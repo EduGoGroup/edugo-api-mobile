@@ -1,0 +1,34 @@
+# Configuración Base - API Mobile
+# Valores comunes a todos los ambientes
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+  read_timeout: 30s
+  write_timeout: 30s
+
+database:
+  postgres:
+    host: "localhost"
+    port: 5432
+    database: "edugo"
+    user: "edugo_user"
+    max_connections: 25
+    ssl_mode: "disable"
+  
+  mongodb:
+    database: "edugo"
+    timeout: 10s
+
+messaging:
+  rabbitmq:
+    queues:
+      material_uploaded: "edugo.material.uploaded"
+      assessment_attempt: "edugo.assessment.attempt"
+    exchanges:
+      materials: "edugo.materials"
+    prefetch_count: 10
+
+logging:
+  level: "info"
+  format: "json"

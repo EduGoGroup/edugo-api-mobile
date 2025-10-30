@@ -1,0 +1,18 @@
+# Configuración Local Development
+# Sobrescribe valores de config.yaml para desarrollo local
+
+database:
+  postgres:
+    host: "localhost"
+    password: "edugo_pass"
+  
+  mongodb:
+    uri: "mongodb://edugo_admin:edugo_pass@localhost:27017/edugo?authSource=admin"
+
+messaging:
+  rabbitmq:
+    url: "amqp://edugo_user:edugo_pass@localhost:5672/"
+
+logging:
+  level: "debug"
+  format: "text"  # Más legible en consola

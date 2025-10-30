@@ -1,0 +1,825 @@
+basePath: /v1
+definitions:
+  Answer:
+    properties:
+      answer:
+        example: option_a
+        type: string
+      question_id:
+        example: q-uuid-1
+        type: string
+    required:
+    - answer
+    - question_id
+    type: object
+  AssessmentResponse:
+    properties:
+      description:
+        example: Evaluación de conceptos básicos
+        type: string
+      passing_score:
+        example: 70
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/Question'
+        type: array
+      time_limit_minutes:
+        example: 15
+        type: integer
+      title:
+        example: 'Cuestionario: Introducción a Pascal'
+        type: string
+      total_points:
+        example: 100
+        type: integer
+      total_questions:
+        example: 5
+        type: integer
+    type: object
+  AttemptResultResponse:
+    properties:
+      detailed_feedback:
+        items:
+          $ref: '#/definitions/QuestionFeedback'
+        type: array
+      passed:
+        example: true
+        type: boolean
+      score:
+        example: 85.5
+        type: number
+      total_points:
+        example: 100
+        type: number
+    type: object
+  CreateMaterialRequest:
+    properties:
+      description:
+        example: Material base sobre programación en Pascal
+        type: string
+      file_name:
+        example: introduccion-pascal.pdf
+        type: string
+      file_size:
+        example: 2048576
+        type: integer
+      subject_id:
+        example: subject-uuid-123
+        type: string
+      title:
+        example: Introducción a Pascal
+        type: string
+      unit_id:
+        example: unit-uuid-456
+        type: string
+    required:
+    - description
+    - file_name
+    - file_size
+    - subject_id
+    - title
+    - unit_id
+    type: object
+  CreateMaterialResponse:
+    properties:
+      material_id:
+        example: uuid-123
+        type: string
+      max_file_size_bytes:
+        example: 104857600
+        type: integer
+      status:
+        example: created
+        type: string
+      upload_url:
+        example: https://s3.amazonaws.com/edugo-materials-prod/upload-url-mock
+        type: string
+      upload_url_expires_at:
+        example: "2025-01-29T12:15:00Z"
+        type: string
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        example: Invalid request
+        type: string
+      message:
+        example: Field 'title' is required
+        type: string
+    type: object
+  GlossaryTerm:
+    properties:
+      definition:
+        example: Programa que traduce código fuente a código máquina
+        type: string
+      order:
+        example: 1
+        type: integer
+      term:
+        example: Compilador
+        type: string
+    type: object
+  LoginRequest:
+    properties:
+      email:
+        example: maria@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  LoginResponse:
+    properties:
+      expires_at:
+        example: "2025-01-29T12:00:00Z"
+        type: string
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/UserInfo'
+    type: object
+  MaterialDetail:
+    properties:
+      author_name:
+        example: Prof. García
+        type: string
+      created_at:
+        example: "2025-01-15T12:00:00Z"
+        type: string
+      description:
+        example: Material base sobre Pascal
+        type: string
+      file_size:
+        example: 2048576
+        type: integer
+      id:
+        example: uuid-1
+        type: string
+      my_progress:
+        example: 0
+        type: number
+      subject_name:
+        example: Programación
+        type: string
+      title:
+        example: Introducción a Pascal
+        type: string
+    type: object
+  MaterialDetailResponse:
+    properties:
+      has_quiz:
+        example: true
+        type: boolean
+      has_summary:
+        example: true
+        type: boolean
+      material:
+        $ref: '#/definitions/MaterialDetail'
+      pdf_url:
+        example: https://s3.../presigned-url
+        type: string
+      pdf_url_expires_at:
+        example: "2025-01-29T11:15:00Z"
+        type: string
+    type: object
+  MaterialListResponse:
+    properties:
+      materials:
+        items:
+          $ref: '#/definitions/MaterialSummary'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  MaterialStatsResponse:
+    properties:
+      average_progress:
+        example: 65.5
+        type: number
+      average_score:
+        example: 82.3
+        type: number
+      total_completed:
+        example: 45
+        type: integer
+      total_views:
+        example: 150
+        type: integer
+    type: object
+  MaterialSummary:
+    properties:
+      has_quiz:
+        example: true
+        type: boolean
+      has_summary:
+        example: true
+        type: boolean
+      id:
+        example: uuid-1
+        type: string
+      progress:
+        example: 0
+        type: number
+      published_at:
+        example: "2025-01-15T12:00:00Z"
+        type: string
+      status:
+        enum:
+        - new
+        - in_progress
+        - completed
+        example: new
+        type: string
+      subject_name:
+        example: Programación
+        type: string
+      title:
+        example: Introducción a Pascal
+        type: string
+      unit_name:
+        example: 5.º A - Programación
+        type: string
+    type: object
+  MaterialSummaryResponse:
+    properties:
+      glossary:
+        items:
+          $ref: '#/definitions/GlossaryTerm'
+        type: array
+      processing_metadata:
+        $ref: '#/definitions/ProcessingMetadata'
+      reflection_questions:
+        example:
+        - ¿Cómo aplicarías este concepto?
+        - ¿Qué diferencias encuentras?
+        items:
+          type: string
+        type: array
+      sections:
+        items:
+          $ref: '#/definitions/SummarySection'
+        type: array
+    type: object
+  ProcessingMetadata:
+    properties:
+      language:
+        example: es
+        type: string
+      model:
+        example: gpt-4
+        type: string
+      nlp_provider:
+        example: openai
+        type: string
+      processing_time_seconds:
+        example: 45
+        type: integer
+      prompt_version:
+        example: v1.2
+        type: string
+      tokens_used:
+        example: 3500
+        type: integer
+    type: object
+  Question:
+    properties:
+      difficulty:
+        enum:
+        - basic
+        - medium
+        - advanced
+        example: basic
+        type: string
+      id:
+        example: q1
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/QuestionOption'
+        type: array
+      order:
+        example: 1
+        type: integer
+      points:
+        example: 20
+        type: integer
+      text:
+        example: ¿Qué es un compilador?
+        type: string
+      type:
+        enum:
+        - multiple_choice
+        - true_false
+        - short_answer
+        example: multiple_choice
+        type: string
+    type: object
+  QuestionFeedback:
+    properties:
+      feedback_message:
+        example: ¡Correcto! Un compilador traduce código fuente a código máquina.
+        type: string
+      is_correct:
+        example: true
+        type: boolean
+      question_id:
+        example: q1
+        type: string
+      your_answer:
+        example: a
+        type: string
+    type: object
+  QuestionOption:
+    properties:
+      id:
+        example: a
+        type: string
+      text:
+        example: Un programa que traduce código
+        type: string
+    type: object
+  RecordAttemptRequest:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/Answer'
+        type: array
+    required:
+    - answers
+    type: object
+  SuccessResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  SummarySection:
+    properties:
+      content:
+        example: Pascal fue desarrollado...
+        type: string
+      difficulty:
+        enum:
+        - basic
+        - medium
+        - advanced
+        example: basic
+        type: string
+      estimated_time_minutes:
+        example: 5
+        type: integer
+      order:
+        example: 1
+        type: integer
+      title:
+        example: Contexto Histórico
+        type: string
+    type: object
+  UpdateProgressRequest:
+    properties:
+      progress:
+        example: 75.5
+        maximum: 100
+        minimum: 0
+        type: number
+    required:
+    - progress
+    type: object
+  UploadCompleteRequest:
+    properties:
+      checksum:
+        example: sha256:abc123...
+        type: string
+      file_size:
+        example: 2048576
+        type: integer
+      version_key:
+        example: materials/uuid-1/v1.pdf
+        type: string
+    required:
+    - checksum
+    - file_size
+    - version_key
+    type: object
+  UploadCompleteResponse:
+    properties:
+      material_id:
+        example: uuid-123
+        type: string
+      message:
+        example: Material queued for processing
+        type: string
+      status:
+        example: processing
+        type: string
+    type: object
+  UserInfo:
+    properties:
+      email:
+        example: maria@example.com
+        type: string
+      id:
+        example: user-uuid-123
+        type: string
+      name:
+        example: María González
+        type: string
+      role:
+        example: teacher
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: soporte@edugo.com
+    name: Equipo EduGo
+  description: API para operaciones frecuentes de docentes y estudiantes en EduGo
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://edugo.com/terms/
+  title: EduGo API Mobile
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Genera JWT token tras validar credenciales
+      parameters:
+      - description: Credenciales de usuario
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Credenciales inválidas
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Autenticar usuario
+      tags:
+      - Auth
+  /health:
+    get:
+      description: Verifica que la API está funcionando
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - Health
+  /materials:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene lista de materiales filtrados por unidad y materia con
+        progreso del estudiante
+      parameters:
+      - description: ID de unidad académica
+        in: query
+        name: unit_id
+        type: string
+      - description: ID de materia
+        in: query
+        name: subject_id
+        type: string
+      - description: Estado del material
+        enum:
+        - all
+        - new
+        - in_progress
+        - completed
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaterialListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener lista de materiales
+      tags:
+      - Materials
+    post:
+      consumes:
+      - application/json
+      description: Crea un nuevo material educativo y retorna URL firmada para subir
+        PDF
+      parameters:
+      - description: Datos del material
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateMaterialRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/CreateMaterialResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Crear nuevo material
+      tags:
+      - Materials
+  /materials/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene información completa de un material incluyendo URL firmada
+        para descargar PDF
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaterialDetailResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener detalle de material
+      tags:
+      - Materials
+  /materials/{id}/assessment:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene las preguntas del quiz SIN respuestas correctas
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AssessmentResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener cuestionario
+      tags:
+      - Materials
+  /materials/{id}/assessment/attempts:
+    post:
+      consumes:
+      - application/json
+      description: Valida respuestas del quiz y registra puntaje del estudiante
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Respuestas del estudiante
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/RecordAttemptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AttemptResultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Registrar intento de evaluación
+      tags:
+      - Materials
+  /materials/{id}/progress:
+    patch:
+      consumes:
+      - application/json
+      description: Registra el progreso del estudiante en la lectura de un material
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Progreso del estudiante
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProgressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Actualizar progreso de lectura
+      tags:
+      - Materials
+  /materials/{id}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene progreso y puntajes de todos los estudiantes para un material
+        (solo docentes)
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaterialStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: No eres docente de este material
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener estadísticas del material
+      tags:
+      - Materials
+  /materials/{id}/summary:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene el resumen generado por IA desde MongoDB
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MaterialSummaryResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Resumen no disponible aún
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener resumen del material
+      tags:
+      - Materials
+  /materials/{id}/upload-complete:
+    post:
+      consumes:
+      - application/json
+      description: Registra versión del material y publica evento para procesamiento
+      parameters:
+      - description: ID del material
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos del archivo subido
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UploadCompleteRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/UploadCompleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Notificar que el upload se completó
+      tags:
+      - Materials
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT token con formato: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
