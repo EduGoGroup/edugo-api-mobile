@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 )
 
 // MaterialSummary representa el resumen de un material (almacenado en MongoDB)

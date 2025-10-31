@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
-	"github.com/edugo/shared/pkg/errors"
-	"github.com/edugo/shared/pkg/logger"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-shared/pkg/errors"
+	"github.com/EduGoGroup/edugo-shared/pkg/logger"
 )
 
 type MaterialStats struct {

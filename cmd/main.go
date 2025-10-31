@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/edugo/api-mobile/internal/config"
-	"github.com/edugo/api-mobile/internal/handlers"
-	"github.com/edugo/api-mobile/internal/middleware"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/handlers"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/edugo/api-mobile/docs" // Swagger docs generados por swag init
+	_ "github.com/EduGoGroup/edugo-api-mobile/docs" // Swagger docs generados por swag init
 )
 
 // @title EduGo API Mobile

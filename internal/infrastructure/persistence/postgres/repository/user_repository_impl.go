@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/edugo/api-mobile/internal/domain/entity"
-	"github.com/edugo/api-mobile/internal/domain/repository"
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
-	"github.com/edugo/shared/pkg/types/enum"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-shared/pkg/types/enum"
 )
 
 type postgresUserRepository struct {

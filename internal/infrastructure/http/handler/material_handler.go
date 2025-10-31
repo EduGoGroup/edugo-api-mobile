@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/edugo/api-mobile/internal/application/dto"
-	"github.com/edugo/api-mobile/internal/application/service"
-	"github.com/edugo/api-mobile/internal/domain/repository"
-	"github.com/edugo/shared/pkg/errors"
-	"github.com/edugo/shared/pkg/logger"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-shared/pkg/errors"
+	"github.com/EduGoGroup/edugo-shared/pkg/logger"
 )
 
 // MaterialHandler maneja las peticiones HTTP relacionadas con materiales

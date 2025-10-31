@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/edugo/api-mobile/internal/domain/repository"
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

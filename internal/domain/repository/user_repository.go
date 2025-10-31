@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/edugo/api-mobile/internal/domain/entity"
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 )
 
 // UserRepository define las operaciones de persistencia para User

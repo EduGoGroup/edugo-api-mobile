@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/edugo/api-mobile/internal/models/request" // Usado en comentarios de Swagger
-	"github.com/edugo/api-mobile/internal/models/response"
+	_ "github.com/EduGoGroup/edugo-api-mobile/internal/models/request" // Usado en comentarios de Swagger
+	"github.com/EduGoGroup/edugo-api-mobile/internal/models/response"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

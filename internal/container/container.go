@@ -3,13 +3,13 @@ package container
 import (
 	"database/sql"
 
-	"github.com/edugo/api-mobile/internal/application/service"
-	"github.com/edugo/api-mobile/internal/domain/repository"
-	"github.com/edugo/api-mobile/internal/infrastructure/http/handler"
-	mongoRepo "github.com/edugo/api-mobile/internal/infrastructure/persistence/mongodb/repository"
-	postgresRepo "github.com/edugo/api-mobile/internal/infrastructure/persistence/postgres/repository"
-	"github.com/edugo/shared/pkg/auth"
-	"github.com/edugo/shared/pkg/logger"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
+	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
+	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
+	"github.com/EduGoGroup/edugo-shared/pkg/auth"
+	"github.com/EduGoGroup/edugo-shared/pkg/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

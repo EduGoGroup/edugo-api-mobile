@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/edugo/shared/pkg/auth"
-	"github.com/edugo/shared/pkg/logger"
+	"github.com/EduGoGroup/edugo-shared/pkg/auth"
+	"github.com/EduGoGroup/edugo-shared/pkg/logger"
 )
 
 // AuthRequired middleware que requiere autenticación JWT

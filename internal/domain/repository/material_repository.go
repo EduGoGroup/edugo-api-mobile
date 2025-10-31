@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/edugo/api-mobile/internal/domain/entity"
-	"github.com/edugo/api-mobile/internal/domain/valueobject"
-	"github.com/edugo/shared/pkg/types/enum"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-shared/pkg/types/enum"
 )
 
 // MaterialRepository define las operaciones de persistencia para Material (PostgreSQL)
