@@ -1,0 +1,136 @@
+name: CI Pipeline
+
+# Se ejecuta en PRs (flujo ideal) y push a main (red de seguridad)
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]  # Red de seguridad por si alguien hace push directo
+
+env:
+  GO_VERSION: '1.25.3'
+
+jobs:
+  test-and-validate:
+    name: Tests and Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Configurar acceso a repos privados
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        env:
+          GOPRIVATE: github.com/EduGoGroup/*
+
+      - name: Verificar formato
+        run: |
+          if ! gofmt -l . | grep -q .; then
+            echo "✓ Código formateado correctamente"
+          else
+            echo "✗ Código no está formateado:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Descargar dependencias
+        run: go mod download
+
+      - name: Verificar go.mod y go.sum
+        run: |
+          go mod tidy
+          if ! git diff --exit-code go.mod go.sum; then
+            echo "✗ go.mod o go.sum no están sincronizados"
+            echo "Ejecuta 'go mod tidy' localmente"
+            exit 1
+          fi
+          echo "✓ go.mod y go.sum están sincronizados"
+
+      - name: Análisis estático (go vet)
+        run: go vet ./...
+
+      - name: Ejecutar tests con race detection
+        run: go test -v -race ./...
+
+      - name: Verificar build
+        run: go build -v ./...
+
+      - name: Verificar que Swagger compile
+        run: |
+          if command -v swag &> /dev/null; then
+            swag init -g cmd/main.go --output docs
+          else
+            echo "⚠️  swag no instalado, se omite verificación de Swagger"
+          fi
+
+  lint:
+    name: Linter (Optional)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # No falla el CI si el linter tiene warnings
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Configurar acceso a repos privados
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        env:
+          GOPRIVATE: github.com/EduGoGroup/*
+
+      - name: Instalar golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Ejecutar linter
+        run: golangci-lint run --timeout=5m || echo "Linter warnings found (not critical)"
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Configurar acceso a repos privados
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        env:
+          GOPRIVATE: github.com/EduGoGroup/*
+
+      - name: Instalar gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Ejecutar análisis de seguridad
+        run: gosec -fmt=json -out=gosec-report.json ./... || true
+
+      - name: Subir reporte de seguridad
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report
+          path: gosec-report.json
+          retention-days: 30

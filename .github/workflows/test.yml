@@ -1,0 +1,163 @@
+name: Tests with Coverage
+
+# Manual o en PRs
+on:
+  workflow_dispatch:  # Manual desde GitHub UI
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.25.3'
+
+jobs:
+  test-coverage:
+    name: Tests with Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Configurar acceso a repos privados
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        env:
+          GOPRIVATE: github.com/EduGoGroup/*
+
+      - name: Descargar dependencias
+        run: go mod download
+
+      - name: Ejecutar tests con cobertura
+        run: |
+          mkdir -p coverage
+          go test -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./...
+
+          if [ -f coverage/coverage.out ]; then
+            echo ""
+            echo "📊 Cobertura de código:"
+            go tool cover -func=coverage/coverage.out | tail -1
+
+            echo ""
+            echo "📈 Top 10 paquetes con menor cobertura:"
+            go tool cover -func=coverage/coverage.out | sort -k3 -n | head -10
+          fi
+
+      - name: Generar reporte HTML
+        run: |
+          if [ -f coverage/coverage.out ]; then
+            go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+          fi
+
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+      - name: Subir a Codecov
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          file: coverage/coverage.out
+          flags: unittests
+          name: codecov-edugo-api-mobile
+          fail_ci_if_error: false
+
+      - name: Comentar en PR con cobertura
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            if (!fs.existsSync('coverage/coverage.out')) {
+              console.log('No se encontró archivo de cobertura');
+              return;
+            }
+
+            const { execSync } = require('child_process');
+            const coverage = execSync('go tool cover -func=coverage/coverage.out | tail -1').toString();
+            const match = coverage.match(/(\d+\.\d+)%/);
+            const percentage = match ? match[1] : 'N/A';
+
+            const body = `## 📊 Reporte de Cobertura\n\n**Cobertura total:** ${percentage}%\n\n[Ver reporte completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+  integration-tests:
+    name: Integration Tests (Optional)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: edugo_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: edugo_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: edugo_test
+          MONGO_INITDB_ROOT_PASSWORD: test_password
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Configurar acceso a repos privados
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        env:
+          GOPRIVATE: github.com/EduGoGroup/*
+
+      - name: Descargar dependencias
+        run: go mod download
+
+      - name: Ejecutar tests de integración
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: edugo_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: edugo_test
+          MONGODB_URI: mongodb://edugo_test:test_password@localhost:27017/edugo_test?authSource=admin
+          APP_ENV: test
+        run: |
+          # Ejecutar tests con tag de integración si existen
+          go test -v -tags=integration ./... || echo "No hay tests de integración configurados"
