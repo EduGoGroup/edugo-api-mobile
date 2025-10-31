@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	"github.com/EduGoGroup/edugo-shared/pkg/validator"
+	"github.com/EduGoGroup/edugo-shared/common/validator"
 )
 
 // LoginRequest solicitud de login

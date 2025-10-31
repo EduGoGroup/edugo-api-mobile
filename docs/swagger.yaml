@@ -441,6 +441,191 @@ definitions:
         example: teacher
         type: string
     type: object
+  dto.CreateMaterialRequest:
+    properties:
+      description:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.LoginResponse:
+    properties:
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserInfo'
+    type: object
+  dto.MaterialResponse:
+    properties:
+      author_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      processing_status:
+        type: string
+      s3_url:
+        type: string
+      status:
+        type: string
+      subject_id:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UploadCompleteRequest:
+    properties:
+      s3_key:
+        type: string
+      s3_url:
+        type: string
+    type: object
+  dto.UserInfo:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      role:
+        type: string
+    type: object
+  enum.AssessmentType:
+    enum:
+    - multiple_choice
+    - true_false
+    - short_answer
+    type: string
+    x-enum-varnames:
+    - AssessmentMultipleChoice
+    - AssessmentTrueFalse
+    - AssessmentShortAnswer
+  handler.ErrorResponse:
+    properties:
+      code:
+        type: string
+      error:
+        type: string
+    type: object
+  repository.AssessmentAttempt:
+    properties:
+      answers:
+        additionalProperties: true
+        description: question_id -> answer
+        type: object
+      attemptedAt:
+        type: string
+      id:
+        type: string
+      materialID:
+        $ref: '#/definitions/valueobject.MaterialID'
+      score:
+        format: float64
+        type: number
+      userID:
+        $ref: '#/definitions/valueobject.UserID'
+    type: object
+  repository.AssessmentQuestion:
+    properties:
+      correctAnswer:
+        description: String o int dependiendo del tipo
+      difficultyLevel:
+        type: string
+      explanation:
+        type: string
+      id:
+        type: string
+      options:
+        description: Para multiple choice
+        items:
+          type: string
+        type: array
+      questionText:
+        type: string
+      questionType:
+        $ref: '#/definitions/enum.AssessmentType'
+    type: object
+  repository.MaterialAssessment:
+    properties:
+      createdAt:
+        type: string
+      materialID:
+        $ref: '#/definitions/valueobject.MaterialID'
+      questions:
+        items:
+          $ref: '#/definitions/repository.AssessmentQuestion'
+        type: array
+    type: object
+  repository.MaterialSummary:
+    properties:
+      createdAt:
+        type: string
+      glossary:
+        additionalProperties:
+          type: string
+        type: object
+      keyConcepts:
+        additionalProperties:
+          type: string
+        type: object
+      mainIdeas:
+        items:
+          type: string
+        type: array
+      materialID:
+        $ref: '#/definitions/valueobject.MaterialID'
+      sections:
+        items:
+          $ref: '#/definitions/repository.SummarySection'
+        type: array
+    type: object
+  repository.SummarySection:
+    properties:
+      content:
+        type: string
+      page:
+        type: integer
+      title:
+        type: string
+    type: object
+  service.MaterialStats:
+    properties:
+      avg_progress:
+        type: number
+      avg_score:
+        type: number
+      total_attempts:
+        type: integer
+      total_views:
+        type: integer
+    type: object
+  valueobject.MaterialID:
+    type: object
+  valueobject.UserID:
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -458,32 +643,28 @@ paths:
     post:
       consumes:
       - application/json
-      description: Genera JWT token tras validar credenciales
+      description: Authenticate user and return JWT token
       parameters:
-      - description: Credenciales de usuario
+      - description: Login credentials
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/LoginResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.LoginResponse'
         "401":
-          description: Credenciales inválidas
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Autenticar usuario
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: User login
       tags:
-      - Auth
+      - auth
   /health:
     get:
       description: Verifica que la API está funcionando
@@ -501,92 +682,51 @@ paths:
       - Health
   /materials:
     get:
-      consumes:
-      - application/json
-      description: Obtiene lista de materiales filtrados por unidad y materia con
-        progreso del estudiante
-      parameters:
-      - description: ID de unidad académica
-        in: query
-        name: unit_id
-        type: string
-      - description: ID de materia
-        in: query
-        name: subject_id
-        type: string
-      - description: Estado del material
-        enum:
-        - all
-        - new
-        - in_progress
-        - completed
-        in: query
-        name: status
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MaterialListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            items:
+              $ref: '#/definitions/dto.MaterialResponse'
+            type: array
       security:
       - BearerAuth: []
-      summary: Obtener lista de materiales
+      summary: List materials
       tags:
-      - Materials
+      - materials
     post:
       consumes:
       - application/json
-      description: Crea un nuevo material educativo y retorna URL firmada para subir
-        PDF
+      description: Creates a new educational material
       parameters:
-      - description: Datos del material
+      - description: Material data
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateMaterialRequest'
+          $ref: '#/definitions/dto.CreateMaterialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/CreateMaterialResponse'
+            $ref: '#/definitions/dto.MaterialResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Crear nuevo material
+      summary: Create a new material
       tags:
-      - Materials
+      - materials
   /materials/{id}:
     get:
-      consumes:
-      - application/json
-      description: Obtiene información completa de un material incluyendo URL firmada
-        para descargar PDF
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
@@ -597,27 +737,20 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MaterialDetailResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.MaterialResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Obtener detalle de material
+      summary: Get material by ID
       tags:
-      - Materials
+      - materials
   /materials/{id}/assessment:
     get:
-      consumes:
-      - application/json
-      description: Obtiene las preguntas del quiz SIN respuestas correctas
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
@@ -628,102 +761,73 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AssessmentResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/repository.MaterialAssessment'
       security:
       - BearerAuth: []
-      summary: Obtener cuestionario
+      summary: Get material assessment/quiz
       tags:
-      - Materials
+      - materials
   /materials/{id}/assessment/attempts:
     post:
       consumes:
       - application/json
-      description: Valida respuestas del quiz y registra puntaje del estudiante
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
         type: string
-      - description: Respuestas del estudiante
+      - description: Answers
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/RecordAttemptRequest'
+          additionalProperties: true
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AttemptResultResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/repository.AssessmentAttempt'
       security:
       - BearerAuth: []
-      summary: Registrar intento de evaluación
+      summary: Record assessment attempt
       tags:
-      - Materials
+      - materials
   /materials/{id}/progress:
     patch:
       consumes:
       - application/json
-      description: Registra el progreso del estudiante en la lectura de un material
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
         type: string
-      - description: Progreso del estudiante
+      - description: Progress data
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/UpdateProgressRequest'
+          additionalProperties:
+            type: integer
+          type: object
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+        "204":
+          description: No Content
       security:
       - BearerAuth: []
-      summary: Actualizar progreso de lectura
+      summary: Update reading progress
       tags:
-      - Materials
+      - materials
   /materials/{id}/stats:
     get:
-      consumes:
-      - application/json
-      description: Obtiene progreso y puntajes de todos los estudiantes para un material
-        (solo docentes)
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
@@ -734,27 +838,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MaterialStatsResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "403":
-          description: No eres docente de este material
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/service.MaterialStats'
       security:
       - BearerAuth: []
-      summary: Obtener estadísticas del material
+      summary: Get material statistics
       tags:
-      - Materials
+      - materials
   /materials/{id}/summary:
     get:
-      consumes:
-      - application/json
-      description: Obtiene el resumen generado por IA desde MongoDB
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
@@ -765,57 +858,43 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MaterialSummaryResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Resumen no disponible aún
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/repository.MaterialSummary'
       security:
       - BearerAuth: []
-      summary: Obtener resumen del material
+      summary: Get material summary
       tags:
-      - Materials
+      - materials
   /materials/{id}/upload-complete:
     post:
       consumes:
       - application/json
-      description: Registra versión del material y publica evento para procesamiento
+      description: Notify that PDF upload to S3 is complete
       parameters:
-      - description: ID del material
+      - description: Material ID
         in: path
         name: id
         required: true
         type: string
-      - description: Datos del archivo subido
+      - description: S3 info
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/UploadCompleteRequest'
+          $ref: '#/definitions/dto.UploadCompleteRequest'
       produces:
       - application/json
       responses:
-        "202":
-          description: Accepted
-          schema:
-            $ref: '#/definitions/UploadCompleteResponse'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Notificar que el upload se completó
+      summary: Notify upload complete
       tags:
-      - Materials
+      - materials
 securityDefinitions:
   BearerAuth:
     description: 'JWT token con formato: Bearer {token}'

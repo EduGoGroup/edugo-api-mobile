@@ -8,8 +8,8 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
 	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
-	"github.com/EduGoGroup/edugo-shared/pkg/auth"
-	"github.com/EduGoGroup/edugo-shared/pkg/logger"
+	"github.com/EduGoGroup/edugo-shared/auth"
+	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

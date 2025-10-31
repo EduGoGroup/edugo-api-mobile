@@ -7,7 +7,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-shared/pkg/types/enum"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 type postgresProgressRepository struct {

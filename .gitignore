@@ -1,0 +1,56 @@
+# Binarios para programas y plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Archivos de test
+*.test
+*.out
+
+# Salida del compilador de Go
+*.o
+*.a
+
+# Cobertura de tests
+*.coverprofile
+coverage.txt
+coverage.html
+
+# Archivos de dependencias
+/vendor/
+go.work
+go.work.sum
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos de configuración local
+*.local
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+
+# Archivos de build
+build/
+_build/
+
+# Archivos específicos del proyecto
+api-mobile

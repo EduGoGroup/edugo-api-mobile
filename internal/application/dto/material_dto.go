@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
-	"github.com/EduGoGroup/edugo-shared/pkg/validator"
+	"github.com/EduGoGroup/edugo-shared/common/validator"
 )
 
 // CreateMaterialRequest solicitud para crear material

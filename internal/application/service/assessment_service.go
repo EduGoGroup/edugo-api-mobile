@@ -5,9 +5,9 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-shared/pkg/errors"
-	"github.com/EduGoGroup/edugo-shared/pkg/logger"
-	"github.com/EduGoGroup/edugo-shared/pkg/types"
+	"github.com/EduGoGroup/edugo-shared/common/errors"
+	"github.com/EduGoGroup/edugo-shared/logger"
+	"github.com/EduGoGroup/edugo-shared/common/types"
 )
 
 // AssessmentService define operaciones para assessments

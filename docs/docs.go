@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/auth/login": {
             "post": {
-                "description": "Genera JWT token tras validar credenciales",
+                "description": "Authenticate user and return JWT token",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,17 +33,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
-                "summary": "Autenticar usuario",
+                "summary": "User login",
                 "parameters": [
                     {
-                        "description": "Credenciales de usuario",
-                        "name": "body",
+                        "description": "Login credentials",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -51,19 +51,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/LoginResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.LoginResponse"
                         }
                     },
                     "401": {
-                        "description": "Credenciales inválidas",
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -99,60 +93,21 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Obtiene lista de materiales filtrados por unidad y materia con progreso del estudiante",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Obtener lista de materiales",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID de unidad académica",
-                        "name": "unit_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "ID de materia",
-                        "name": "subject_id",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "all",
-                            "new",
-                            "in_progress",
-                            "completed"
-                        ],
-                        "type": "string",
-                        "description": "Estado del material",
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
+                "summary": "List materials",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MaterialListResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.MaterialResponse"
+                            }
                         }
                     }
                 }
@@ -163,7 +118,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Crea un nuevo material educativo y retorna URL firmada para subir PDF",
+                "description": "Creates a new educational material",
                 "consumes": [
                     "application/json"
                 ],
@@ -171,17 +126,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Crear nuevo material",
+                "summary": "Create a new material",
                 "parameters": [
                     {
-                        "description": "Datos del material",
-                        "name": "body",
+                        "description": "Material data",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateMaterialRequest"
+                            "$ref": "#/definitions/dto.CreateMaterialRequest"
                         }
                     }
                 ],
@@ -189,25 +144,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateMaterialResponse"
+                            "$ref": "#/definitions/dto.MaterialResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -220,21 +163,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Obtiene información completa de un material incluyendo URL firmada para descargar PDF",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Obtener detalle de material",
+                "summary": "Get material by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -244,19 +183,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MaterialDetailResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.MaterialResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -269,21 +202,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Obtiene las preguntas del quiz SIN respuestas correctas",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Obtener cuestionario",
+                "summary": "Get material assessment/quiz",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -293,19 +222,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AssessmentResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/repository.MaterialAssessment"
                         }
                     }
                 }
@@ -318,7 +235,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Valida respuestas del quiz y registra puntaje del estudiante",
                 "consumes": [
                     "application/json"
                 ],
@@ -326,24 +242,25 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Registrar intento de evaluación",
+                "summary": "Record assessment attempt",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Respuestas del estudiante",
-                        "name": "body",
+                        "description": "Answers",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RecordAttemptRequest"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 ],
@@ -351,19 +268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AttemptResultResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/repository.AssessmentAttempt"
                         }
                     }
                 }
@@ -376,7 +281,6 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Registra el progreso del estudiante en la lectura de un material",
                 "consumes": [
                     "application/json"
                 ],
@@ -384,45 +288,33 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Actualizar progreso de lectura",
+                "summary": "Update reading progress",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Progreso del estudiante",
-                        "name": "body",
+                        "description": "Progress data",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateProgressRequest"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -434,21 +326,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Obtiene progreso y puntajes de todos los estudiantes para un material (solo docentes)",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Obtener estadísticas del material",
+                "summary": "Get material statistics",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -458,19 +346,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MaterialStatsResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "No eres docente de este material",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/service.MaterialStats"
                         }
                     }
                 }
@@ -483,21 +359,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Obtiene el resumen generado por IA desde MongoDB",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Obtener resumen del material",
+                "summary": "Get material summary",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -507,19 +379,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MaterialSummaryResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Resumen no disponible aún",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/repository.MaterialSummary"
                         }
                     }
                 }
@@ -532,7 +392,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Registra versión del material y publica evento para procesamiento",
+                "description": "Notify that PDF upload to S3 is complete",
                 "consumes": [
                     "application/json"
                 ],
@@ -540,44 +400,35 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Materials"
+                    "materials"
                 ],
-                "summary": "Notificar que el upload se completó",
+                "summary": "Notify upload complete",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del material",
+                        "description": "Material ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Datos del archivo subido",
-                        "name": "body",
+                        "description": "S3 info",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UploadCompleteRequest"
+                            "$ref": "#/definitions/dto.UploadCompleteRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/UploadCompleteResponse"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -1202,6 +1053,286 @@ const docTemplate = `{
                     "example": "teacher"
                 }
             }
+        },
+        "dto.CreateMaterialRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.UserInfo"
+                }
+            }
+        },
+        "dto.MaterialResponse": {
+            "type": "object",
+            "properties": {
+                "author_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "processing_status": {
+                    "type": "string"
+                },
+                "s3_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UploadCompleteRequest": {
+            "type": "object",
+            "properties": {
+                "s3_key": {
+                    "type": "string"
+                },
+                "s3_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "enum.AssessmentType": {
+            "type": "string",
+            "enum": [
+                "multiple_choice",
+                "true_false",
+                "short_answer"
+            ],
+            "x-enum-varnames": [
+                "AssessmentMultipleChoice",
+                "AssessmentTrueFalse",
+                "AssessmentShortAnswer"
+            ]
+        },
+        "handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.AssessmentAttempt": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "description": "question_id -\u003e answer",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "attemptedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "materialID": {
+                    "$ref": "#/definitions/valueobject.MaterialID"
+                },
+                "score": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "userID": {
+                    "$ref": "#/definitions/valueobject.UserID"
+                }
+            }
+        },
+        "repository.AssessmentQuestion": {
+            "type": "object",
+            "properties": {
+                "correctAnswer": {
+                    "description": "String o int dependiendo del tipo"
+                },
+                "difficultyLevel": {
+                    "type": "string"
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "options": {
+                    "description": "Para multiple choice",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "questionText": {
+                    "type": "string"
+                },
+                "questionType": {
+                    "$ref": "#/definitions/enum.AssessmentType"
+                }
+            }
+        },
+        "repository.MaterialAssessment": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "materialID": {
+                    "$ref": "#/definitions/valueobject.MaterialID"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.AssessmentQuestion"
+                    }
+                }
+            }
+        },
+        "repository.MaterialSummary": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "glossary": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "keyConcepts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "mainIdeas": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "materialID": {
+                    "$ref": "#/definitions/valueobject.MaterialID"
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.SummarySection"
+                    }
+                }
+            }
+        },
+        "repository.SummarySection": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.MaterialStats": {
+            "type": "object",
+            "properties": {
+                "avg_progress": {
+                    "type": "number"
+                },
+                "avg_score": {
+                    "type": "number"
+                },
+                "total_attempts": {
+                    "type": "integer"
+                },
+                "total_views": {
+                    "type": "integer"
+                }
+            }
+        },
+        "valueobject.MaterialID": {
+            "type": "object"
+        },
+        "valueobject.UserID": {
+            "type": "object"
         }
     },
     "securityDefinitions": {
