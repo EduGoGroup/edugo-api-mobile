@@ -81,17 +81,17 @@ func ReconstructMaterial(
 
 // Getters
 
-func (m *Material) ID() valueobject.MaterialID       { return m.id }
-func (m *Material) Title() string                    { return m.title }
-func (m *Material) Description() string              { return m.description }
-func (m *Material) AuthorID() valueobject.UserID     { return m.authorID }
-func (m *Material) SubjectID() string                { return m.subjectID }
-func (m *Material) S3Key() string                    { return m.s3Key }
-func (m *Material) S3URL() string                    { return m.s3URL }
-func (m *Material) Status() enum.MaterialStatus      { return m.status }
+func (m *Material) ID() valueobject.MaterialID              { return m.id }
+func (m *Material) Title() string                           { return m.title }
+func (m *Material) Description() string                     { return m.description }
+func (m *Material) AuthorID() valueobject.UserID            { return m.authorID }
+func (m *Material) SubjectID() string                       { return m.subjectID }
+func (m *Material) S3Key() string                           { return m.s3Key }
+func (m *Material) S3URL() string                           { return m.s3URL }
+func (m *Material) Status() enum.MaterialStatus             { return m.status }
 func (m *Material) ProcessingStatus() enum.ProcessingStatus { return m.processingStatus }
-func (m *Material) CreatedAt() time.Time             { return m.createdAt }
-func (m *Material) UpdatedAt() time.Time             { return m.updatedAt }
+func (m *Material) CreatedAt() time.Time                    { return m.createdAt }
+func (m *Material) UpdatedAt() time.Time                    { return m.updatedAt }
 
 // Business Logic
 

@@ -47,13 +47,13 @@ func ReconstructUser(
 
 // Getters
 
-func (u *User) ID() valueobject.UserID     { return u.id }
-func (u *User) Email() valueobject.Email   { return u.email }
-func (u *User) PasswordHash() string       { return u.passwordHash }
-func (u *User) FirstName() string          { return u.firstName }
-func (u *User) LastName() string           { return u.lastName }
-func (u *User) FullName() string           { return u.firstName + " " + u.lastName }
-func (u *User) Role() enum.SystemRole      { return u.role }
-func (u *User) IsActive() bool             { return u.isActive }
-func (u *User) CreatedAt() time.Time       { return u.createdAt }
-func (u *User) UpdatedAt() time.Time       { return u.updatedAt }
+func (u *User) ID() valueobject.UserID   { return u.id }
+func (u *User) Email() valueobject.Email { return u.email }
+func (u *User) PasswordHash() string     { return u.passwordHash }
+func (u *User) FirstName() string        { return u.firstName }
+func (u *User) LastName() string         { return u.lastName }
+func (u *User) FullName() string         { return u.firstName + " " + u.lastName }
+func (u *User) Role() enum.SystemRole    { return u.role }
+func (u *User) IsActive() bool           { return u.isActive }
+func (u *User) CreatedAt() time.Time     { return u.createdAt }
+func (u *User) UpdatedAt() time.Time     { return u.updatedAt }

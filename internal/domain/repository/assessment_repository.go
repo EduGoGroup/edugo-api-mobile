@@ -16,22 +16,22 @@ type MaterialAssessment struct {
 
 // AssessmentQuestion representa una pregunta del quiz
 type AssessmentQuestion struct {
-	ID             string
-	QuestionText   string
-	QuestionType   enum.AssessmentType
-	Options        []string // Para multiple choice
-	CorrectAnswer  interface{} // String o int dependiendo del tipo
-	Explanation    string
+	ID              string
+	QuestionText    string
+	QuestionType    enum.AssessmentType
+	Options         []string    // Para multiple choice
+	CorrectAnswer   interface{} // String o int dependiendo del tipo
+	Explanation     string
 	DifficultyLevel string
 }
 
 // AssessmentAttempt representa un intento de resolver el quiz
 type AssessmentAttempt struct {
-	ID         string
-	MaterialID valueobject.MaterialID
-	UserID     valueobject.UserID
-	Answers    map[string]interface{} // question_id -> answer
-	Score      float64
+	ID          string
+	MaterialID  valueobject.MaterialID
+	UserID      valueobject.UserID
+	Answers     map[string]interface{} // question_id -> answer
+	Score       float64
 	AttemptedAt string
 }
 

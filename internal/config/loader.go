@@ -29,7 +29,7 @@ func Load() (*Config, error) {
 	// 3. Configuración de archivos
 	v.SetConfigType("yaml")
 	v.AddConfigPath("./config")
-	v.AddConfigPath("../config")  // Por si se ejecuta desde otro directorio
+	v.AddConfigPath("../config") // Por si se ejecuta desde otro directorio
 
 	// Leer archivo base
 	v.SetConfigName("config")

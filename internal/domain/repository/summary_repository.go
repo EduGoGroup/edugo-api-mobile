@@ -8,12 +8,12 @@ import (
 
 // MaterialSummary representa el resumen de un material (almacenado en MongoDB)
 type MaterialSummary struct {
-	MaterialID valueobject.MaterialID
-	MainIdeas  []string
+	MaterialID  valueobject.MaterialID
+	MainIdeas   []string
 	KeyConcepts map[string]string
-	Sections   []SummarySection
-	Glossary   map[string]string
-	CreatedAt  string
+	Sections    []SummarySection
+	Glossary    map[string]string
+	CreatedAt   string
 }
 
 // SummarySection representa una sección del resumen

@@ -58,11 +58,11 @@ func (r *mongoAssessmentRepository) FindAssessmentByMaterialID(ctx context.Conte
 
 func (r *mongoAssessmentRepository) SaveAttempt(ctx context.Context, attempt *repository.AssessmentAttempt) error {
 	doc := bson.M{
-		"id":          attempt.ID,
-		"material_id": attempt.MaterialID.String(),
-		"user_id":     attempt.UserID.String(),
-		"answers":     attempt.Answers,
-		"score":       attempt.Score,
+		"id":           attempt.ID,
+		"material_id":  attempt.MaterialID.String(),
+		"user_id":      attempt.UserID.String(),
+		"answers":      attempt.Answers,
+		"score":        attempt.Score,
 		"attempted_at": time.Now(),
 	}
 
@@ -90,10 +90,10 @@ func (r *mongoAssessmentRepository) FindAttemptsByUser(ctx context.Context, mate
 		}
 
 		attempt := &repository.AssessmentAttempt{
-			ID:         doc["id"].(string),
-			MaterialID: materialID,
-			UserID:     userID,
-			Score:      doc["score"].(float64),
+			ID:          doc["id"].(string),
+			MaterialID:  materialID,
+			UserID:      userID,
+			Score:       doc["score"].(float64),
 			AttemptedAt: doc["attempted_at"].(string),
 		}
 		attempts = append(attempts, attempt)
@@ -118,10 +118,10 @@ func (r *mongoAssessmentRepository) GetBestAttempt(ctx context.Context, material
 	}
 
 	return &repository.AssessmentAttempt{
-		ID:         doc["id"].(string),
-		MaterialID: materialID,
-		UserID:     userID,
-		Score:      doc["score"].(float64),
+		ID:          doc["id"].(string),
+		MaterialID:  materialID,
+		UserID:      userID,
+		Score:       doc["score"].(float64),
 		AttemptedAt: doc["attempted_at"].(string),
 	}, nil
 }

@@ -33,14 +33,14 @@ type PostgresConfig struct {
 	Port           int    `mapstructure:"port"`
 	Database       string `mapstructure:"database"`
 	User           string `mapstructure:"user"`
-	Password       string `mapstructure:"password"`        // Desde ENV
+	Password       string `mapstructure:"password"` // Desde ENV
 	MaxConnections int    `mapstructure:"max_connections"`
 	SSLMode        string `mapstructure:"ssl_mode"`
 }
 
 // MongoDBConfig configuración de MongoDB
 type MongoDBConfig struct {
-	URI      string        `mapstructure:"uri"`      // Desde ENV
+	URI      string        `mapstructure:"uri"` // Desde ENV
 	Database string        `mapstructure:"database"`
 	Timeout  time.Duration `mapstructure:"timeout"`
 }
@@ -52,16 +52,16 @@ type MessagingConfig struct {
 
 // RabbitMQConfig configuración de RabbitMQ
 type RabbitMQConfig struct {
-	URL           string        `mapstructure:"url"` // Desde ENV
-	Queues        QueuesConfig  `mapstructure:"queues"`
+	URL           string         `mapstructure:"url"` // Desde ENV
+	Queues        QueuesConfig   `mapstructure:"queues"`
 	Exchanges     ExchangeConfig `mapstructure:"exchanges"`
-	PrefetchCount int           `mapstructure:"prefetch_count"`
+	PrefetchCount int            `mapstructure:"prefetch_count"`
 }
 
 // QueuesConfig nombres de colas
 type QueuesConfig struct {
-	MaterialUploaded   string `mapstructure:"material_uploaded"`
-	AssessmentAttempt  string `mapstructure:"assessment_attempt"`
+	MaterialUploaded  string `mapstructure:"material_uploaded"`
+	AssessmentAttempt string `mapstructure:"assessment_attempt"`
 }
 
 // ExchangeConfig nombres de exchanges
