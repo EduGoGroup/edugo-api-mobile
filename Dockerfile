@@ -1,34 +1,25 @@
 # Dockerfile para API Mobile
 # Puerto: 8080
 
-FROM golang:1.23-alpine AS builder
-
-# Argumento para GitHub token (acceso a repos privados)
-ARG GITHUB_TOKEN
+FROM golang:alpine AS builder
 
 # Instalar dependencias del sistema
 RUN apk add --no-cache git ca-certificates
 
-# Configurar git para usar token con repos privados
-RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-
 # Establecer directorio de trabajo
 WORKDIR /app
-
-# Variables de entorno para Go
-ENV GOPRIVATE=github.com/EduGoGroup/*
 
 # Copiar go.mod y go.sum
 COPY go.mod go.sum ./
 
-# Descargar dependencias (incluido edugo-shared privado)
+# Variable para bypass checksum (edugo-shared es público pero nuevo)
+ENV GONOSUMDB=github.com/EduGoGroup/*
+
+# Descargar dependencias
 RUN go mod download
 
-# Copiar código fuente
+# Copiar código fuente completo
 COPY . .
-
-# Copiar archivos de configuración
-COPY config/ ./config/
 
 # Compilar la aplicación
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
