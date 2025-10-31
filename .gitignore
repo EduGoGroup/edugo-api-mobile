@@ -54,3 +54,39 @@ _build/
 
 # Archivos específicos del proyecto
 api-mobile
+edugo-api-mobile
+
+# Documentación generada
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
+
+# Coverage reports
+coverage/
+*.out
+
+# CI/CD artifacts
+.github/workflows/*.log
+
+# Docker
+*.dockerfile.swp
+docker-compose.override.yml
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# Archivos de debug
+__debug_bin
+debug.test
