@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/edugo/api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-shared/pkg/types/enum"
+	"github.com/edugo/shared/pkg/types/enum"
 )
 
 // MaterialAssessment representa el quiz de un material (almacenado en MongoDB)

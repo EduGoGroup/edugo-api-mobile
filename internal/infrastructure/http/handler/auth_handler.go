@@ -7,8 +7,8 @@ import (
 
 	"github.com/edugo/api-mobile/internal/application/dto"
 	"github.com/edugo/api-mobile/internal/application/service"
-	"github.com/EduGoGroup/edugo-shared/pkg/errors"
-	"github.com/EduGoGroup/edugo-shared/pkg/logger"
+	"github.com/edugo/shared/pkg/errors"
+	"github.com/edugo/shared/pkg/logger"
 )
 
 // AuthHandler maneja las peticiones de autenticación
