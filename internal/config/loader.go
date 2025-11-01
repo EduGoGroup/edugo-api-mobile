@@ -31,10 +31,14 @@ func Load() (*Config, error) {
 	v.AddConfigPath("./config")
 	v.AddConfigPath("../config") // Por si se ejecuta desde otro directorio
 
-	// Leer archivo base
+	// Leer archivo base (opcional en Docker)
 	v.SetConfigName("config")
 	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("error reading base config: %w", err)
+		// En Docker, el archivo puede no existir (se usa solo env vars)
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("error reading base config: %w", err)
+		}
+		// Archivo no encontrado es OK, continuamos con defaults + env vars
 	}
 
 	// Merge archivo específico del ambiente
