@@ -723,15 +723,15 @@ Para cada proyecto, verificar:
 
 ## 🏁 Estado del Plan
 
-**Última actualización:** 2025-11-01
-**Completado:** 1/5 proyectos (20%)
+**Última actualización:** 2025-11-01 20:35
+**Completado:** 2/5 proyectos (40%)
 
 | Proyecto | Estado | Fecha Inicio | Fecha Fin | Notas |
 |----------|--------|--------------|-----------|-------|
-| edugo-api-mobile | ✅ Completado | 2025-11-01 | 2025-11-01 | Proyecto origen |
-| edugo-api-administracion | ⏸️ Pendiente | - | - | - |
-| edugo-worker | ⏸️ Pendiente | - | - | - |
-| edugo-shared | ⏸️ Pendiente | - | - | - |
+| edugo-api-mobile | ✅ Completado | 2025-11-01 | 2025-11-01 | Proyecto origen (v1.0.2 → necesita reseteo a v0.1.0) |
+| edugo-shared | ✅ Completado | 2025-11-01 | 2025-11-01 | CI/CD listo, versionado reseteado v2.0.6 → v0.3.0 |
+| edugo-api-administracion | ⏸️ Pendiente | - | - | Resetear a v0.x.x al implementar |
+| edugo-worker | ⏸️ Pendiente | - | - | Resetear a v0.x.x al implementar |
 | edugo-dev-environment | ⏸️ Pendiente | - | - | - |
 
 ---
@@ -908,6 +908,46 @@ actionlint .github/workflows/*.yml && \
 
 ---
 
+## 🔢 IMPORTANTE: Esquema de Versionado Correcto
+
+### ⚠️ Corrección Aplicada (2025-11-01)
+
+**Problema Detectado**: Todos los proyectos estaban usando versiones v1.x.x y v2.x.x cuando deberían usar v0.x.x (proyectos en desarrollo, sin producción).
+
+**Solución Implementada**: Reseteo a v0.x.x en todos los proyectos.
+
+### Versionado por Proyecto
+
+| Proyecto | Versión Anterior (Incorrecta) | Versión Nueva (Correcta) | Estado |
+|----------|-------------------------------|--------------------------|--------|
+| **edugo-shared** | v2.0.6 | v0.3.0 | ✅ Corregido |
+| **edugo-api-mobile** | v1.0.2 | v0.1.0 | ⏸️ Pendiente |
+| **edugo-api-administracion** | TBD | v0.1.0 | ⏸️ Pendiente |
+| **edugo-worker** | TBD | v0.1.0 | ⏸️ Pendiente |
+
+### Regla de Versionado para Proyectos en Desarrollo
+
+```
+v0.1.0 → Primera versión funcional
+v0.2.0 → Nueva feature
+v0.x.x → Desarrollo continuo (pueden haber breaking changes)
+
+v1.0.0 → SOLO cuando salga a PRODUCCIÓN (primer release estable)
+```
+
+### Impacto en Workflows
+
+- ✅ Tags en workflows deben ser v0.x.x
+- ✅ Instrucciones de instalación usan v0.x.x
+- ✅ CHANGELOG documenta versiones v0.x.x
+- ✅ GitHub Releases usan v0.x.x
+
+### Referencia
+
+Ver informe detallado: `INFORME_VERSIONADO_CRITICO.md`
+
+---
+
 **Responsable:** Claude Code + Jhoan Medina
-**Siguiente acción:** Comenzar con FASE 3 (edugo-shared) por ser dependencia crítica
+**Siguiente acción:** Aplicar reseteo de versionado a proyectos hermanos durante implementación CI/CD
 **Herramientas requeridas:** `actionlint`, `gh`, `git`
