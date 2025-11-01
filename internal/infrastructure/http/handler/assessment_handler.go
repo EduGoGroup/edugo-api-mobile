@@ -8,6 +8,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 )
 
 // AssessmentHandler maneja peticiones de assessments
@@ -59,7 +60,7 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 // @Security BearerAuth
 func (h *AssessmentHandler) RecordAttempt(c *gin.Context) {
 	id := c.Param("id")
-	userID, _ := c.Get("user_id")
+	userID := ginmiddleware.MustGetUserID(c)
 
 	var answers map[string]interface{}
 	if err := c.ShouldBindJSON(&answers); err != nil {
@@ -67,7 +68,7 @@ func (h *AssessmentHandler) RecordAttempt(c *gin.Context) {
 		return
 	}
 
-	attempt, err := h.assessmentService.RecordAttempt(c.Request.Context(), id, userID.(string), answers)
+	attempt, err := h.assessmentService.RecordAttempt(c.Request.Context(), id, userID, answers)
 	if err != nil {
 		if appErr, ok := errors.GetAppError(err); ok {
 			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})

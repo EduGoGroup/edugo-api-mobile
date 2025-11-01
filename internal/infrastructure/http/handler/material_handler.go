@@ -10,6 +10,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 )
 
 // MaterialHandler maneja las peticiones HTTP relacionadas con materiales
@@ -46,9 +47,9 @@ func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
 	}
 
 	// Obtener user_id del contexto (middleware de autenticación)
-	authorID, _ := c.Get("user_id")
+	authorID := ginmiddleware.MustGetUserID(c)
 
-	material, err := h.materialService.CreateMaterial(c.Request.Context(), req, authorID.(string))
+	material, err := h.materialService.CreateMaterial(c.Request.Context(), req, authorID)
 	if err != nil {
 		if appErr, ok := errors.GetAppError(err); ok {
 			h.logger.Error("create material failed", "error", appErr.Message)

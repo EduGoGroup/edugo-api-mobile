@@ -1,5 +1,50 @@
 # 🔄 Workflows de CI/CD - edugo-api-mobile
 
+## 🎯 Estrategia de Ejecución por Branch
+
+Esta tabla muestra **qué workflows se ejecutan en cada tipo de branch** para evitar ejecuciones innecesarias y notificaciones de falsos positivos:
+
+| Workflow | feature/* | main | PR a main/dev | Tags v* | Manual |
+|----------|-----------|------|---------------|---------|--------|
+| **ci.yml** | ❌ | ✅ | ✅ | ❌ | ❌ |
+| **test.yml** | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **auto-version.yml** | ❌ | ❌ | ✅ (closed) | ❌ | ❌ |
+| **docker-only.yml** | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **release.yml** | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **sync-main-to-dev.yml** | ❌ | ✅ | ❌ | ✅ | ❌ |
+
+### 📌 Resumen por Escenario
+
+```bash
+# Push a feature/* → SIN workflows automáticos
+git push origin feature/mi-feature
+# ✅ Sin ejecuciones, sin notificaciones
+
+# Crear PR desde feature/* → CI completo
+gh pr create --base main --head feature/mi-feature
+# ✅ ci.yml (tests, linter, security)
+# ✅ test.yml (cobertura)
+# ✅ Copilot code review
+
+# Merge PR a main → Auto-versionado + sync
+# ✅ auto-version.yml (crea tag automáticamente)
+# ✅ sync-main-to-dev.yml (sincroniza con dev)
+
+# Tag v* creado → Release completo
+git tag v1.0.0 && git push origin v1.0.0
+# ✅ release.yml (build Docker, GitHub Release)
+
+# Build manual de Docker → Usar workflow_dispatch
+# Actions → Docker Build and Push → Run workflow
+# ✅ docker-only.yml (solo cuando lo necesites)
+```
+
+### ⚠️ Nota sobre GitHub Actions
+
+GitHub Actions **evalúa** todos los workflows en cualquier evento, pero solo **ejecuta** los que cumplen las condiciones de trigger. Esto es comportamiento normal de GitHub y no indica un error.
+
+---
+
 ## 📋 Workflows Configurados
 
 ### 1️⃣ **ci.yml** - Pipeline de Integración Continua
@@ -355,6 +400,62 @@ git push origin v1.0.0
 
 ---
 
+## 🤖 GitHub Copilot - Code Review Automático
+
+Este repositorio incluye **instrucciones personalizadas para GitHub Copilot** que mejoran:
+- ✅ Sugerencias de código en tu IDE
+- ✅ Code reviews automáticos en Pull Requests
+- ✅ Comentarios contextuales según tu arquitectura
+
+### 📄 Archivo de Configuración
+
+**Ubicación:** `.github/copilot-instructions.md`
+
+Este archivo contiene:
+- Arquitectura del proyecto (Clean Architecture)
+- Convenciones de código y naming
+- Reglas de uso de `edugo-shared`
+- TODOs y deuda técnica conocida
+- **Configuración de idioma:** Todos los comentarios en español
+
+### 🎯 Copilot en Pull Requests
+
+Cuando creas un PR, Copilot **automáticamente**:
+
+1. **Analiza el código** según las instrucciones personalizadas
+2. **Genera comentarios** sobre mejoras, bugs potenciales, o mejores prácticas
+3. **Reporta cobertura** de tests (si está configurado)
+4. **Sugiere implementaciones** alineadas con tu arquitectura
+
+**Ejemplo de comentario de Copilot:**
+```
+⚠️ Considera usar errors.NewValidationError() de edugo-shared
+en lugar de fmt.Errorf() para mantener consistencia con la
+arquitectura del proyecto.
+```
+
+### 📝 Actualizar Instrucciones
+
+Si cambias patrones arquitectónicos o agregas nuevas convenciones:
+
+```bash
+# Editar instrucciones
+vim .github/copilot-instructions.md
+
+# Commit
+git add .github/copilot-instructions.md
+git commit -m "docs: actualizar instrucciones de Copilot"
+
+# Las nuevas instrucciones se aplicarán en el próximo PR
+```
+
+### 📖 Más Información
+
+- [Documentación oficial de Copilot Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot)
+- [Archivo de instrucciones actual](../copilot-instructions.md)
+
+---
+
 ## 📚 Recursos Adicionales
 
 - [Documentación de GitHub Actions](https://docs.github.com/en/actions)
@@ -379,6 +480,6 @@ Si vas a replicar estos workflows en otros proyectos:
 
 ---
 
-**Última actualización:** 2025-10-31
+**Última actualización:** 2025-11-01
 **Mantenedor:** Equipo EduGo
 **Proyecto:** edugo-api-mobile

@@ -23,11 +23,13 @@ type Container struct {
 	JWTManager *auth.JWTManager
 
 	// Repositories
-	UserRepository       repository.UserRepository
-	MaterialRepository   repository.MaterialRepository
-	ProgressRepository   repository.ProgressRepository
-	SummaryRepository    repository.SummaryRepository
-	AssessmentRepository repository.AssessmentRepository
+	UserRepository         repository.UserRepository
+	MaterialRepository     repository.MaterialRepository
+	ProgressRepository     repository.ProgressRepository
+	SummaryRepository      repository.SummaryRepository
+	AssessmentRepository   repository.AssessmentRepository
+	RefreshTokenRepository repository.RefreshTokenRepository
+	LoginAttemptRepository repository.LoginAttemptRepository
 
 	// Services
 	AuthService       service.AuthService
@@ -59,12 +61,16 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	c.UserRepository = postgresRepo.NewPostgresUserRepository(db)
 	c.MaterialRepository = postgresRepo.NewPostgresMaterialRepository(db)
 	c.ProgressRepository = postgresRepo.NewPostgresProgressRepository(db)
+	c.RefreshTokenRepository = postgresRepo.NewPostgresRefreshTokenRepository(db)
+	c.LoginAttemptRepository = postgresRepo.NewPostgresLoginAttemptRepository(db)
 	c.SummaryRepository = mongoRepo.NewMongoSummaryRepository(mongoDB)
 	c.AssessmentRepository = mongoRepo.NewMongoAssessmentRepository(mongoDB)
 
 	// Inicializar services (capa de aplicación)
 	c.AuthService = service.NewAuthService(
 		c.UserRepository,
+		c.RefreshTokenRepository,
+		c.LoginAttemptRepository,
 		c.JWTManager,
 		logger,
 	)

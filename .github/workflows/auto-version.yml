@@ -43,9 +43,8 @@ jobs:
       - name: Commit cambios de versión
         run: |
           git add .github/version.txt CHANGELOG.md
-          git commit -m "chore: bump version to v${{ steps.version.outputs.new_version }}
-
-[skip ci]"
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          git commit -m "chore: bump version to v${NEW_VERSION}" -m "" -m "[skip ci]"
 
       - name: Crear y pushear tag
         run: |
