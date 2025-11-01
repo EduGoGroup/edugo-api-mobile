@@ -3,7 +3,7 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.25.3
 
 require (
-	github.com/EduGoGroup/edugo-shared/auth v0.0.1
+	github.com/EduGoGroup/edugo-shared/auth v0.0.2
 	github.com/EduGoGroup/edugo-shared/common v0.0.0-20251031204120-ecc6528ef4b6
 	github.com/EduGoGroup/edugo-shared/logger v0.0.0-20251031204214-949cb60a661c
 	github.com/gin-gonic/gin v1.9.1

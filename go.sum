@@ -4,8 +4,8 @@ github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8af
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6/go.mod h1:8o94RPi1/7XTJvwPpRSzSUedZrtlirdB3r9Z20bi2f8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
-github.com/EduGoGroup/edugo-shared/auth v0.0.1 h1:lHjTDy1wZSP5q0VYpteFaqGPZTnOCRzf/t7C1q/C3jY=
-github.com/EduGoGroup/edugo-shared/auth v0.0.1/go.mod h1:QoVyw+fSSVdWUqPkUEY91CznBoue8Ulm1YbtrYPyEzg=
+github.com/EduGoGroup/edugo-shared/auth v0.0.2 h1:F2+ddqD+fCqKOvs4xvSMjwxbmD/pohGFG0YVmhww6es=
+github.com/EduGoGroup/edugo-shared/auth v0.0.2/go.mod h1:QoVyw+fSSVdWUqPkUEY91CznBoue8Ulm1YbtrYPyEzg=
 github.com/EduGoGroup/edugo-shared/common v0.0.0-20251031204120-ecc6528ef4b6 h1:S5DcY2arvCQTZhEvWdWXHFXJkWMwGEs2UcMuEbTQ1Qo=
 github.com/EduGoGroup/edugo-shared/common v0.0.0-20251031204120-ecc6528ef4b6/go.mod h1:4n10W5xY48sRb0bWw58L7DEmCD7dnnak2EQ6jAyuzCo=
 github.com/EduGoGroup/edugo-shared/logger v0.0.0-20251031204214-949cb60a661c h1:g5LKooHjNu24i7X+oQ1yl5rACryOPp2FieNY+UuIEm0=

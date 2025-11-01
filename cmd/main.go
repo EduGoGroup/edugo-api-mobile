@@ -108,12 +108,17 @@ func main() {
 	{
 		// Autenticación
 		v1.POST("/auth/login", c.AuthHandler.Login)
+		v1.POST("/auth/refresh", c.AuthHandler.Refresh)
 	}
 
 	// Rutas protegidas (requieren JWT)
 	protected := v1.Group("")
 	protected.Use(jwtAuthMiddleware(c.JWTManager))
 	{
+		// Auth protegida
+		protected.POST("/auth/logout", c.AuthHandler.Logout)
+		protected.POST("/auth/revoke-all", c.AuthHandler.RevokeAll)
+
 		// Materials
 		materials := protected.Group("/materials")
 		{
