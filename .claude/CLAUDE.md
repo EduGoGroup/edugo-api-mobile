@@ -59,6 +59,157 @@ internal/
 
 ---
 
+## 📦 Trabajo con edugo-shared
+
+### Ubicación del Proyecto Shared
+```
+Ruta local: /Users/jhoanmedina/source/EduGo/repos-separados/edugo-shared
+```
+
+### 🔄 Flujo Completo de Modificación de edugo-shared
+
+**IMPORTANTE**: Cuando necesites modificar código en `edugo-shared`, debes seguir este flujo obligatorio para mantener las versiones sincronizadas:
+
+#### **Paso 1: Modificar código en edugo-shared**
+
+```bash
+# Navegar al proyecto shared
+cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-shared
+
+# Verificar branch y estado
+git status
+git log -1 --oneline
+
+# Hacer los cambios necesarios (ej: agregar middleware)
+# ... editar archivos ...
+
+# Compilar y verificar que no hay errores
+go build ./...
+go test ./...
+
+# Commit de cambios en shared
+git add .
+git commit -m "feat: agregar middleware JWT para Gin"
+```
+
+#### **Paso 2: Crear Tag de Versión (OBLIGATORIO)**
+
+```bash
+# Listar tags existentes para ver última versión
+git tag -l | sort -V | tail -5
+
+# Crear nuevo tag semántico (seguir Semantic Versioning)
+# Formato: vMAJOR.MINOR.PATCH o v0.0.0-YYYYMMDDHHMMSS-commit
+# Ejemplos:
+# - Cambio menor (nueva feature): v0.1.0 → v0.2.0
+# - Parche (bugfix): v0.1.0 → v0.1.1
+# - Breaking change: v0.1.0 → v1.0.0
+
+git tag v0.2.0  # Ajustar según el tipo de cambio
+
+# Push del tag al remote (esto genera el release en GitHub)
+git push origin v0.2.0
+```
+
+#### **Paso 3: Actualizar Dependencia en edugo-api-mobile**
+
+```bash
+# Navegar de vuelta al proyecto api-mobile
+cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+
+# Opción A: Actualizar a tag específico
+go get github.com/EduGoGroup/edugo-shared@v0.2.0
+
+# Opción B: Actualizar a última versión
+go get -u github.com/EduGoGroup/edugo-shared
+
+# Limpiar módulos
+go mod tidy
+
+# Verificar que se actualizó correctamente
+go list -m github.com/EduGoGroup/edugo-shared
+# Debe mostrar: github.com/EduGoGroup/edugo-shared v0.2.0
+
+# Compilar para verificar compatibilidad
+go build ./...
+```
+
+#### **Paso 4: Commit de Actualización en api-mobile**
+
+```bash
+# Agregar go.mod y go.sum al staging
+git add go.mod go.sum
+
+# Commit indicando la actualización
+git commit -m "chore: actualizar edugo-shared a v0.2.0
+
+- Actualizar dependencia de edugo-shared
+- Incluye nuevo middleware JWT para Gin
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+### 📋 Checklist de Modificación de Shared
+
+Cada vez que modifiques `edugo-shared`, verifica:
+
+- [ ] Los cambios están en el branch correcto de shared
+- [ ] Código compila sin errores (`go build ./...`)
+- [ ] Tests pasan (`go test ./...`)
+- [ ] Commit creado en shared con mensaje descriptivo
+- [ ] **Tag de versión creado** (vMAJOR.MINOR.PATCH)
+- [ ] Tag pusheado a GitHub (`git push origin <tag>`)
+- [ ] Dependencia actualizada en api-mobile (`go get`)
+- [ ] go.mod y go.sum actualizados
+- [ ] api-mobile compila con nueva versión
+- [ ] Commit de actualización creado en api-mobile
+
+### ⚠️ Reglas de Versionado Semántico
+
+| Tipo de Cambio | Ejemplo | Versión |
+|----------------|---------|---------|
+| **Breaking Change** | Cambiar firma de función pública | v0.1.0 → v1.0.0 |
+| **Nueva Feature** | Agregar middleware nuevo | v0.1.0 → v0.2.0 |
+| **Bugfix** | Corregir error en logger | v0.1.0 → v0.1.1 |
+| **Desarrollo** | Cambios experimentales | v0.0.0-20251031... |
+
+### 🚨 Errores Comunes a Evitar
+
+❌ **NO HACER**:
+- Modificar shared sin crear tag
+- Olvidar hacer `go get` en api-mobile
+- Pushear código que no compila
+- Usar versiones en desarrollo (commit hash) en producción
+
+✅ **SÍ HACER**:
+- Siempre crear tag después de commit en shared
+- Actualizar inmediatamente api-mobile
+- Verificar compilación en ambos proyectos
+- Documentar breaking changes en mensaje de commit
+
+### 📚 Paquetes Disponibles en edugo-shared
+
+```
+edugo-shared/
+├── auth/               # JWT Manager, autenticación
+├── logger/             # Logger Zap estructurado
+├── common/
+│   └── errors/        # Error types de aplicación
+└── (pendientes)
+    ├── middleware/    # Middleware reutilizable (próximo)
+    └── utils/         # Utilidades comunes
+```
+
+### 🔗 Referencias Útiles
+
+- Repo shared: `https://github.com/EduGoGroup/edugo-shared`
+- Go modules docs: `https://go.dev/ref/mod`
+- Semantic Versioning: `https://semver.org`
+
+---
+
 ## 🔐 Variables de Entorno Requeridas
 
 El proyecto requiere las siguientes variables de entorno para funcionar:
@@ -154,5 +305,5 @@ Completar la migración de handlers mock a implementación real, eliminando cód
 
 ---
 
-**Última actualización**: 2025-10-31
+**Última actualización**: 2025-10-31 (v2 - Agregado flujo edugo-shared)
 **Responsable**: Claude Code + Jhoan Medina
