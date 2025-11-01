@@ -1,6 +1,21 @@
 # Plan de Trabajo - Migración de Mocks a Implementación Real
 
-Este documento contiene el plan de trabajo para completar la migración del proyecto desde handlers mock a la implementación real con Container DI.
+**📅 Última actualización**: 2025-10-31 23:30
+**🎯 Progreso**: 6/11 commits (55%)
+**⏱️ Tiempo invertido**: ~9 horas
+**👉 Próxima tarea**: [FASE 2.1: RabbitMQ](#21-implementar-messaging-rabbitmq)
+
+---
+
+## 📊 Vista Rápida de Progreso
+
+```
+✅ FASE 0: Autenticación OAuth2      COMPLETADA (5 commits)
+✅ FASE 1: Container DI              COMPLETADA (1 commit)
+⏳ FASE 2: TODOs de Servicios        0/3 commits ← EMPEZAR AQUÍ
+⏳ FASE 3: Limpieza                  0/1 commits
+⏳ FASE 4: Testing                   0/1 commits
+```
 
 ---
 
@@ -12,11 +27,42 @@ Este documento contiene el plan de trabajo para completar la migración del proy
 
 ---
 
-## ✅ FASE 1: Conectar Implementación Real con Container DI
+## ✅ FASE 0: Mejorar Autenticación OAuth2 - **COMPLETADA**
 
-**Estado**: ✅ COMPLETADA
+**Estado**: ✅ **COMPLETADA 2025-10-31**
+**Commits**: 5 (3 en shared + 2 en api-mobile)
+**Tiempo real**: 9 horas
 
-**Commit**: `3332c05` - "feat: conectar implementación real con Container DI"
+### Pasos Completados
+
+- [x] **PASO 0.1**: bcrypt seguro (Commits: `8d7005a`, `e8a177c`)
+- [x] **PASO 0.3**: Refresh tokens (Commits: `8fed9d7`, `24b10f6`)
+- [x] **PASO 0.4**: Middleware compartido (Commits: `4330be1`, `c09e347`)
+- [x] **PASO 0.5**: Rate limiting (Commit: `204aeea`)
+
+### Tags Publicados en edugo-shared
+
+- [x] `auth/v0.0.1` - bcrypt implementation
+- [x] `auth/v0.0.2` - refresh token generator
+- [x] `middleware/gin/v0.0.1` - JWT middleware reutilizable
+
+### Mejoras de Seguridad
+
+- [x] bcrypt cost 12 (vs SHA256 inseguro)
+- [x] Refresh tokens con revocación en BD
+- [x] Logout funcional
+- [x] Revocación de todas las sesiones
+- [x] Rate limiting (5 intentos/15 min)
+- [x] Middleware JWT compartido
+- [x] Type-safe helpers (GetUserID, etc.)
+- [x] Access tokens 15 min (vs 24 horas antes)
+
+---
+
+## ✅ FASE 1: Conectar Implementación Real con Container DI - **COMPLETADA**
+
+**Estado**: ✅ **COMPLETADA 2025-10-31**
+**Commit**: `3332c05`
 
 ### Tareas Completadas
 
@@ -207,33 +253,44 @@ La aplicación ahora requiere las siguientes variables de entorno:
 
 ## 📊 Resumen de Progreso
 
-### Commits Estimados
+### Commits por Fase
 
 | Fase | Commits | Estado |
 |------|---------|--------|
-| Fase 1 | 1 | ✅ Completado |
-| Fase 2 | 3 | ⏳ Pendiente |
-| Fase 3 | 1 | ⏳ Pendiente |
-| Fase 4 | 1 | ⏳ Pendiente |
-| **TOTAL** | **6** | **1/6 completados** |
-
-### Archivos Principales Modificados en Fase 1
-
-- [x] `cmd/main.go` - Refactorizado completamente (+192 líneas)
-- [x] `internal/application/service/material_service.go` - Formateo menor
-- [x] Eliminados: `internal/domain/.gitkeep`, `internal/infrastructure/http/.gitkeep`
+| Fase 0 | 5/5 | ✅ Completada |
+| Fase 1 | 1/1 | ✅ Completada |
+| Fase 2 | 0/3 | ⏳ Pendiente |
+| Fase 3 | 0/1 | ⏳ Pendiente |
+| Fase 4 | 0/1 | ⏳ Pendiente |
+| **TOTAL** | **6/11** | **55% completado** |
 
 ---
 
-## 🎯 Próximos Pasos Inmediatos
+## 🎯 Cómo Retomar el Trabajo
 
-**Cuando reanudes el trabajo**:
+### **Inicio de Sesión - 3 Pasos**:
 
-1. Revisar este documento (`sprint/README.md`)
-2. Verificar el estado del branch `feature/conectar`
-3. Continuar con **FASE 2.1**: Implementar funcionalidad S3
-4. Marcar casillas completadas según avances
-5. Actualizar este documento con hallazgos o cambios al plan
+1. **Ver estado del proyecto**:
+   ```bash
+   git status
+   git log -5 --oneline
+   ```
+
+2. **Leer vista rápida**:
+   ```bash
+   cat sprint/README.md | head -20
+   # O abrir: sprint/MASTER_PLAN_VISUAL.md
+   ```
+
+3. **Buscar próxima tarea sin marcar**:
+   - Buscar el primer `- [ ]` en este documento
+   - Esa es la siguiente tarea a realizar
+
+### **Durante el Trabajo**:
+
+1. Marcar `- [ ]` como `- [x]` al completar cada tarea
+2. Actualizar sección "📊 Vista Rápida de Progreso" arriba
+3. Hacer commits atómicos (código que compila)
 
 ---
 
@@ -241,28 +298,32 @@ La aplicación ahora requiere las siguientes variables de entorno:
 
 ### Decisiones Tomadas
 
-- ✅ Los handlers viejos (`internal/handlers/`) NO fueron eliminados en Fase 1 para mantener atomicidad del commit
-- ✅ Se decidió usar `logger.NewZapLogger()` en lugar de `logger.NewLogger()`
-- ✅ CORS configurado como wildcard (*) por ahora, puede ajustarse en producción
-- ✅ Health check mejorado con validación real de conexiones a DBs
+- ✅ Implementación propia de OAuth2 (vs Firebase/Auth0)
+- ✅ bcrypt cost 12 para passwords
+- ✅ Refresh tokens con revocación en BD
+- ✅ Rate limiting: 5 intentos en 15 minutos
+- ✅ Access tokens válidos 15 minutos (renovables)
+- ✅ Middleware compartido en edugo-shared
+- ✅ Health check mejorado con validación de DBs
 
-### Puntos de Atención
+### Puntos de Atención para FASE 2
 
-- ⚠️ **RabbitMQ**: Aún no está conectado. La aplicación fallará si intenta publicar eventos.
-- ⚠️ **S3**: No configurado. Las subidas de materiales no generarán URLs aún.
-- ⚠️ **Queries complejas**: Algunos servicios tienen implementaciones básicas que necesitan refinamiento.
-- ⚠️ **Variables de entorno**: Asegurarse de tenerlas todas configuradas antes de ejecutar.
+- ⚠️ **RabbitMQ**: Configurar antes de publicar eventos
+- ⚠️ **S3**: Configurar cliente AWS antes de generar URLs
+- ⚠️ **Queries complejas**: Implementaciones básicas necesitan refinamiento
 
 ### Referencias Útiles
 
-- **Container DI**: `internal/container/container.go`
-- **Handlers Reales**: `internal/infrastructure/http/handler/`
-- **Servicios**: `internal/application/service/`
-- **Repositorios**: `internal/infrastructure/persistence/{postgres,mongodb}/repository/`
-- **Tests Existentes**: `test/integration/`
+- 📄 **Plan detallado**: [MASTER_PLAN.md](MASTER_PLAN.md) (código completo)
+- 📄 **Plan visual**: [MASTER_PLAN_VISUAL.md](MASTER_PLAN_VISUAL.md) (checkboxes)
+- 📄 **Análisis OAuth2**: [AUTH_PROVIDERS_COMPARISON.md](AUTH_PROVIDERS_COMPARISON.md)
+- 📁 **Container DI**: `internal/container/container.go`
+- 📁 **Handlers**: `internal/infrastructure/http/handler/`
+- 📁 **Servicios**: `internal/application/service/`
 
 ---
 
-**Última actualización**: 2025-10-31
-**Responsable**: Claude Code
+**Última actualización**: 2025-10-31 23:30
+**Responsable**: Claude Code + Jhoan Medina
 **Branch**: `feature/conectar`
+**Estado**: ✅ 55% completado | ⏳ 3-4 días restantes
