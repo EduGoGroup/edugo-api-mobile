@@ -11,8 +11,8 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
-	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	swaggerFiles "github.com/swaggo/files"
@@ -113,7 +113,7 @@ func main() {
 
 	// Rutas protegidas (requieren JWT)
 	protected := v1.Group("")
-	protected.Use(jwtAuthMiddleware(c.JWTManager))
+	protected.Use(ginmiddleware.JWTAuthMiddleware(c.JWTManager))
 	{
 		// Auth protegida
 		protected.POST("/auth/logout", c.AuthHandler.Logout)
@@ -210,42 +210,6 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-// jwtAuthMiddleware valida el token JWT
-func jwtAuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header required"})
-			c.Abort()
-			return
-		}
-
-		// Extraer token del header "Bearer {token}"
-		tokenString := ""
-		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-			tokenString = authHeader[7:]
-		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
-			c.Abort()
-			return
-		}
-
-		// Validar token
-		claims, err := jwtManager.ValidateToken(tokenString)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
-			c.Abort()
-			return
-		}
-
-		// Guardar claims en el contexto para uso en handlers
-		c.Set("user_id", claims.UserID)
-		c.Set("email", claims.Email)
-		c.Set("role", claims.Role)
-
-		c.Next()
-	}
-}
 
 // healthCheckHandler godoc
 // @Summary Health check
