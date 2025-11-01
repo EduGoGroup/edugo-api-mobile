@@ -4,7 +4,8 @@ name: Docker Build and Push (Simple)
 # Sin tests, sin validaciones, solo construir y subir imagen
 
 on:
-  # Trigger manual
+  # Trigger manual únicamente
+  # NO se ejecuta automáticamente en ningún branch
   workflow_dispatch:
     inputs:
       tag:
@@ -12,9 +13,8 @@ on:
         required: false
         default: 'latest'
 
-  # Trigger automático en push a main (opcional, comentar si no quieres)
-  push:
-    branches: [ main ]
+  # NOTA: Push automático a main está DESHABILITADO
+  # Si necesitas build automático en main, usa release.yml que se activa con tags
 
 env:
   REGISTRY: ghcr.io
