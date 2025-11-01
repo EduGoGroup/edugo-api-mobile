@@ -1,0 +1,154 @@
+name: Manual Release
+
+# Workflow 100% manual y controlado
+# Ejecutar desde GitHub UI: Actions → Manual Release → Run workflow
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a crear (sin v, ejemplo: 0.1.0)'
+        required: true
+        type: string
+      bump_type:
+        description: 'Tipo de incremento'
+        required: true
+        type: choice
+        options:
+          - patch  # 0.0.1 → 0.0.2 (bugfix)
+          - minor  # 0.0.1 → 0.1.0 (nueva feature)
+          - major  # 0.0.1 → 1.0.0 (breaking change o producción)
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Crear Release v${{ inputs.version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validar versión
+        id: validate
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Validar formato semver
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Versión debe ser formato semver (ejemplo: 0.1.0)"
+            exit 1
+          fi
+
+          # Verificar que el tag no exista
+          if git tag -l | grep -q "^v$VERSION$"; then
+            echo "❌ Error: El tag v$VERSION ya existe"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Versión v$VERSION validada"
+
+      - name: Actualizar version.txt
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+          echo "$VERSION" > .github/version.txt
+          echo "✅ version.txt actualizado a $VERSION"
+
+      - name: Generar entrada de CHANGELOG
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+          BUMP_TYPE="${{ inputs.bump_type }}"
+          DATE=$(date +%Y-%m-%d)
+
+          # Crear entrada de CHANGELOG directamente
+          echo "## [$VERSION] - $DATE" > /tmp/changelog_entry.md
+          echo "" >> /tmp/changelog_entry.md
+          echo "### Tipo de Release: $BUMP_TYPE" >> /tmp/changelog_entry.md
+          echo "" >> /tmp/changelog_entry.md
+
+          # Agregar últimos commits
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --no-merges | head -20 >> /tmp/changelog_entry.md
+          else
+            git log --pretty=format:"- %s" --no-merges | head -20 >> /tmp/changelog_entry.md
+          fi
+
+          echo "" >> /tmp/changelog_entry.md
+          echo "" >> /tmp/changelog_entry.md
+          echo "---" >> /tmp/changelog_entry.md
+
+          # Insertar en CHANGELOG.md después de la cabecera
+          if [ -f CHANGELOG.md ]; then
+            # Guardar cabecera (primeras 6 líneas)
+            head -6 CHANGELOG.md > /tmp/changelog_header.md
+            # Guardar resto
+            tail -n +7 CHANGELOG.md > /tmp/changelog_rest.md
+            # Combinar: cabecera + nueva entrada + resto
+            cat /tmp/changelog_header.md > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat /tmp/changelog_entry.md >> CHANGELOG.md
+            cat /tmp/changelog_rest.md >> CHANGELOG.md
+          else
+            # Si no existe, crear nuevo
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            cat /tmp/changelog_entry.md >> CHANGELOG.md
+          fi
+
+          echo "✅ CHANGELOG.md actualizado"
+
+      - name: Commit cambios de versión
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+
+          git add .github/version.txt CHANGELOG.md
+          git commit -m "chore: release v$VERSION" -m "" -m "Actualizar version.txt y CHANGELOG.md para release v$VERSION" -m "" -m "🤖 Generated with [Claude Code](https://claude.com/claude-code)" -m "" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+          git push origin main
+
+          echo "✅ Commit de release pusheado a main"
+
+      - name: Crear y pushear tag
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
+          echo "✅ Tag v$VERSION creado y pusheado"
+
+      - name: Resumen
+        run: |
+          VERSION="${{ steps.validate.outputs.version }}"
+
+          echo "# 🎉 Release v$VERSION Iniciado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Aspecto | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Versión | v$VERSION |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tipo | ${{ inputs.bump_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag Creado | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Próximos Pasos Automáticos" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "El tag \`v$VERSION\` disparará automáticamente:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Release CI/CD** → Build y tests completos" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Build Docker** → Imagen publicada en GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **GitHub Release** → Release notes publicados" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Sync Main to Dev** → Sincronización automática" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 Monitorea en: https://github.com/EduGoGroup/edugo-api-mobile/actions" >> $GITHUB_STEP_SUMMARY
