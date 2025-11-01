@@ -767,5 +767,5 @@ edugo-shared/middleware/gin/context.go
 
 ---
 
-**Última actualización**: 2025-10-31
+**Última actualización**: 2024-10-31
 **Próxima revisión**: Después de implementar Fase 1
