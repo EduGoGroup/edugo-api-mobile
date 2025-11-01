@@ -328,4 +328,3 @@ func extractClientInfo(ctx context.Context) clientInfo {
 
 	return info
 }
-

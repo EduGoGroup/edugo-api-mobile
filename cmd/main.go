@@ -210,7 +210,6 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-
 // healthCheckHandler godoc
 // @Summary Health check
 // @Description Verifica que la API está funcionando
