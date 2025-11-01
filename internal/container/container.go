@@ -29,6 +29,7 @@ type Container struct {
 	SummaryRepository      repository.SummaryRepository
 	AssessmentRepository   repository.AssessmentRepository
 	RefreshTokenRepository repository.RefreshTokenRepository
+	LoginAttemptRepository repository.LoginAttemptRepository
 
 	// Services
 	AuthService       service.AuthService
@@ -61,6 +62,7 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	c.MaterialRepository = postgresRepo.NewPostgresMaterialRepository(db)
 	c.ProgressRepository = postgresRepo.NewPostgresProgressRepository(db)
 	c.RefreshTokenRepository = postgresRepo.NewPostgresRefreshTokenRepository(db)
+	c.LoginAttemptRepository = postgresRepo.NewPostgresLoginAttemptRepository(db)
 	c.SummaryRepository = mongoRepo.NewMongoSummaryRepository(mongoDB)
 	c.AssessmentRepository = mongoRepo.NewMongoAssessmentRepository(mongoDB)
 
@@ -68,6 +70,7 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	c.AuthService = service.NewAuthService(
 		c.UserRepository,
 		c.RefreshTokenRepository,
+		c.LoginAttemptRepository,
 		c.JWTManager,
 		logger,
 	)

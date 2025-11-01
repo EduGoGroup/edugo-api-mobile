@@ -23,6 +23,7 @@ type AuthService interface {
 type authService struct {
 	userRepo         repository.UserRepository
 	refreshTokenRepo repository.RefreshTokenRepository
+	loginAttemptRepo repository.LoginAttemptRepository
 	jwtManager       *auth.JWTManager
 	logger           logger.Logger
 }
@@ -30,21 +31,32 @@ type authService struct {
 func NewAuthService(
 	userRepo repository.UserRepository,
 	refreshTokenRepo repository.RefreshTokenRepository,
+	loginAttemptRepo repository.LoginAttemptRepository,
 	jwtManager *auth.JWTManager,
 	logger logger.Logger,
 ) AuthService {
 	return &authService{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
+		loginAttemptRepo: loginAttemptRepo,
 		jwtManager:       jwtManager,
 		logger:           logger,
 	}
 }
 
 func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+	// Extraer información del cliente
+	client := extractClientInfo(ctx)
+
 	// Validar request
 	if err := req.Validate(); err != nil {
 		s.logger.Warn("validation failed", "error", err)
+		return nil, err
+	}
+
+	// Verificar rate limit ANTES de buscar usuario
+	if err := s.checkRateLimit(ctx, req.Email, client.IP); err != nil {
+		s.logger.Warn("rate limit check failed", "email", req.Email, "ip", client.IP)
 		return nil, err
 	}
 
@@ -61,6 +73,8 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	}
 
 	if user == nil || !user.IsActive() {
+		// Registrar intento fallido
+		s.recordLoginAttempt(ctx, req.Email, client.IP, false, client.UserAgent)
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
@@ -68,6 +82,8 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	err = auth.VerifyPassword(user.PasswordHash(), req.Password)
 	if err != nil {
 		s.logger.Warn("invalid password attempt", "email", req.Email)
+		// Registrar intento fallido
+		s.recordLoginAttempt(ctx, req.Email, client.IP, false, client.UserAgent)
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
@@ -104,6 +120,9 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		s.logger.Error("failed to store refresh token", "error", err)
 		return nil, errors.NewInternalError("token storage failed", err)
 	}
+
+	// Registrar intento exitoso
+	s.recordLoginAttempt(ctx, req.Email, client.IP, true, client.UserAgent)
 
 	s.logger.Info("user logged in",
 		"user_id", user.ID().String(),
@@ -220,5 +239,93 @@ func (s *authService) RevokeAllSessions(ctx context.Context, userID string) erro
 
 	s.logger.Info("all sessions revoked", "user_id", userID)
 	return nil
+}
+
+// checkRateLimit verifica si un email o IP está bloqueado por rate limiting
+func (s *authService) checkRateLimit(ctx context.Context, email, ip string) error {
+	// Configuración de rate limiting
+	const maxAttempts = 5
+	const windowMinutes = 15
+
+	// Verificar rate limit por email
+	isLimitedByEmail, err := s.loginAttemptRepo.IsRateLimited(ctx, email, maxAttempts, windowMinutes)
+	if err != nil {
+		s.logger.Error("error checking rate limit by email", "error", err)
+		// No bloquear por error de rate limit check, solo loguear
+	} else if isLimitedByEmail {
+		s.logger.Warn("rate limit exceeded by email", "email", email)
+		return errors.NewRateLimitError()
+	}
+
+	// Verificar rate limit por IP
+	isLimitedByIP, err := s.loginAttemptRepo.IsRateLimited(ctx, ip, maxAttempts, windowMinutes)
+	if err != nil {
+		s.logger.Error("error checking rate limit by IP", "error", err)
+		// No bloquear por error de rate limit check
+	} else if isLimitedByIP {
+		s.logger.Warn("rate limit exceeded by IP", "ip", ip)
+		return errors.NewRateLimitError()
+	}
+
+	return nil
+}
+
+// recordLoginAttempt registra un intento de login (exitoso o fallido)
+func (s *authService) recordLoginAttempt(ctx context.Context, email, ip string, successful bool, userAgent string) {
+	now := time.Now()
+
+	// Registrar intento por email
+	attemptEmail := repository.LoginAttemptData{
+		Identifier:  email,
+		AttemptType: "email",
+		Successful:  successful,
+		UserAgent:   userAgent,
+		IPAddress:   ip,
+		AttemptedAt: now,
+	}
+	if err := s.loginAttemptRepo.RecordAttempt(ctx, attemptEmail); err != nil {
+		s.logger.Error("failed to record email attempt", "error", err)
+		// No fallar el login por error de auditoría
+	}
+
+	// Registrar intento por IP
+	attemptIP := repository.LoginAttemptData{
+		Identifier:  ip,
+		AttemptType: "ip",
+		Successful:  successful,
+		UserAgent:   userAgent,
+		IPAddress:   ip,
+		AttemptedAt: now,
+	}
+	if err := s.loginAttemptRepo.RecordAttempt(ctx, attemptIP); err != nil {
+		s.logger.Error("failed to record IP attempt", "error", err)
+		// No fallar el login por error de auditoría
+	}
+}
+
+// extractClientInfo extrae información del cliente desde el contexto
+type clientInfo struct {
+	IP        string
+	UserAgent string
+}
+
+func extractClientInfo(ctx context.Context) clientInfo {
+	info := clientInfo{
+		IP:        "unknown",
+		UserAgent: "unknown",
+	}
+
+	// Intentar extraer del contexto Gin (si está disponible)
+	// Los valores deben ser seteados por un middleware previo
+	if ginCtx, ok := ctx.Value("gin_context").(map[string]interface{}); ok {
+		if ip, ok := ginCtx["client_ip"].(string); ok {
+			info.IP = ip
+		}
+		if ua, ok := ginCtx["user_agent"].(string); ok {
+			info.UserAgent = ua
+		}
+	}
+
+	return info
 }
 
