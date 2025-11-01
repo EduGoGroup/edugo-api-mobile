@@ -736,5 +736,178 @@ Para cada proyecto, verificar:
 
 ---
 
+## 🛠️ Herramientas de Validación Pre-Commit
+
+### ⚠️ IMPORTANTE: Validar Workflows ANTES de Push
+
+Durante la implementación en `edugo-api-mobile` encontramos **errores críticos de sintaxis YAML** que causaron fallos en GitHub Actions. Para evitar esto en los proyectos hermanos, **SIEMPRE** validar workflows localmente.
+
+### 🔧 Instalar actionlint
+
+```bash
+# macOS
+brew install actionlint
+
+# Linux
+wget https://github.com/rhysd/actionlint/releases/latest/download/actionlint_linux_amd64.tar.gz
+tar -xzf actionlint_linux_amd64.tar.gz
+sudo mv actionlint /usr/local/bin/
+
+# Verificar instalación
+actionlint --version
+```
+
+### ✅ Flujo de Validación Recomendado
+
+```bash
+# 1. Modificar workflow
+vim .github/workflows/mi-workflow.yml
+
+# 2. VALIDAR antes de commit
+actionlint .github/workflows/mi-workflow.yml
+
+# 3. Si pasa validación → commit
+git add .github/workflows/mi-workflow.yml
+git commit -m "feat: agregar workflow"
+
+# 4. Push con confianza
+git push origin feature/mi-branch
+```
+
+### 🚨 Errores Comunes Encontrados y Sus Soluciones
+
+#### **Error 1: Commit Messages Multilinea**
+
+**Problema:**
+```yaml
+# ❌ INCORRECTO
+git commit -m "mensaje línea 1
+
+línea 2"  # Error de parsing YAML
+```
+
+**Solución:**
+```yaml
+# ✅ CORRECTO
+git commit -m "mensaje línea 1" -m "" -m "línea 2"
+```
+
+#### **Error 2: Backticks en Strings de Bash**
+
+**Problema:**
+```yaml
+# ❌ INCORRECTO
+--body "Este es un \`código\` con backticks"  # Causa command substitution
+```
+
+**Solución A (Concatenación):**
+```yaml
+# ✅ CORRECTO
+BODY="Este es un \`código\` con backticks"
+--body "$BODY"
+```
+
+**Solución B (Archivo temporal):**
+```yaml
+# ✅ CORRECTO
+echo "Este es un \`código\` con backticks" > /tmp/body.txt
+--body-file /tmp/body.txt
+```
+
+#### **Error 3: Heredocs Dentro de Workflows**
+
+**Problema:**
+```yaml
+# ❌ INCORRECTO - actionlint falla con heredocs complejos
+run: |
+  cat <<EOF
+  Texto con \`backticks\`
+  EOF
+```
+
+**Solución:**
+```yaml
+# ✅ CORRECTO - Usar variables concatenadas
+run: |
+  TEXT="Texto con \`backticks\`"
+  echo "$TEXT"
+```
+
+### 📋 Checklist de Validación por Proyecto
+
+Antes de hacer push en cada proyecto hermano:
+
+- [ ] ✅ `actionlint` instalado
+- [ ] ✅ Todos los workflows validados localmente
+- [ ] ✅ No hay errores `syntax-check`
+- [ ] ✅ Warnings de `shellcheck` revisados (opcionales)
+- [ ] ✅ Commit messages sin caracteres especiales problemáticos
+- [ ] ✅ Backticks escapados correctamente en scripts bash
+- [ ] ✅ Heredocs evitados o simplificados
+
+### 🎯 Comando de Validación Rápida
+
+```bash
+# Validar todos los workflows de una vez
+actionlint .github/workflows/*.yml
+
+# Ver solo errores críticos (ignorar warnings)
+actionlint .github/workflows/*.yml 2>&1 | grep "syntax-check" || echo "✅ OK"
+
+# Validar + commit en un solo paso
+actionlint .github/workflows/*.yml && \
+  git add .github/workflows/*.yml && \
+  git commit -m "feat: agregar workflows validados"
+```
+
+### 📊 Resultados de Validación en edugo-api-mobile
+
+| Workflow | Errores Encontrados | Solución Aplicada |
+|----------|---------------------|-------------------|
+| `auto-version.yml` | Commit multilinea (línea 47) | Múltiples flags `-m` |
+| `sync-main-to-dev.yml` | Backticks en heredoc (línea 80) | Concatenación de strings |
+| `ci.yml` | ✅ Sin errores | N/A |
+| `test.yml` | ✅ Sin errores | N/A |
+| `docker-only.yml` | ✅ Sin errores | N/A |
+| `release.yml` | ⚠️ Warnings shellcheck | Ignorados (no críticos) |
+
+### 🔗 Referencias
+
+- **actionlint GitHub**: https://github.com/rhysd/actionlint
+- **Documentación**: https://github.com/rhysd/actionlint/blob/main/docs/usage.md
+- **Errores comunes**: Documentados en este plan
+
+---
+
+## 📚 Lecciones Aprendidas del Proyecto Origen
+
+### ✅ Lo que Funcionó Bien
+
+1. **Copilot Custom Instructions en Español** - Excelente adopción
+2. **Estrategia por Branch** - Elimina falsos positivos
+3. **Validación Local con actionlint** - Previene errores
+4. **Documentación Detallada** - Facilita replicación
+5. **Plan con Checkboxes** - Tracking efectivo
+
+### ⚠️ Problemas Encontrados y Soluciones
+
+| Problema | Causa | Solución | Prevención |
+|----------|-------|----------|------------|
+| Workflows fallando en push | Sintaxis YAML incorrecta | Usar actionlint | Validar antes de push |
+| Backticks causan errores | Command substitution | Escapar o concatenar | Evitar en heredocs |
+| Commit multilinea | Parsing YAML | Múltiples `-m` flags | Simplificar mensajes |
+| Workflows ejecutándose en feature/* | Triggers incorrectos | Filtrar por branch | Documentar triggers |
+
+### 🎯 Recomendaciones para Proyectos Hermanos
+
+1. **SIEMPRE usar actionlint** antes de push
+2. **Copiar workflows validados** desde edugo-api-mobile como base
+3. **Adaptar nombres** de imágenes Docker y variables
+4. **Testear manualmente** con `workflow_dispatch` primero
+5. **Documentar cambios** específicos del proyecto
+
+---
+
 **Responsable:** Claude Code + Jhoan Medina
 **Siguiente acción:** Comenzar con FASE 3 (edugo-shared) por ser dependencia crítica
+**Herramientas requeridas:** `actionlint`, `gh`, `git`
