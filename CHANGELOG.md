@@ -7,6 +7,16 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased]
 
+## [0.0.1] - 2025-11-01
+
+### ⚠️ BREAKING CHANGES
+
+- fix: resetear version.txt a 0.0.0 (#5)
+
+### Fixed
+
+- resetear version.txt a 0.0.0 (#5)
+
 ## [1.0.0] - 2025-10-31
 
 ### Added
