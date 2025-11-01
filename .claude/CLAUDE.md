@@ -305,5 +305,5 @@ Completar la migración de handlers mock a implementación real, eliminando cód
 
 ---
 
-**Última actualización**: 2025-10-31 (v2 - Agregado flujo edugo-shared)
+**Última actualización**: 2024-10-31 (v2 - Agregado flujo edugo-shared)
 **Responsable**: Claude Code + Jhoan Medina

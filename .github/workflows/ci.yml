@@ -3,7 +3,7 @@ name: CI Pipeline
 # Se ejecuta en PRs (flujo ideal) y push a main (red de seguridad)
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
   push:
     branches: [ main ]  # Red de seguridad por si alguien hace push directo
 

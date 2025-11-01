@@ -1,7 +1,7 @@
 # 🎯 PLAN MAESTRO DE DESARROLLO - EduGo API Mobile
 
-**Fecha de creación**: 2025-10-31
-**Última actualización**: 2025-10-31 23:30
+**Fecha de creación**: 2024-10-31
+**Última actualización**: 2024-10-31 23:30
 **Branch de trabajo**: `feature/conectar`
 **Estado actual**: ✅ FASE 0 COMPLETADA | ✅ FASE 1 COMPLETADA | ⏳ FASE 2 SIGUIENTE
 

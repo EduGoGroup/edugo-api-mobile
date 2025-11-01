@@ -1,6 +1,6 @@
 # Plan Integral: Sistema de Autenticación OAuth2 para Ecosistema EduGo
 
-**Fecha de creación**: 2025-10-31
+**Fecha de creación**: 2024-10-31
 **Estado**: 📋 EN ANÁLISIS
 **Prioridad**: 🔴 ALTA (Seguridad crítica)
 

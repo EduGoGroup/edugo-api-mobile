@@ -2,7 +2,7 @@
 -- Tabla: login_attempts
 -- Descripción: Registra intentos de login para rate limiting y auditoría
 -- Autor: EduGo Team
--- Fecha: 2025-10-31
+-- Fecha: 2024-10-31
 -- =====================================================
 
 -- Crear tabla login_attempts

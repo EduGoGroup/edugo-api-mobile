@@ -424,5 +424,5 @@ En 5-7 días tendrás autenticación robusta, y social login lo agregas cuando l
 
 ---
 
-**Última actualización**: 2025-10-31
+**Última actualización**: 2024-10-31
 **Próxima revisión**: Cuando se implemente Fase 1

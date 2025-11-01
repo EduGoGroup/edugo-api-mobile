@@ -1,6 +1,6 @@
 # Comparación: Autenticación Propia vs Servicios de Terceros
 
-**Fecha**: 2025-10-31
+**Fecha**: 2024-10-31
 **Contexto**: Apps móviles (Android/iOS) → API Backend
 
 ---

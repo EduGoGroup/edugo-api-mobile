@@ -2,7 +2,7 @@
 -- Tabla: refresh_tokens
 -- Descripción: Almacena refresh tokens para renovación de access tokens
 -- Autor: EduGo Team
--- Fecha: 2025-10-31
+-- Fecha: 2024-10-31
 -- =====================================================
 
 -- Crear tabla refresh_tokens
