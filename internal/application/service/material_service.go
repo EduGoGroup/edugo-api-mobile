@@ -24,10 +24,7 @@ type materialService struct {
 	logger       logger.Logger
 }
 
-func NewMaterialService(
-	materialRepo repository.MaterialRepository,
-	logger logger.Logger,
-) MaterialService {
+func NewMaterialService(materialRepo repository.MaterialRepository, logger logger.Logger) MaterialService {
 	return &materialService{
 		materialRepo: materialRepo,
 		logger:       logger,

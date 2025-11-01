@@ -1,8 +1,6 @@
 package dto
 
 import (
-	"time"
-
 	"github.com/EduGoGroup/edugo-shared/common/validator"
 )
 
@@ -21,12 +19,25 @@ func (r *LoginRequest) Validate() error {
 	return v.GetError()
 }
 
-// LoginResponse respuesta de login
+// LoginResponse respuesta de login (OAuth2 compatible)
 type LoginResponse struct {
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	User         UserInfo  `json:"user"`
+	AccessToken  string   `json:"access_token"`  // JWT access token
+	RefreshToken string   `json:"refresh_token"` // Refresh token para renovar
+	ExpiresIn    int      `json:"expires_in"`    // Segundos hasta expiración
+	TokenType    string   `json:"token_type"`    // Siempre "Bearer"
+	User         UserInfo `json:"user"`          // Información del usuario
+}
+
+// RefreshRequest solicitud para refrescar access token
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// RefreshResponse respuesta al refrescar token (OAuth2 compatible)
+type RefreshResponse struct {
+	AccessToken string `json:"access_token"` // Nuevo JWT access token
+	ExpiresIn   int    `json:"expires_in"`   // Segundos hasta expiración
+	TokenType   string `json:"token_type"`   // Siempre "Bearer"
 }
 
 // UserInfo información básica del usuario

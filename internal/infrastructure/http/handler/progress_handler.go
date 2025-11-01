@@ -8,6 +8,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 )
 
 type ProgressHandler struct {
@@ -34,7 +35,7 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 // @Security BearerAuth
 func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
 	id := c.Param("id")
-	userID, _ := c.Get("user_id")
+	userID := ginmiddleware.MustGetUserID(c)
 
 	var req struct {
 		Percentage int `json:"percentage"`
@@ -46,7 +47,7 @@ func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
 		return
 	}
 
-	err := h.progressService.UpdateProgress(c.Request.Context(), id, userID.(string), req.Percentage, req.LastPage)
+	err := h.progressService.UpdateProgress(c.Request.Context(), id, userID, req.Percentage, req.LastPage)
 	if err != nil {
 		if appErr, ok := errors.GetAppError(err); ok {
 			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
