@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
@@ -60,9 +58,9 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
-	// Verificar password (hash simple para ejemplo, en prod usar bcrypt)
-	passwordHash := hashPassword(req.Password)
-	if user.PasswordHash() != passwordHash {
+	// Verificar password con bcrypt
+	err = auth.VerifyPassword(user.PasswordHash(), req.Password)
+	if err != nil {
 		s.logger.Warn("invalid password attempt", "email", req.Email)
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
@@ -112,9 +110,3 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	}, nil
 }
 
-// hashPassword crea un hash simple del password (en prod usar bcrypt)
-func hashPassword(password string) string {
-	h := sha256.New()
-	h.Write([]byte(password))
-	return hex.EncodeToString(h.Sum(nil))
-}
