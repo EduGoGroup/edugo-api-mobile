@@ -37,18 +37,20 @@ Replicar las mejoras de CI/CD y configuración de GitHub Copilot implementadas e
 #### **APIs (api-mobile, api-administracion)**
 - [ ] `ci.yml` - Pipeline de integración continua
 - [ ] `test.yml` - Tests con cobertura
-- [ ] `auto-version.yml` - Auto-versionado en merge a main
-- [ ] `docker-only.yml` - Build manual de Docker
-- [ ] `release.yml` - Release completo con Docker + GitHub Release
+- [ ] `manual-release.yml` - ⭐ **Workflow TODO-EN-UNO** manual para crear releases (reemplaza auto-version)
+- [ ] `docker-only.yml` - Build manual de Docker (opcional, manual-release ya incluye Docker)
+- [ ] `release.yml` - Disparado automáticamente por tags (puede ejecutarse manual también)
 - [ ] `sync-main-to-dev.yml` - Sincronización de branches
+- [ ] ❌ **NO auto-version.yml** - Eliminado (inestable, reemplazado por manual-release)
 
 #### **Worker (edugo-worker)**
 - [ ] `ci.yml` - Pipeline de integración continua
 - [ ] `test.yml` - Tests con cobertura
-- [ ] `docker-only.yml` - Build manual de Docker
-- [ ] `release.yml` - Release con Docker
-- [ ] ⚠️ **NO auto-version** (workers no versionan igual que APIs)
-- [ ] ⚠️ **NO sync-main-to-dev** (flujo más simple)
+- [ ] `manual-release.yml` - ⭐ **Workflow TODO-EN-UNO** manual para crear releases
+- [ ] `docker-only.yml` - Build manual de Docker (opcional)
+- [ ] `release.yml` - Disparado por tags (opcional)
+- [ ] ❌ **NO auto-version.yml** - Versionado manual on-demand
+- [ ] ❌ **NO sync-main-to-dev** (flujo más simple para workers)
 
 #### **Librería Compartida (edugo-shared)**
 - [ ] `ci.yml` - Tests y validación
@@ -111,10 +113,11 @@ Replicar las mejoras de CI/CD y configuración de GitHub Copilot implementadas e
 - [ ] **Paso 1.6:** Crear/Actualizar workflows
   - [ ] `ci.yml` - Adaptar versión de Go y dependencias
   - [ ] `test.yml` - Configurar cobertura
-  - [ ] `auto-version.yml` - Mantener igual
-  - [ ] `docker-only.yml` - Adaptar nombre de imagen (edugo-api-administracion)
-  - [ ] `release.yml` - Adaptar tags y nombres
+  - [ ] `manual-release.yml` - ⭐ **Copiar desde api-mobile** (TODO-EN-UNO: version + Docker + release)
+  - [ ] `docker-only.yml` - Adaptar nombre de imagen (opcional, manual-release ya incluye Docker)
+  - [ ] `release.yml` - Adaptar tags y nombres + agregar workflow_dispatch
   - [ ] `sync-main-to-dev.yml` - Mantener igual
+  - [ ] ❌ **NO auto-version.yml** - No copiar (fue eliminado de api-mobile)
 
 - [ ] **Paso 1.7:** Actualizar `.github/workflows/README.md`
   - Tabla de estrategia por branch
@@ -226,9 +229,10 @@ Replicar las mejoras de CI/CD y configuración de GitHub Copilot implementadas e
 - [ ] **Paso 2.6:** Crear workflows específicos de Worker
   - [ ] `ci.yml` - Tests y validación (sin handlers HTTP)
   - [ ] `test.yml` - Cobertura enfocada en processors
-  - [ ] `docker-only.yml` - Build manual
-  - [ ] `release.yml` - Release con Docker
-  - [ ] ❌ **NO auto-version.yml** (workers versionan diferente)
+  - [ ] `manual-release.yml` - ⭐ **Copiar desde api-mobile** (TODO-EN-UNO)
+  - [ ] `docker-only.yml` - Build manual (opcional)
+  - [ ] `release.yml` - Con workflow_dispatch (opcional)
+  - [ ] ❌ **NO auto-version.yml** - Versionado manual on-demand
   - [ ] ❌ **NO sync-main-to-dev.yml** (flujo más simple)
 
 - [ ] **Paso 2.7:** Adaptar documentación
@@ -612,22 +616,27 @@ Replicar las mejoras de CI/CD y configuración de GitHub Copilot implementadas e
 - ✅ `.github/copilot-instructions.md` (621 líneas)
 - ✅ `.github/workflows/ci.yml`
 - ✅ `.github/workflows/test.yml`
-- ✅ `.github/workflows/auto-version.yml`
-- ✅ `.github/workflows/docker-only.yml`
-- ✅ `.github/workflows/release.yml`
+- ✅ `.github/workflows/manual-release.yml` ⭐ **NUEVO - TODO-EN-UNO**
+- ✅ `.github/workflows/docker-only.yml` (opcional)
+- ✅ `.github/workflows/release.yml` (con workflow_dispatch)
 - ✅ `.github/workflows/sync-main-to-dev.yml`
 - ✅ `.github/workflows/README.md`
+- ❌ ~~`.github/workflows/auto-version.yml`~~ (eliminado - inestable)
 
 ### Adaptaciones por Tipo de Proyecto
 
 #### APIs (api-mobile, api-administracion)
 ```
-Workflows completos + Docker + Auto-versioning + Sync
+Workflows completos + Docker + Manual Release (TODO-EN-UNO) + Sync
+- auto-version.yml eliminado (inestable)
++ manual-release.yml (control total, on-demand)
 ```
 
 #### Worker (edugo-worker)
 ```
-Workflows completos + Docker - Auto-versioning - Sync
+Workflows completos + Docker + Manual Release (TODO-EN-UNO) - Sync
+- auto-version.yml NO incluir
++ manual-release.yml (control total, on-demand)
 + Lógica específica de workers en copilot-instructions.md
 ```
 
@@ -723,15 +732,16 @@ Para cada proyecto, verificar:
 
 ## 🏁 Estado del Plan
 
-**Última actualización:** 2025-11-01 20:35
+**Última actualización:** 2025-11-01 23:20
 **Completado:** 2/5 proyectos (40%)
+**Nota importante:** auto-version.yml eliminado, usar manual-release.yml en su lugar
 
 | Proyecto | Estado | Fecha Inicio | Fecha Fin | Notas |
 |----------|--------|--------------|-----------|-------|
-| edugo-api-mobile | ✅ Completado | 2025-11-01 | 2025-11-01 | Proyecto origen (v1.0.2 → necesita reseteo a v0.1.0) |
-| edugo-shared | ✅ Completado | 2025-11-01 | 2025-11-01 | CI/CD listo, versionado reseteado v2.0.6 → v0.3.0 |
-| edugo-api-administracion | ⏸️ Pendiente | - | - | Resetear a v0.x.x al implementar |
-| edugo-worker | ⏸️ Pendiente | - | - | Resetear a v0.x.x al implementar |
+| edugo-api-mobile | ✅ Completado | 2025-11-01 | 2025-11-01 | Workflows optimizados + manual-release.yml TODO-EN-UNO + v0.1.1 |
+| edugo-shared | ✅ Completado | 2025-11-01 | 2025-11-01 | CI/CD + versionado v0.3.0 + manual (sin Docker) |
+| edugo-api-administracion | ⏸️ Pendiente | - | - | Usar manual-release.yml + v0.x.x |
+| edugo-worker | ⏸️ Pendiente | - | - | Usar manual-release.yml + v0.x.x |
 | edugo-dev-environment | ⏸️ Pendiente | - | - | - |
 
 ---
@@ -879,6 +889,84 @@ actionlint .github/workflows/*.yml && \
 
 ---
 
+## ⭐ NUEVO: Workflow Manual Release (TODO-EN-UNO)
+
+### 🎯 Descripción
+
+**manual-release.yml** es un workflow completamente manual que hace TODO en un solo proceso:
+
+1. ✅ Actualiza `version.txt`
+2. ✅ Genera entrada en `CHANGELOG.md`
+3. ✅ Crea commit de versión en main
+4. ✅ Crea y pushea tag
+5. ✅ Ejecuta tests completos
+6. ✅ Construye imagen Docker multi-platform (amd64/arm64)
+7. ✅ Publica imagen en GitHub Container Registry (GHCR)
+8. ✅ Crea GitHub Release con changelog
+
+### 🚀 Cómo Usarlo
+
+```bash
+# Desde GitHub UI:
+1. Ir a: https://github.com/EduGoGroup/edugo-api-mobile/actions/workflows/manual-release.yml
+2. Click "Run workflow"
+3. Inputs:
+   - Branch: main
+   - Versión: 0.2.0 (sin 'v')
+   - Tipo: minor / patch / major
+4. Click "Run workflow"
+
+# El workflow tarda ~20 minutos:
+# - 1 min: Preparación (version.txt, CHANGELOG, tag)
+# - 2 min: Tests
+# - 17 min: Build Docker multi-platform
+# - 1 min: GitHub Release
+```
+
+### ✅ Ventajas sobre Auto-Version
+
+| Aspecto | auto-version.yml (❌ Eliminado) | manual-release.yml (✅ Nuevo) |
+|---------|-------------------------------|-------------------------------|
+| **Control** | Automático (impredecible) | Manual (tú decides cuándo) |
+| **Confiabilidad** | Inestable (a veces no funciona) | 100% predecible |
+| **Visibilidad** | Separado en múltiples workflows | TODO en un solo lugar |
+| **Docker** | Depende de release.yml separado | Incluido en el mismo workflow |
+| **Duración** | Desconocida | Predecible (~20 min) |
+| **Debugging** | Difícil (múltiples workflows) | Fácil (un solo workflow) |
+
+### 📋 Inputs del Workflow
+
+**version** (required):
+- Formato: `0.1.0` (sin 'v')
+- Validación: Debe ser semver válido
+- Verifica que el tag no exista
+
+**bump_type** (required):
+- `patch`: 0.1.0 → 0.1.1 (bugfix)
+- `minor`: 0.1.0 → 0.2.0 (nueva feature)
+- `major`: 0.1.0 → 1.0.0 (breaking change o producción)
+
+### 📊 Outputs
+
+| Componente | Descripción | Ubicación |
+|------------|-------------|-----------|
+| **Tag Git** | v0.1.0 | GitHub repository tags |
+| **Commit** | chore: release v0.1.0 | Branch main |
+| **Imagen Docker** | ghcr.io/edugogroup/edugo-api-mobile:v0.1.0 | GitHub Container Registry |
+| **GitHub Release** | Release v0.1.0 | GitHub Releases |
+| **CHANGELOG** | Entrada [0.1.0] | CHANGELOG.md |
+
+### 🔧 Para Proyectos Hermanos
+
+Al implementar en api-administracion y worker:
+
+1. **Copiar** `.github/workflows/manual-release.yml` desde api-mobile
+2. **Adaptar** nombre de imagen Docker (si es diferente)
+3. **Mantener** todo lo demás igual
+4. **NO copiar** auto-version.yml (fue eliminado)
+
+---
+
 ## 📚 Lecciones Aprendidas del Proyecto Origen
 
 ### ✅ Lo que Funcionó Bien
@@ -888,6 +976,7 @@ actionlint .github/workflows/*.yml && \
 3. **Validación Local con actionlint** - Previene errores
 4. **Documentación Detallada** - Facilita replicación
 5. **Plan con Checkboxes** - Tracking efectivo
+6. **Workflow Manual Release (TODO-EN-UNO)** - Control total, predecible, 100% funcional
 
 ### ⚠️ Problemas Encontrados y Soluciones
 
@@ -897,6 +986,7 @@ actionlint .github/workflows/*.yml && \
 | Backticks causan errores | Command substitution | Escapar o concatenar | Evitar en heredocs |
 | Commit multilinea | Parsing YAML | Múltiples `-m` flags | Simplificar mensajes |
 | Workflows ejecutándose en feature/* | Triggers incorrectos | Filtrar por branch | Documentar triggers |
+| auto-version.yml inestable | Timing impredecible, fallos aleatorios | manual-release.yml TODO-EN-UNO | Usar workflows manuales controlados |
 
 ### 🎯 Recomendaciones para Proyectos Hermanos
 
@@ -948,6 +1038,41 @@ Ver informe detallado: `INFORME_VERSIONADO_CRITICO.md`
 
 ---
 
+---
+
+## 🚀 Guía Rápida: Crear Release e Imagen Docker (Nuevo Proceso Manual)
+
+### Para api-mobile, api-administracion y worker:
+
+```bash
+# 1. Ir a GitHub Actions
+https://github.com/EduGoGroup/[PROYECTO]/actions/workflows/manual-release.yml
+
+# 2. Click "Run workflow"
+Inputs:
+  - Branch: main
+  - Versión: 0.x.x (formato semver, sin 'v')
+  - Tipo: patch / minor / major
+
+# 3. Esperar ~20 minutos
+
+# 4. Verificar resultados:
+- Tag Git: creado ✅
+- Imagen Docker: ghcr.io/edugogroup/[proyecto]:v0.x.x ✅
+- GitHub Release: publicado ✅
+- CHANGELOG: actualizado ✅
+```
+
+### Notas Importantes:
+
+- ✅ **TODO en un solo workflow** (version + tag + tests + Docker + release)
+- ✅ **Control total** (tú decides cuándo ejecutar)
+- ✅ **Predecible** (siempre funciona igual)
+- ⏱️ **Duración**: ~20 minutos (build multi-platform)
+- ❌ **NO usar auto-version.yml** (fue eliminado por inestable)
+
+---
+
 **Responsable:** Claude Code + Jhoan Medina
-**Siguiente acción:** Aplicar reseteo de versionado a proyectos hermanos durante implementación CI/CD
+**Siguiente acción:** Implementar CI/CD en edugo-api-administracion y edugo-worker con manual-release.yml
 **Herramientas requeridas:** `actionlint`, `gh`, `git`
