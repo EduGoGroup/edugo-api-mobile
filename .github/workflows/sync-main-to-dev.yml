@@ -73,26 +73,31 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
 
-          # Crear PR
-          gh pr create \
-            --base dev \
-            --head main \
-            --title "chore: sync main v$VERSION to dev" \
-            --body "## 🔄 Sincronización Automática
+          # Crear PR usando heredoc para manejar correctamente los backticks
+          PR_BODY=$(cat <<EOF
+## 🔄 Sincronización Automática
 
-Este PR sincroniza los cambios de \`main\` (v$VERSION) a \`dev\`.
+Este PR sincroniza los cambios de \`main\` (v${VERSION}) a \`dev\`.
 
 ### Cambios incluidos:
-- Versión actualizada a v$VERSION
+- Versión actualizada a v${VERSION}
 - CHANGELOG actualizado
-- Release v$VERSION publicado
+- Release v${VERSION} publicado
 
 ### ⚠️ Importante:
 Si hay conflictos, resuélvelos manualmente.
 
 ---
 
-🤖 PR automático generado por workflow \`sync-main-to-dev.yml\`" \
+🤖 PR automático generado por workflow \`sync-main-to-dev.yml\`
+EOF
+          )
+
+          gh pr create \
+            --base dev \
+            --head main \
+            --title "chore: sync main v$VERSION to dev" \
+            --body "$PR_BODY" \
             --label "sync" \
             --label "automated" || echo "⚠️  PR ya existe o hubo un error"
 
