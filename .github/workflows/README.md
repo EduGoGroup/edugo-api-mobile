@@ -8,7 +8,7 @@ Esta tabla muestra **qué workflows se ejecutan en cada tipo de branch** para ev
 |----------|-----------|------|---------------|---------|--------|
 | **ci.yml** | ❌ | ✅ | ✅ | ❌ | ❌ |
 | **test.yml** | ❌ | ❌ | ✅ | ❌ | ✅ |
-| **auto-version.yml** | ❌ | ❌ | ✅ (closed) | ❌ | ❌ |
+| **manual-release.yml** | ❌ | ❌ | ❌ | ❌ | ✅ (RECOMENDADO) |
 | **docker-only.yml** | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **release.yml** | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **sync-main-to-dev.yml** | ❌ | ✅ | ❌ | ✅ | ❌ |
@@ -26,13 +26,17 @@ gh pr create --base main --head feature/mi-feature
 # ✅ test.yml (cobertura)
 # ✅ Copilot code review
 
-# Merge PR a main → Auto-versionado + sync
-# ✅ auto-version.yml (crea tag automáticamente)
-# ✅ sync-main-to-dev.yml (sincroniza con dev)
+# Merge PR a main → Solo CI
+# ✅ ci.yml se ejecuta
+# ⏸️ Espera a crear release manualmente
 
-# Tag v* creado → Release completo
-git tag v1.0.0 && git push origin v1.0.0
-# ✅ release.yml (build Docker, GitHub Release)
+# Crear release manualmente (RECOMENDADO)
+# Actions → Manual Release → Run workflow
+#   - Versión: 0.1.0
+#   - Tipo: minor
+# ✅ manual-release.yml (actualiza version.txt, CHANGELOG, crea tag)
+# ✅ release.yml (build Docker, GitHub Release) - AUTOMÁTICO
+# ✅ sync-main-to-dev.yml (sincroniza con dev) - AUTOMÁTICO
 
 # Build manual de Docker → Usar workflow_dispatch
 # Actions → Docker Build and Push → Run workflow
@@ -102,7 +106,56 @@ gh pr create  # ← AQUÍ se ejecuta
 
 ---
 
-### 3️⃣ **build-and-push.yml** - Build y Push de Docker
+### 3️⃣ **manual-release.yml** - Crear Release Manual ⭐ RECOMENDADO
+
+**Trigger:**
+- ✅ Manual únicamente (workflow_dispatch)
+
+**Ejecuta:**
+- ✅ Validación de formato de versión (semver)
+- ✅ Verificación de que el tag no exista
+- ✅ Actualización de `.github/version.txt`
+- ✅ Generación automática de entrada en CHANGELOG.md
+- ✅ Commit de cambios de versión a main
+- ✅ Creación y push de tag (dispara release.yml automáticamente)
+
+**Cómo usarlo:**
+```bash
+# Desde GitHub UI:
+# 1. Ir a: Actions → Manual Release → Run workflow
+# 2. Seleccionar branch: main
+# 3. Ingresar versión: 0.1.0 (sin 'v')
+# 4. Seleccionar tipo: patch / minor / major
+# 5. Click "Run workflow"
+
+# El workflow automáticamente:
+# - Actualiza version.txt
+# - Actualiza CHANGELOG.md
+# - Crea commit en main
+# - Crea tag v0.1.0
+# - Dispara release.yml (que construye Docker)
+```
+
+**Inputs requeridos:**
+- `version`: Versión a crear (formato: 0.1.0)
+- `bump_type`: patch (bugfix) / minor (feature) / major (breaking/producción)
+
+**Qué dispara automáticamente:**
+- ✅ **release.yml** → Build Docker + GitHub Release
+- ✅ **sync-main-to-dev.yml** → Sincroniza cambios a dev
+
+**Duración estimada:** 1 minuto (luego dispara release.yml)
+
+**Ventajas:**
+- ✅ Control total sobre cuándo y qué versión crear
+- ✅ No depende de auto-version inestable
+- ✅ Proceso predecible y auditable
+- ✅ Actualiza CHANGELOG automáticamente
+- ✅ Dispara release completo (Docker + GitHub Release)
+
+---
+
+### 4️⃣ **build-and-push.yml** - Build y Push de Docker
 
 **Trigger:**
 - ✅ Manual (workflow_dispatch con selección de ambiente)
