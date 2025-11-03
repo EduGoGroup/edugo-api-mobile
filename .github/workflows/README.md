@@ -49,6 +49,106 @@ GitHub Actions **evalúa** todos los workflows en cualquier evento, pero solo **
 
 ---
 
+## 🤖 Configuración: GitHub App para Sincronización Automática
+
+Los workflows `manual-release.yml` y `sync-main-to-dev.yml` utilizan una **GitHub App** en lugar de `GITHUB_TOKEN` para poder disparar workflows subsecuentes.
+
+### ¿Por qué GitHub App?
+
+**Problema con GITHUB_TOKEN**:
+- ❌ Los commits realizados con `GITHUB_TOKEN` NO disparan workflows automáticamente
+- ❌ Esto es una limitación de seguridad de GitHub Actions
+- ❌ Sin esto, `sync-main-to-dev.yml` nunca se ejecutaba después de `manual-release.yml`
+
+**Solución con GitHub App**:
+- ✅ Los commits con App Token SÍ disparan workflows
+- ✅ Sincronización automática de main → dev funciona
+- ✅ Permisos granulares y seguros
+- ✅ Tokens expiran automáticamente
+
+### Secretos Requeridos
+
+A nivel de **organización** (EduGoGroup):
+
+| Secret | Valor | Descripción |
+|--------|-------|-------------|
+| `APP_ID` | Número (ej: 123456) | ID de la GitHub App |
+| `APP_PRIVATE_KEY` | Contenido del .pem | Private key de la App |
+
+### Cómo Crear la GitHub App
+
+1. **Crear App**:
+   - Settings → Developer settings → GitHub Apps → **New GitHub App**
+   - Name: `EduGo Sync Bot` (o cualquier nombre)
+   - Homepage URL: `https://github.com/EduGoGroup`
+   - Webhook: Desactivar (no necesario)
+
+2. **Configurar Permisos**:
+   ```
+   Repository permissions:
+   - Contents: Read and write ✅
+   - Workflows: Read and write ✅
+   - Metadata: Read-only (automático)
+   ```
+
+3. **Generar Private Key**:
+   - Scroll a sección "Private keys"
+   - Click **"Generate a private key"**
+   - Se descarga archivo `.pem` automáticamente
+   - **Guardar en lugar seguro** (se necesita para configurar secretos)
+
+4. **Instalar la App**:
+   - Click "Install App" (lado izquierdo)
+   - Seleccionar organización: **EduGoGroup**
+   - Repository access: **Selected repositories**
+     - Seleccionar: edugo-api-mobile, edugo-shared, edugo-worker, edugo-api-administracion
+   - Click **"Install"**
+
+5. **Configurar Secretos**:
+   - Ir a: https://github.com/organizations/EduGoGroup/settings/secrets/actions
+   - Click **"New organization secret"**
+
+   **Secreto 1 - APP_ID**:
+   - Name: `APP_ID`
+   - Secret: `123456` (el App ID visible en la página de la App)
+   - Repository access: **Selected repositories** (los 4 repos)
+
+   **Secreto 2 - APP_PRIVATE_KEY**:
+   - Name: `APP_PRIVATE_KEY`
+   - Secret: Abrir el .pem en editor y copiar TODO el contenido
+   ```
+   -----BEGIN RSA PRIVATE KEY-----
+   MIIEpAIBAAKCAQEA...
+   ...
+   -----END RSA PRIVATE KEY-----
+   ```
+   - Repository access: **Selected repositories** (los 4 repos)
+
+6. **Verificar**:
+   - Los 4 repos deben tener acceso a ambos secretos
+   - La App debe estar instalada en los 4 repos
+   - Los permisos deben estar correctos
+
+### Uso en Workflows
+
+```yaml
+- name: Generar token desde GitHub App
+  id: generate_token
+  uses: actions/create-github-app-token@v1
+  with:
+    app-id: ${{ secrets.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+- name: Checkout con App Token
+  uses: actions/checkout@v4
+  with:
+    token: ${{ steps.generate_token.outputs.token }}
+```
+
+**Beneficio**: Los commits realizados con este token SÍ disparan workflows subsecuentes.
+
+---
+
 ## 📋 Workflows Configurados
 
 ### 1️⃣ **ci.yml** - Pipeline de Integración Continua
