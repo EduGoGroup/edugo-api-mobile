@@ -231,6 +231,65 @@ APP_ENV=local|dev|qa|prod
 
 ---
 
+## 🎯 Sistema de Análisis de Sprint
+
+El proyecto cuenta con un sistema flexible de análisis arquitectónico:
+
+### Comando Principal: `/01-analysis`
+
+```bash
+# Sintaxis
+/01-analysis [--source=sprint|current] [--phase=N] [--mode=full|quick]
+
+# Ejemplos
+/01-analysis                              # Análisis completo de sprint/current
+/01-analysis --mode=quick                 # Análisis rápido sin diagramas
+/01-analysis --source=sprint              # Analizar sprint/readme.md
+/01-analysis --source=sprint --phase=3    # Solo fase 3 del sprint root
+/01-analysis --phase=2 --mode=quick       # Fase 2 rápido de current
+```
+
+### Atajo: `/01-quick-analysis`
+
+```bash
+# Equivalente a /01-analysis --mode=quick
+/01-quick-analysis
+/01-quick-analysis --source=sprint
+/01-quick-analysis --phase=3
+```
+
+### Parámetros
+
+| Parámetro | Valores | Default | Descripción |
+|-----------|---------|---------|-------------|
+| `--source` | `sprint`, `current` | `current` | De dónde leer el readme |
+| `--phase` | Número de fase | todas | Analizar solo una fase |
+| `--mode` | `full`, `quick` | `full` | Con o sin diagramas |
+
+### Modos de Análisis
+
+**MODE=full** (Completo):
+- `architecture.md` - Diagramas de arquitectura (Mermaid)
+- `data-model.md` - Diagramas ER
+- `process-diagram.md` - Diagramas de flujo
+- `readme.md` - Resumen ejecutivo
+
+**MODE=quick** (Rápido):
+- `readme.md` - Solo análisis ejecutivo (sin diagramas)
+
+### Alcance de Análisis
+
+**SCOPE=complete**:
+- Analiza todo el contenido del readme
+- Archivos: `architecture.md`, etc.
+
+**SCOPE=phase-N**:
+- Enfoque en fase específica
+- Archivos: `architecture-phase-3.md`, etc.
+- Incluye resumen general como contexto
+
+---
+
 ## 📁 Archivos de Configuración
 
 - `config/config.yaml` - Configuración base

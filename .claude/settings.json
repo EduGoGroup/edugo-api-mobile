@@ -1,0 +1,65 @@
+{
+  "project": {
+    "name": "EduGo Presentation - Sistema de Flujo de Desarrollo",
+    "description": "Demostración de flujo de desarrollo profesional usando Claude Code con comandos slash y agentes especializados",
+    "version": "1.0.0"
+  },
+  "workflow": {
+    "sprints": {
+      "active_directory": "Sprint",
+      "archive_directory": "sprint-archivado",
+      "archive_format": "sprint-YYYY-MM-DD-HHMM"
+    },
+    "structure": {
+      "analysis_output": "Sprint/analisis",
+      "planning_output": "Sprint/planificacion",
+      "execution_output": "Sprint/ejecucion",
+      "revision_output": "Sprint/revision"
+    }
+  },
+  "agents": {
+    "isolation_mode": true,
+    "description": "Agentes especializados con acceso limitado según su función"
+  },
+  "commands": {
+    "01-analisis": {
+      "description": "Analiza el readme.md del sprint y genera documentación arquitectónica",
+      "agent": "analisis",
+      "input": "Sprint/readme.md",
+      "output": "Sprint/analisis/"
+    },
+    "02-planificacion": {
+      "description": "Transforma el análisis en un plan granular de fases y tareas",
+      "agent": "planificador",
+      "input": "Sprint/analisis/readme.md",
+      "output": "Sprint/planificacion/readme.md"
+    },
+    "03-ejecucion": {
+      "description": "Ejecuta las tareas del plan (soporta argumentos para fases específicas)",
+      "agent": "ejecucion",
+      "input": "Sprint/planificacion/readme.md",
+      "optional_input": "Sprint/ejecucion/reglas.md",
+      "output": "Sprint/ejecucion/[fase]-[timestamp].md",
+      "validation": "compilation_check"
+    },
+    "04-revision": {
+      "description": "Consolida el estado del sprint y genera guía de validación",
+      "agent": "revision",
+      "input": ["Sprint/planificacion/readme.md", "Sprint/ejecucion/*.md"],
+      "output": "Sprint/revision/readme.md"
+    },
+    "archivar": {
+      "description": "Archiva el sprint actual y prepara uno nuevo",
+      "permissions": "full_access"
+    }
+  },
+  "validation": {
+    "mermaid_syntax": true,
+    "compilation_check": true,
+    "user_guide_required": true
+  },
+  "presentation": {
+    "focus": ["visual_diagrams", "architectural_analysis", "code_quality"],
+    "highlight": "Flujo modular con comandos slash y agentes aislados"
+  }
+}

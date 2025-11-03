@@ -4,129 +4,129 @@ allowed-tools: Bash, Read, Write
 argument-hint: ""
 ---
 
-# Command: Archive Sprint
+# Comando: Archivar Sprint
 
-## Description
-This command archives the current sprint and prepares the project for a new cycle. It renames the sprint/current folder with a timestamp, moves it to the sprint/archived folder, and creates a new clean sprint/current folder.
+## Descripción
+Este comando archiva el sprint actual y prepara el proyecto para un nuevo ciclo. Renombra la carpeta sprint/current con un timestamp, la mueve a la carpeta sprint/archived, y crea una nueva carpeta sprint/current limpia.
 
-## Command Responsibilities
-1. **Validate** that content exists to archive
-2. **Generate** unique name based on date/time
-3. **Move** the current sprint/current folder to sprint/archived
-4. **Create** new clean sprint/current folder with initial structure
-5. **Report** the process to the user
+## Responsabilidades del Comando
+1. **Validar** que existe contenido para archivar
+2. **Generar** nombre único basado en fecha/hora
+3. **Mover** la carpeta sprint/current actual a sprint/archived
+4. **Crear** nueva carpeta sprint/current limpia con estructura inicial
+5. **Reportar** el proceso al usuario
 
-## File Naming Format
+## Formato de Nombre de Archivo
 ```
 sprint-YYYY-MM-DD-HHMM
-Example: sprint-2025-10-31-1430
+Ejemplo: sprint-2025-10-31-1430
 ```
 
-## Execution Instructions
+## Instrucciones de Ejecución
 
-Please execute the following steps:
+Por favor, ejecuta los siguientes pasos:
 
-### Step 1: Validate sprint/current folder
-Verify that the `sprint/current/` folder exists and contains files. If it's empty or doesn't exist:
+### Paso 1: Validar carpeta sprint/current
+Verifica que la carpeta `sprint/current/` existe y contiene archivos. Si está vacía o no existe:
 ```
-ℹ️ Warning: The sprint/current folder is empty or doesn't exist
+ℹ️ Advertencia: La carpeta sprint/current está vacía o no existe
 
-There's nothing to archive. Do you want to create a new sprint/current folder anyway?
+No hay nada que archivar. ¿Quieres crear una nueva carpeta sprint/current de todas formas?
 ```
 
-### Step 2: Generate archive name
-Generate the name using current date/time format:
+### Paso 2: Generar nombre del archivo
+Genera el nombre usando el formato de fecha/hora actual:
 ```bash
-# Format: sprint-YYYY-MM-DD-HHMM
-# Example: sprint-2025-10-31-1430
+# Formato: sprint-YYYY-MM-DD-HHMM
+# Ejemplo: sprint-2025-10-31-1430
 
-# Use date command to generate timestamp
+# Usa el comando date para generar el timestamp
 TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
 ARCHIVE_NAME="sprint-${TIMESTAMP}"
 ```
 
-### Step 3: Verify name doesn't exist
-Verify that a folder with that name doesn't already exist in `sprint/archived/`:
+### Paso 3: Verificar que el nombre no existe
+Verifica que no existe ya una carpeta con ese nombre en `sprint/archived/`:
 ```bash
-# If it exists, add a numeric suffix
+# Si existe, agrega un sufijo numérico
 # sprint-2025-10-31-1430-1
 # sprint-2025-10-31-1430-2
 # etc.
 ```
 
-### Step 4: Move sprint/current folder to archive
+### Paso 4: Mover carpeta sprint/current al archivo
 ```bash
-# Ensure sprint/archived/ exists
+# Asegurar que existe sprint/archived/
 mkdir -p sprint/archived
 
-# Move sprint/current to sprint/archived with new name
+# Mover sprint/current a sprint/archived con nuevo nombre
 mv sprint/current "sprint/archived/${ARCHIVE_NAME}"
 ```
 
-### Step 5: Create new clean sprint/current folder
+### Paso 5: Crear nueva carpeta sprint/current limpia
 ```bash
-# Create clean structure
+# Crear estructura limpia
 mkdir -p sprint/current/analysis
 mkdir -p sprint/current/planning
 mkdir -p sprint/current/execution
 mkdir -p sprint/current/review
 ```
 
-### Step 6: Confirmation message
+### Paso 6: Mensaje de confirmación
 ```
-✅ Sprint archived successfully
+✅ Sprint archivado exitosamente
 
-📦 Archive created:
+📦 Archivo creado:
 - sprint/archived/sprint-2025-10-31-1430/
 
-📁 New sprint/current folder created with clean structure:
+📁 Nueva carpeta sprint/current creada con estructura limpia:
 - sprint/current/
   ├─ analysis/
   ├─ planning/
   ├─ execution/
   └─ review/
 
-📌 Next step:
-1. Create a new sprint/current/readme.md file with new sprint requirements
-2. Execute /01-analysis to start the new cycle
+📌 Siguiente paso:
+1. Crea un nuevo archivo sprint/current/readme.md con los requisitos del nuevo sprint
+2. Ejecuta /01-analysis para iniciar el nuevo ciclo
 
-💡 The previous sprint is available at:
+💡 El sprint anterior está disponible en:
    sprint/archived/sprint-2025-10-31-1430/
 ```
 
-### Step 7: Template creation suggestion (optional)
-Optionally, ask the user if they want to create an empty readme.md template:
+### Paso 7: Sugerencia de creación de plantilla (opcional)
+Opcionalmente, pregunta al usuario si quiere crear un archivo de plantilla readme.md vacío:
 ```
-Do you want to create a sprint/current/readme.md template file for the new sprint?
+¿Quieres crear un archivo de plantilla sprint/current/readme.md para el nuevo sprint?
 
-If the user accepts, create:
+Si el usuario acepta, crea:
 ```markdown
-# Sprint: [Sprint Name]
+# Sprint: [Nombre del Sprint]
 
-## Description
-[Brief description of sprint objective]
+## Descripción
+[Breve descripción del objetivo del sprint]
 
-## Requirements
-- [ ] Requirement 1
-- [ ] Requirement 2
-- [ ] Requirement 3
+## Requisitos
+- [ ] Requisito 1
+- [ ] Requisito 2
+- [ ] Requisito 3
 
-## Context
-[Additional relevant information]
+## Contexto
+[Información adicional relevante]
 
-## Expected Deliverables
-1. [Deliverable 1]
-2. [Deliverable 2]
+## Entregables Esperados
+1. [Entregable 1]
+2. [Entregable 2]
 
-## Restrictions/Considerations
-- [Restriction 1]
-- [Restriction 2]
+## Restricciones/Consideraciones
+- [Restricción 1]
+- [Restricción 2]
 ```
 ```
 
-## Important Notes
-- This command has **full read/write permissions**
-- Uses **timestamp** to avoid overwriting previous files
-- Preserves **complete history** of sprints in the sprint/archived folder
-- Guarantees there's always a clean sprint/current folder ready for a new cycle
-- DO NOT archive if the user is in the middle of an important sprint (ask for confirmation if sprint/current has recent content)
+## Notas Importantes
+- Este comando tiene **permisos completos de lectura/escritura**
+- Usa **timestamp** para evitar sobrescribir archivos previos
+- Preserva el **historial completo** de sprints en la carpeta sprint/archived
+- Garantiza que siempre hay una carpeta sprint/current limpia lista para un nuevo ciclo
+- NO archivar si el usuario está en medio de un sprint importante (pedir confirmación si sprint/current tiene contenido reciente)

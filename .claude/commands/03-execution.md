@@ -4,102 +4,102 @@ allowed-tools: Read, Task
 argument-hint: "[phase-N|task-N.M]"
 ---
 
-# Command: Sprint Execution
+# Comando: Ejecución de Sprint
 
-## Description
-This command executes the planned sprint tasks. It can execute the entire plan or specific phases/tasks according to provided arguments. It reads the execution plan and optionally the project rules, then invokes the execution agent.
+## Descripción
+Este comando ejecuta las tareas planeadas del sprint. Puede ejecutar el plan completo o fases/tareas específicas según los argumentos proporcionados. Lee el plan de ejecución y opcionalmente las reglas del proyecto, luego invoca al agente de ejecución.
 
-## Syntax
+## Sintaxis
 ```bash
-/03-execution              # Execute entire plan
-/03-execution phase-1      # Execute only phase 1
-/03-execution task-2.3     # Execute only task 3 of phase 2
+/03-execution              # Ejecutar plan completo
+/03-execution phase-1      # Ejecutar solo la fase 1
+/03-execution task-2.3     # Ejecutar solo la tarea 3 de la fase 2
 ```
 
-## Command Responsibilities
-1. **Read** the `sprint/current/planning/readme.md` file
-2. **Filter** content according to arguments (if provided)
-3. **Read** the `sprint/current/execution/rules.md` file (if it exists)
-4. **Invoke** the `execution` agent with tasks and rules
-5. **Allow limited access** for the agent to analysis/planning folders for additional context
+## Responsabilidades del Comando
+1. **Leer** el archivo `sprint/current/planning/readme.md`
+2. **Filtrar** contenido según argumentos (si se proporcionan)
+3. **Leer** el archivo `sprint/current/execution/rules.md` (si existe)
+4. **Invocar** al agente `execution` con las tareas y reglas
+5. **Permitir acceso limitado** para que el agente acceda a las carpetas analysis/planning para contexto adicional
 
-## Execution Instructions
+## Instrucciones de Ejecución
 
-Please execute the following steps:
+Por favor, ejecuta los siguientes pasos:
 
-### Step 1: Validate input file
-Verify that the `sprint/current/planning/readme.md` file exists. If it doesn't exist:
+### Paso 1: Validar archivo de entrada
+Verifica que existe el archivo `sprint/current/planning/readme.md`. Si no existe:
 ```
-❌ Error: Sprint plan not found
+❌ Error: Plan de sprint no encontrado
 
-Please execute first: /02-planning
+Por favor ejecuta primero: /02-planning
 ```
 
-### Step 2: Read work plan
-Read the complete `sprint/current/planning/readme.md` file.
+### Paso 2: Leer plan de trabajo
+Lee el archivo completo `sprint/current/planning/readme.md`.
 
-### Step 3: Process arguments (if any)
-If the user provided arguments (e.g., `phase-1`, `task-2.3`):
-- Extract from the plan only the section corresponding to that phase/task
-- Verify the dependencies of that phase/task
-- If there are uncompleted dependencies, warn the user but allow continuation
+### Paso 3: Procesar argumentos (si los hay)
+Si el usuario proporcionó argumentos (ej: `phase-1`, `task-2.3`):
+- Extrae del plan solo la sección correspondiente a esa fase/tarea
+- Verifica las dependencias de esa fase/tarea
+- Si hay dependencias no completadas, advierte al usuario pero permite continuar
 
-If NO arguments:
-- Use the complete plan
+Si NO hay argumentos:
+- Usa el plan completo
 
-### Step 4: Verify project rules
-Verify if the `sprint/current/execution/rules.md` file exists:
+### Paso 4: Verificar reglas del proyecto
+Verifica si existe el archivo `sprint/current/execution/rules.md`:
 ```bash
-If exists → Read it and pass to the agent
-If NOT exists → Continue without rules (agent will use best practices)
+Si existe → Léelo y pásalo al agente
+Si NO existe → Continúa sin reglas (el agente usará mejores prácticas)
 ```
 
-### Step 5: Invoke execution agent
-Use the Task tool with `subagent_type: "general-purpose"` to invoke the execution agent.
+### Paso 5: Invocar agente de ejecución
+Usa la herramienta Task con `subagent_type: "general-purpose"` para invocar al agente de ejecución.
 
-Pass to the agent:
-- **Complete prompt**: The agent's instructions (read `.claude/agents/execution.md`)
-- **Tasks to execute**: Complete or filtered plan according to step 3
-- **Project rules**: Content of rules.md (if it exists)
-- **Special permissions**:
-  - Can read files from `sprint/current/analysis/` and `sprint/current/planning/` for additional context
-  - Can write/modify files in the project root folder
-  - CANNOT touch the `.claude/` folder
-  - CANNOT touch the `sprint/` folder except to write reports in `sprint/current/execution/`
+Pasa al agente:
+- **Prompt completo**: Las instrucciones del agente (lee `.claude/agents/execution.md`)
+- **Tareas a ejecutar**: Plan completo o filtrado según paso 3
+- **Reglas del proyecto**: Contenido de rules.md (si existe)
+- **Permisos especiales**:
+  - Puede leer archivos de `sprint/current/analysis/` y `sprint/current/planning/` para contexto adicional
+  - Puede escribir/modificar archivos en la carpeta raíz del proyecto
+  - NO PUEDE tocar la carpeta `.claude/`
+  - NO PUEDE tocar la carpeta `sprint/` excepto para escribir reportes en `sprint/current/execution/`
 
-### Step 6: Confirmation message
-Once the agent completes its work, inform the user:
+### Paso 6: Mensaje de confirmación
+Una vez que el agente completa su trabajo, informa al usuario:
 ```
-✅ Execution completed successfully
+✅ Ejecución completada exitosamente
 
-📁 Report generated:
+📁 Reporte generado:
 - sprint/current/execution/[phase-step]-[timestamp].md
 
-✅ Validations performed:
-- Code compiled correctly
-- Tests executed (if applicable)
+✅ Validaciones realizadas:
+- Código compiló correctamente
+- Tests ejecutados (si aplica)
 
-📌 Next step:
-- Execute /04-review to see consolidated sprint status
-- Or execute /03-execution [another-phase] to continue with other tasks
+📌 Siguiente paso:
+- Ejecuta /04-review para ver el estado consolidado del sprint
+- O ejecuta /03-execution [otra-fase] para continuar con otras tareas
 ```
 
-If there were compilation errors or failed tests:
+Si hubo errores de compilación o tests fallidos:
 ```
-⚠️ Execution completed with warnings
+⚠️ Ejecución completada con advertencias
 
-📁 Report generated:
+📁 Reporte generado:
 - sprint/current/execution/[phase-step]-[timestamp].md
 
-⚠️ Problems detected:
-[List problems]
+⚠️ Problemas detectados:
+[Lista de problemas]
 
-📌 Recommendation:
-Review the execution report and fix problems before continuing
+📌 Recomendación:
+Revisa el reporte de ejecución y corrige los problemas antes de continuar
 ```
 
-## Important Notes
-- This command allows **modular execution** - you can execute specific phases/tasks
-- The agent **validates that code compiles** before marking the task as complete
-- **Project rules** are optional but recommended for consistency
-- Each execution generates a **separate report** with timestamp for traceability
+## Notas Importantes
+- Este comando permite **ejecución modular** - puedes ejecutar fases/tareas específicas
+- El agente **valida que el código compile** antes de marcar la tarea como completada
+- Las **reglas del proyecto** son opcionales pero recomendadas para consistencia
+- Cada ejecución genera un **reporte separado** con timestamp para trazabilidad

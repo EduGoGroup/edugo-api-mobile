@@ -4,87 +4,87 @@ allowed-tools: Read, Task
 argument-hint: ""
 ---
 
-# Command: Sprint Review
+# Comando: Revisión de Sprint
 
-## Description
-This command consolidates the complete sprint status. It reads the original plan and all execution reports, then invokes the review agent to generate a document showing which tasks were completed and provides a validation guide for the user.
+## Descripción
+Este comando consolida el estado completo del sprint. Lee el plan original y todos los reportes de ejecución, luego invoca al agente de revisión para generar un documento que muestre qué tareas se completaron y proporcione una guía de validación para el usuario.
 
-## Command Responsibilities
-1. **Read** the `sprint/current/planning/readme.md` file (original plan)
-2. **Read** all report files in `sprint/current/execution/*.md`
-3. **Invoke** the `review` agent with all information
-4. **Generate** a consolidated document with status and validation guide
+## Responsabilidades del Comando
+1. **Leer** el archivo `sprint/current/planning/readme.md` (plan original)
+2. **Leer** todos los archivos de reporte en `sprint/current/execution/*.md`
+3. **Invocar** al agente `review` con toda la información
+4. **Generar** un documento consolidado con estado y guía de validación
 
-## Execution Instructions
+## Instrucciones de Ejecución
 
-Please execute the following steps:
+Por favor, ejecuta los siguientes pasos:
 
-### Step 1: Validate input files
-Verify that the `sprint/current/planning/readme.md` file exists. If it doesn't exist:
+### Paso 1: Validar archivos de entrada
+Verifica que existe el archivo `sprint/current/planning/readme.md`. Si no existe:
 ```
-❌ Error: Sprint plan not found
+❌ Error: Plan de sprint no encontrado
 
-Please execute first: /02-planning
-```
-
-Verify that files exist in `sprint/current/execution/`. If there are none:
-```
-ℹ️ Warning: No execution reports found
-
-The sprint has no tasks executed yet.
-Do you want to generate a status report anyway? (useful to see what's missing)
+Por favor ejecuta primero: /02-planning
 ```
 
-### Step 2: Read work plan
-Read the complete `sprint/current/planning/readme.md` file.
-
-### Step 3: Read all execution reports
-List and read all files in `sprint/current/execution/*.md` (except rules.md if it exists).
-
-Organize the reports chronologically to give them to the agent in order.
-
-### Step 4: Invoke review agent
-Use the Task tool with `subagent_type: "general-purpose"` to invoke the review agent.
-
-Pass to the agent:
-- **Complete prompt**: The agent's instructions (read `.claude/agents/review.md`)
-- **Original plan**: Content of `sprint/current/planning/readme.md`
-- **Execution reports**: All files read in step 3, in chronological order
-- **Special instruction**: The agent must generate a final "User Validation Guide" section
-
-### Step 5: Confirmation message
-Once the agent completes its work, inform the user:
+Verifica que existen archivos en `sprint/current/execution/`. Si no hay ninguno:
 ```
-✅ Review completed successfully
+ℹ️ Advertencia: No se encontraron reportes de ejecución
 
-📁 File generated:
+El sprint no tiene tareas ejecutadas todavía.
+¿Quieres generar un reporte de estado de todas formas? (útil para ver qué falta)
+```
+
+### Paso 2: Leer plan de trabajo
+Lee el archivo completo `sprint/current/planning/readme.md`.
+
+### Paso 3: Leer todos los reportes de ejecución
+Lista y lee todos los archivos en `sprint/current/execution/*.md` (excepto rules.md si existe).
+
+Organiza los reportes cronológicamente para dárselos al agente en orden.
+
+### Paso 4: Invocar agente de revisión
+Usa la herramienta Task con `subagent_type: "general-purpose"` para invocar al agente de revisión.
+
+Pasa al agente:
+- **Prompt completo**: Las instrucciones del agente (lee `.claude/agents/review.md`)
+- **Plan original**: Contenido de `sprint/current/planning/readme.md`
+- **Reportes de ejecución**: Todos los archivos leídos en paso 3, en orden cronológico
+- **Instrucción especial**: El agente debe generar una sección final "Guía de Validación para el Usuario"
+
+### Paso 5: Mensaje de confirmación
+Una vez que el agente completa su trabajo, informa al usuario:
+```
+✅ Revisión completada exitosamente
+
+📁 Archivo generado:
 - sprint/current/review/readme.md
 
-📊 Report content:
-- Original plan with tasks marked as completed ✅
-- Summary of pending tasks
-- Validation guide to test the sprint
+📊 Contenido del reporte:
+- Plan original con tareas marcadas como completadas ✅
+- Resumen de tareas pendientes
+- Guía de validación para probar el sprint
 
-📌 Next step:
-- Read sprint/current/review/readme.md to see complete status
-- Use the "Validation Guide" at the end of the document to test the application
-- If everything is complete, execute /archive to archive this sprint
-- If tasks are missing, execute /03-execution [phase] to continue
+📌 Siguiente paso:
+- Lee sprint/current/review/readme.md para ver el estado completo
+- Usa la "Guía de Validación" al final del documento para probar la aplicación
+- Si todo está completo, ejecuta /archive para archivar este sprint
+- Si faltan tareas, ejecuta /03-execution [fase] para continuar
 ```
 
-### Step 6: Show quick summary (optional)
-Optionally, you can show a quick summary in the console:
+### Paso 6: Mostrar resumen rápido (opcional)
+Opcionalmente, puedes mostrar un resumen rápido en consola:
 ```
-📈 Sprint Summary:
-├─ Total phases: X
-├─ Completed phases: Y
-├─ Total tasks: A
-├─ Completed tasks: B
-└─ Progress: ZZ%
+📈 Resumen del Sprint:
+├─ Fases totales: X
+├─ Fases completadas: Y
+├─ Tareas totales: A
+├─ Tareas completadas: B
+└─ Progreso: ZZ%
 ```
 
-## Important Notes
-- This command gives **complete visibility** of sprint status
-- The **validation guide** is crucial - it must be simple and practical for the user
-- Allows making decisions about what to do next (continue, archive, or fix)
-- Useful for presentations/demos showing work progress
+## Notas Importantes
+- Este comando da **visibilidad completa** del estado del sprint
+- La **guía de validación** es crucial - debe ser simple y práctica para el usuario
+- Permite tomar decisiones sobre qué hacer a continuación (continuar, archivar, o corregir)
+- Útil para presentaciones/demos mostrando el progreso del trabajo
