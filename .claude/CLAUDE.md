@@ -4,10 +4,10 @@
 
 **IMPORTANTE**: Este proyecto tiene un plan de trabajo en curso documentado en:
 
-👉 **[sprint/README.md](../sprint/README.md)**
+👉 **[sprint/current/readme.md](../sprint/current/readme.md)**
 
 Antes de realizar cualquier tarea, **SIEMPRE**:
-1. Leer el archivo `sprint/README.md` para entender el contexto y fase actual
+1. Leer el archivo `sprint/current/readme.md` para entender el contexto y fase actual
 2. Verificar qué tareas están completadas y cuáles están pendientes
 3. Seguir el orden de las fases establecidas
 4. Actualizar las casillas de verificación según el progreso
@@ -243,10 +243,10 @@ APP_ENV=local|dev|qa|prod
 
 ### Commits
 1. **NUNCA** hacer commit si el proyecto tiene errores de compilación
-2. Solo hacer commits atómicos según lo planeado en `sprint/README.md`
+2. Solo hacer commits atómicos según lo planeado en `sprint/current/readme.md`
 3. Seguir el formato de commit establecido (feat, fix, refactor, test, etc.)
 4. Incluir siempre el footer de Claude Code en commits
-5. Actualizar el `sprint/README.md` marcando casillas al completar tareas
+5. Actualizar el `sprint/current/readme.md` marcando casillas al completar tareas
 
 ### Manejo de Errores
 1. Usar los error types de `edugo-shared/common/errors`
@@ -271,19 +271,19 @@ APP_ENV=local|dev|qa|prod
 
 ### Al comenzar una sesión:
 ```bash
-1. git status                    # Ver estado actual
-2. cat sprint/README.md          # Revisar plan de trabajo
-3. git log -1 --oneline          # Ver último commit
+1. git status                         # Ver estado actual
+2. cat sprint/current/readme.md       # Revisar plan de trabajo
+3. git log -1 --oneline               # Ver último commit
 ```
 
 ### Durante el desarrollo:
-1. Seguir las tareas del `sprint/README.md` en orden
+1. Seguir las tareas del `sprint/current/readme.md` en orden
 2. Marcar casillas completadas
 3. Hacer commits atómicos según lo planeado
 4. **NO HACER PUSH** sin autorización del usuario
 
 ### Al finalizar una fase:
-1. Actualizar `sprint/README.md` con estado ✅
+1. Actualizar `sprint/current/readme.md` con estado ✅
 2. Documentar hallazgos o cambios al plan
 3. Preparar contexto para próxima fase
 

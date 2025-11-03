@@ -90,3 +90,4 @@ Desktop.ini
 # Archivos de debug
 __debug_bin
 debug.test
+.envrc
