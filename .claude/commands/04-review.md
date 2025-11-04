@@ -1,6 +1,5 @@
 ---
 description: Consolidate sprint status and generate validation guide
-allowed-tools: Read, Task
 argument-hint: ""
 ---
 

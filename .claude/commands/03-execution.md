@@ -1,6 +1,5 @@
 ---
 description: Execute planned sprint tasks (all, specific phase, or task)
-allowed-tools: Read, Task
 argument-hint: "[phase-N|task-N.M]"
 ---
 

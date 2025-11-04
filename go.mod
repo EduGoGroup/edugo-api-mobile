@@ -10,6 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1
