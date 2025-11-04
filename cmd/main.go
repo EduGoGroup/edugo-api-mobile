@@ -11,6 +11,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/database"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/router"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -71,6 +72,20 @@ func main() {
 		appLogger.Fatal("error inicializando MongoDB", zap.Error(err))
 	}
 
+	// Inicializar RabbitMQ Publisher
+	publisher, err := rabbitmq.NewRabbitMQPublisher(
+		cfg.Messaging.RabbitMQ.URL,
+		cfg.Messaging.RabbitMQ.Exchanges.Materials,
+		appLogger.With(zap.String("component", "rabbitmq-publisher")),
+	)
+	if err != nil {
+		appLogger.Fatal("error inicializando RabbitMQ Publisher", zap.Error(err))
+	}
+	defer publisher.Close()
+	appLogger.Info("RabbitMQ Publisher inicializado correctamente",
+		zap.String("exchange", cfg.Messaging.RabbitMQ.Exchanges.Materials),
+	)
+
 	// Obtener JWT secret desde variable de entorno
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
@@ -78,7 +93,7 @@ func main() {
 	}
 
 	// Crear container de dependencias (DI)
-	c := container.NewContainer(db, mongoDB, jwtSecret, appLogger)
+	c := container.NewContainer(db, mongoDB, publisher, jwtSecret, appLogger)
 	defer c.Close()
 	appLogger.Info("container de dependencias inicializado correctamente")
 

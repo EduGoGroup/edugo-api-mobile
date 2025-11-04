@@ -7,8 +7,11 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	"go.uber.org/zap"
 )
 
 // MaterialService define las operaciones de negocio para materiales
@@ -20,14 +23,20 @@ type MaterialService interface {
 }
 
 type materialService struct {
-	materialRepo repository.MaterialRepository
-	logger       logger.Logger
+	materialRepo     repository.MaterialRepository
+	messagePublisher rabbitmq.Publisher
+	logger           logger.Logger
 }
 
-func NewMaterialService(materialRepo repository.MaterialRepository, logger logger.Logger) MaterialService {
+func NewMaterialService(
+	materialRepo repository.MaterialRepository,
+	messagePublisher rabbitmq.Publisher,
+	logger logger.Logger,
+) MaterialService {
 	return &materialService{
-		materialRepo: materialRepo,
-		logger:       logger,
+		materialRepo:     materialRepo,
+		messagePublisher: messagePublisher,
+		logger:           logger,
 	}
 }
 
@@ -70,6 +79,34 @@ func (s *materialService) CreateMaterial(
 		"author_id", authorID.String(),
 		"title", material.Title(),
 	)
+
+	// Publicar evento de material creado
+	event := messaging.MaterialUploadedEvent{
+		MaterialID:  material.ID().String(),
+		Title:       material.Title(),
+		ContentType: "application/pdf", // TODO: obtener del request cuando se implemente S3
+		UploadedAt:  material.CreatedAt(),
+	}
+
+	eventJSON, err := event.ToJSON()
+	if err != nil {
+		s.logger.Warn("failed to serialize material uploaded event",
+			zap.String("material_id", material.ID().String()),
+			zap.Error(err),
+		)
+	} else {
+		// Publicar evento de forma asíncrona (no bloqueante)
+		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "material.uploaded", eventJSON); err != nil {
+			s.logger.Warn("failed to publish material uploaded event",
+				zap.String("material_id", material.ID().String()),
+				zap.Error(err),
+			)
+		} else {
+			s.logger.Info("material uploaded event published",
+				zap.String("material_id", material.ID().String()),
+			)
+		}
+	}
 
 	return dto.ToMaterialResponse(material), nil
 }
