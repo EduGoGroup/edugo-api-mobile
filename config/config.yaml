@@ -29,6 +29,13 @@ messaging:
       materials: "edugo.materials"
     prefetch_count: 10
 
+storage:
+  s3:
+    region: "us-east-1"
+    bucket_name: "edugo-materials"
+    # access_key_id y secret_access_key se cargan desde ENV
+    # endpoint: "" # Opcional, para usar Localstack en desarrollo
+
 logging:
   level: "info"
   format: "json"

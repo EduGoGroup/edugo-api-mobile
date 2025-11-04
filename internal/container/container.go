@@ -9,6 +9,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
 	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,6 +24,7 @@ type Container struct {
 	Logger           logger.Logger
 	JWTManager       *auth.JWTManager
 	MessagePublisher rabbitmq.Publisher
+	S3Client         *s3.S3Client
 
 	// Repositories
 	UserRepository         repository.UserRepository
@@ -51,11 +53,12 @@ type Container struct {
 }
 
 // NewContainer crea un nuevo contenedor e inicializa todas las dependencias
-func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publisher, jwtSecret string, logger logger.Logger) *Container {
+func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publisher, s3Client *s3.S3Client, jwtSecret string, logger logger.Logger) *Container {
 	c := &Container{
 		DB:               db,
 		MongoDB:          mongoDB,
 		MessagePublisher: publisher,
+		S3Client:         s3Client,
 		Logger:           logger,
 		JWTManager:       auth.NewJWTManager(jwtSecret, "edugo-mobile"),
 	}
@@ -104,6 +107,7 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publis
 	)
 	c.MaterialHandler = handler.NewMaterialHandler(
 		c.MaterialService,
+		c.S3Client,
 		logger,
 	)
 	c.ProgressHandler = handler.NewProgressHandler(
