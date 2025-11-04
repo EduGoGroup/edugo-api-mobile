@@ -6,7 +6,8 @@
 
 set -e
 
-ANALYSIS_DIR="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/sprint/current/analysis"
+# Obtener directorio del script de forma dinámica
+ANALYSIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMP_DIR="${ANALYSIS_DIR}/temp_mermaid"
 
 echo "🎨 Generando imágenes de diagramas Mermaid..."

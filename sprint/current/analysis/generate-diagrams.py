@@ -5,13 +5,12 @@ Autor: Claude Code
 Fecha: 2025-11-04
 """
 
-import os
 import re
 import subprocess
 from pathlib import Path
 
-# Configuración
-ANALYSIS_DIR = Path("/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/sprint/current/analysis")
+# Configuración - obtener directorio del script de forma dinámica
+ANALYSIS_DIR = Path(__file__).parent.resolve()
 TEMP_DIR = ANALYSIS_DIR / "temp_mermaid"
 
 def extract_mermaid_blocks(file_path, output_prefix):

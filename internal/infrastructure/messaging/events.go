@@ -7,10 +7,12 @@ import (
 
 // MaterialUploadedEvent representa el evento cuando un material es creado/subido
 type MaterialUploadedEvent struct {
-	MaterialID  string    `json:"material_id"`
-	Title       string    `json:"title"`
-	ContentType string    `json:"content_type"`
-	UploadedAt  time.Time `json:"uploaded_at"`
+	MaterialID string `json:"material_id"`
+	Title      string `json:"title"`
+	// ContentType debe ser un tipo MIME válido (ej: "application/pdf", "image/png", "video/mp4")
+	ContentType string `json:"content_type"`
+	// UploadedAt debe estar en formato UTC (zona horaria UTC)
+	UploadedAt time.Time `json:"uploaded_at"`
 }
 
 // ToJSON serializa el evento a JSON
@@ -20,11 +22,13 @@ func (e MaterialUploadedEvent) ToJSON() ([]byte, error) {
 
 // AssessmentAttemptRecordedEvent representa el evento cuando se registra un intento de evaluación
 type AssessmentAttemptRecordedEvent struct {
-	AttemptID    string    `json:"attempt_id"`
-	UserID       string    `json:"user_id"`
-	AssessmentID string    `json:"assessment_id"`
-	Score        float64   `json:"score"`
-	SubmittedAt  time.Time `json:"submitted_at"`
+	AttemptID    string `json:"attempt_id"`
+	UserID       string `json:"user_id"`
+	AssessmentID string `json:"assessment_id"`
+	// Score representa la calificación obtenida (rango: 0.0 - 100.0)
+	Score float64 `json:"score"`
+	// SubmittedAt debe estar en formato UTC (zona horaria UTC)
+	SubmittedAt time.Time `json:"submitted_at"`
 }
 
 // ToJSON serializa el evento a JSON
