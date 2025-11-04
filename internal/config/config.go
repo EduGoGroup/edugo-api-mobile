@@ -10,6 +10,7 @@ type Config struct {
 	Server    ServerConfig    `mapstructure:"server"`
 	Database  DatabaseConfig  `mapstructure:"database"`
 	Messaging MessagingConfig `mapstructure:"messaging"`
+	Storage   StorageConfig   `mapstructure:"storage"`
 	Logging   LoggingConfig   `mapstructure:"logging"`
 }
 
@@ -69,6 +70,20 @@ type ExchangeConfig struct {
 	Materials string `mapstructure:"materials"`
 }
 
+// StorageConfig configuración de almacenamiento
+type StorageConfig struct {
+	S3 S3Config `mapstructure:"s3"`
+}
+
+// S3Config configuración de AWS S3
+type S3Config struct {
+	Region          string `mapstructure:"region"`
+	BucketName      string `mapstructure:"bucket_name"`
+	AccessKeyID     string `mapstructure:"access_key_id"`     // Desde ENV
+	SecretAccessKey string `mapstructure:"secret_access_key"` // Desde ENV
+	Endpoint        string `mapstructure:"endpoint"`          // Opcional, para Localstack
+}
+
 // LoggingConfig configuración de logging
 type LoggingConfig struct {
 	Level  string `mapstructure:"level"`  // debug, info, warn, error
@@ -91,6 +106,15 @@ func (c *Config) Validate() error {
 	}
 	if c.Messaging.RabbitMQ.URL == "" {
 		return fmt.Errorf("RABBITMQ_URL is required")
+	}
+	if c.Storage.S3.AccessKeyID == "" {
+		return fmt.Errorf("AWS_ACCESS_KEY_ID is required")
+	}
+	if c.Storage.S3.SecretAccessKey == "" {
+		return fmt.Errorf("AWS_SECRET_ACCESS_KEY is required")
+	}
+	if c.Storage.S3.BucketName == "" {
+		return fmt.Errorf("S3_BUCKET_NAME is required")
 	}
 	return nil
 }

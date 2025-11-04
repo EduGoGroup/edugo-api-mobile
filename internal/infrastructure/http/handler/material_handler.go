@@ -2,12 +2,14 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
@@ -16,12 +18,14 @@ import (
 // MaterialHandler maneja las peticiones HTTP relacionadas con materiales
 type MaterialHandler struct {
 	materialService service.MaterialService
+	s3Client        *s3.S3Client
 	logger          logger.Logger
 }
 
-func NewMaterialHandler(materialService service.MaterialService, logger logger.Logger) *MaterialHandler {
+func NewMaterialHandler(materialService service.MaterialService, s3Client *s3.S3Client, logger logger.Logger) *MaterialHandler {
 	return &MaterialHandler{
 		materialService: materialService,
+		s3Client:        s3Client,
 		logger:          logger,
 	}
 }
@@ -146,6 +150,137 @@ func (h *MaterialHandler) ListMaterials(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, materials)
+}
+
+// GenerateUploadURL godoc
+// @Summary Generate presigned upload URL
+// @Description Generate a presigned URL for uploading a material file to S3
+// @Tags materials
+// @Accept json
+// @Produce json
+// @Param id path string true "Material ID"
+// @Param request body dto.GenerateUploadURLRequest true "Upload URL request"
+// @Success 200 {object} dto.GenerateUploadURLResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /materials/{id}/upload-url [post]
+// @Security BearerAuth
+func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
+	materialID := c.Param("id")
+	var req dto.GenerateUploadURLRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Warn("invalid request body", "error", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request body", Code: "INVALID_REQUEST"})
+		return
+	}
+
+	// Verificar que el material existe
+	_, err := h.materialService.GetMaterial(c.Request.Context(), materialID)
+	if err != nil {
+		if appErr, ok := errors.GetAppError(err); ok {
+			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error", Code: "INTERNAL_ERROR"})
+		return
+	}
+
+	// Construir key de S3: materials/{material_id}/{filename}
+	s3Key := "materials/" + materialID + "/" + req.FileName
+
+	// Generar URL presignada (válida por 15 minutos)
+	uploadURL, err := h.s3Client.GeneratePresignedUploadURL(
+		c.Request.Context(),
+		s3Key,
+		req.ContentType,
+		15*time.Minute,
+	)
+	if err != nil {
+		h.logger.Error("error generating presigned upload URL",
+			"material_id", materialID,
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: "failed to generate upload URL",
+			Code:  "S3_ERROR",
+		})
+		return
+	}
+
+	h.logger.Info("presigned upload URL generated",
+		"material_id", materialID,
+		"s3_key", s3Key,
+	)
+
+	c.JSON(http.StatusOK, dto.GenerateUploadURLResponse{
+		UploadURL: uploadURL,
+		S3Key:     s3Key,
+		ExpiresIn: 900, // 15 minutos en segundos
+	})
+}
+
+// GenerateDownloadURL godoc
+// @Summary Generate presigned download URL
+// @Description Generate a presigned URL for downloading a material file from S3
+// @Tags materials
+// @Produce json
+// @Param id path string true "Material ID"
+// @Success 200 {object} dto.GenerateDownloadURLResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /materials/{id}/download-url [get]
+// @Security BearerAuth
+func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
+	materialID := c.Param("id")
+
+	// Verificar que el material existe y obtener la S3 key
+	material, err := h.materialService.GetMaterial(c.Request.Context(), materialID)
+	if err != nil {
+		if appErr, ok := errors.GetAppError(err); ok {
+			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error", Code: "INTERNAL_ERROR"})
+		return
+	}
+
+	// Verificar que el material tiene una S3 key (fue subido)
+	if material.S3Key == "" {
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error: "material file not uploaded yet",
+			Code:  "FILE_NOT_FOUND",
+		})
+		return
+	}
+
+	// Generar URL presignada para descarga (válida por 1 hora)
+	downloadURL, err := h.s3Client.GeneratePresignedDownloadURL(
+		c.Request.Context(),
+		material.S3Key,
+		1*time.Hour,
+	)
+	if err != nil {
+		h.logger.Error("error generating presigned download URL",
+			"material_id", materialID,
+			"s3_key", material.S3Key,
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: "failed to generate download URL",
+			Code:  "S3_ERROR",
+		})
+		return
+	}
+
+	h.logger.Info("presigned download URL generated",
+		"material_id", materialID,
+		"s3_key", material.S3Key,
+	)
+
+	c.JSON(http.StatusOK, dto.GenerateDownloadURLResponse{
+		DownloadURL: downloadURL,
+		ExpiresIn:   3600, // 1 hora en segundos
+	})
 }
 
 type ErrorResponse struct {
