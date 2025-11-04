@@ -12,10 +12,10 @@ database:
     host: "localhost"
     port: 5432
     database: "edugo"
-    user: "edugo_user"
+    user: "edugo"
     max_connections: 25
     ssl_mode: "disable"
-  
+
   mongodb:
     database: "edugo"
     timeout: 10s

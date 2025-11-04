@@ -49,6 +49,12 @@ build: ## Compilar binario
 	@$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_PATH)
 	@echo "$(GREEN)✓ Binario: $(BUILD_DIR)/$(APP_NAME) ($(VERSION))$(RESET)"
 
+build-debug: ## Compilar binario para debugging (sin optimizaciones, útil para Delve)
+	@echo "$(YELLOW)🔨 Compilando $(APP_NAME) para debug (all=-N -l)...$(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	@$(GOBUILD) -gcflags "all=-N -l" $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_PATH)
+	@echo "$(GREEN)✓ Binario para debug: $(BUILD_DIR)/$(APP_NAME)$(RESET)"
+
 run: ## Ejecutar en modo desarrollo
 	@echo "$(YELLOW)🚀 Ejecutando $(APP_NAME) (ambiente: $(APP_ENV))...$(RESET)"
 	@$(GOCMD) run $(MAIN_PATH)
@@ -201,4 +207,4 @@ info: ## Info del proyecto
 	@echo "  Ambiente: $(APP_ENV)"
 	@echo "  Go: $$($(GOCMD) version)"
 
-.PHONY: help build run dev test test-coverage test-unit test-integration benchmark fmt vet lint audit deps tidy tools swagger docker-build docker-run docker-stop docker-logs ci pre-commit clean all info
+.PHONY: help build build-debug run dev test test-coverage test-unit test-integration benchmark fmt vet lint audit deps tidy tools swagger docker-build docker-run docker-stop docker-logs ci pre-commit clean all info

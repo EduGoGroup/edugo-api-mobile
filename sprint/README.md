@@ -1,329 +1,271 @@
-# Plan de Trabajo - Migración de Mocks a Implementación Real
+# 🎯 PLAN MAESTRO - Vista Rápida con Checkboxes
 
 **📅 Última actualización**: 2024-10-31 23:30
-**🎯 Progreso**: 6/11 commits (55%)
-**⏱️ Tiempo invertido**: ~9 horas
-**👉 Próxima tarea**: [FASE 2.1: RabbitMQ](#21-implementar-messaging-rabbitmq)
+**🌿 Branch**: `feature/conectar`
+**📊 Progreso**: 6/11 commits (55%) | 9 horas invertidas
 
 ---
 
-## 📊 Vista Rápida de Progreso
+## 🚀 PRÓXIMA TAREA
 
-```
-✅ FASE 0: Autenticación OAuth2      COMPLETADA (5 commits)
-✅ FASE 1: Container DI              COMPLETADA (1 commit)
-⏳ FASE 2: TODOs de Servicios        0/3 commits ← EMPEZAR AQUÍ
-⏳ FASE 3: Limpieza                  0/1 commits
-⏳ FASE 4: Testing                   0/1 commits
-```
+**👉 FASE 2.1: Implementar RabbitMQ Messaging** (1-2 días)
+
+Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios) abajo ⬇️
 
 ---
 
-## 📋 Estado General del Proyecto
+## 📋 ÍNDICE DE FASES
 
-**Objetivo**: Conectar toda la implementación real, eliminar mocks, y completar funcionalidades pendientes.
-
-**Branch actual**: `feature/conectar`
+- [✅ FASE 0: Autenticación OAuth2](#fase-0-autenticación-oauth2) - **COMPLETADA**
+- [✅ FASE 1: Container DI](#fase-1-container-di) - **COMPLETADA**
+- [⏳ FASE 2: TODOs de Servicios](#fase-2-completar-todos-de-servicios) - **SIGUIENTE**
+- [⏳ FASE 3: Limpieza](#fase-3-limpieza-y-consolidación) - PENDIENTE
+- [⏳ FASE 4: Testing](#fase-4-testing-de-integración) - PENDIENTE
 
 ---
 
-## ✅ FASE 0: Mejorar Autenticación OAuth2 - **COMPLETADA**
+## ✅ FASE 0: Autenticación OAuth2
 
 **Estado**: ✅ **COMPLETADA 2024-10-31**
-**Commits**: 5 (3 en shared + 2 en api-mobile)
-**Tiempo real**: 9 horas
+**Commits**: 5/5 ✅
+**Tiempo**: 9 horas
 
 ### Pasos Completados
 
-- [x] **PASO 0.1**: bcrypt seguro (Commits: `8d7005a`, `e8a177c`)
-- [x] **PASO 0.3**: Refresh tokens (Commits: `8fed9d7`, `24b10f6`)
-- [x] **PASO 0.4**: Middleware compartido (Commits: `4330be1`, `c09e347`)
-- [x] **PASO 0.5**: Rate limiting (Commit: `204aeea`)
+- [x] **PASO 0.1**: bcrypt en edugo-shared ✅
+  - [x] Crear `auth/password.go` con bcrypt
+  - [x] Crear tests (8 tests, 100% passing)
+  - [x] Commit + tag `auth/v0.0.1`
+  - [x] Actualizar api-mobile
+  - [x] Eliminar SHA256 inseguro
+  - **Commits**: `8d7005a` (shared), `e8a177c` (api-mobile)
 
-### Tags Publicados en edugo-shared
+- [x] **PASO 0.3**: Refresh Tokens ✅
+  - [x] SUB-PASO 0.3.1: Crear tabla `refresh_tokens`
+  - [x] SUB-PASO 0.3.2: Crear `RefreshToken` en shared (tag `auth/v0.0.2`)
+  - [x] SUB-PASO 0.3.3: Crear RefreshTokenRepository
+  - [x] SUB-PASO 0.3.4: Modificar AuthService (3 métodos nuevos)
+  - [x] SUB-PASO 0.3.5: Crear endpoints `/refresh`, `/logout`, `/revoke-all`
+  - **Commits**: `8fed9d7` (shared), `24b10f6` (api-mobile)
 
-- [x] `auth/v0.0.1` - bcrypt implementation
-- [x] `auth/v0.0.2` - refresh token generator
-- [x] `middleware/gin/v0.0.1` - JWT middleware reutilizable
+- [x] **PASO 0.4**: Middleware JWT Compartido ✅
+  - [x] Crear `middleware/gin/jwt_auth.go`
+  - [x] Crear `middleware/gin/context.go` (helpers tipados)
+  - [x] Tests (17 tests, 100% passing)
+  - [x] Commit + tag `middleware/gin/v0.0.1`
+  - [x] Migrar api-mobile al middleware
+  - [x] Eliminar middleware local (−35 líneas)
+  - **Commits**: `4330be1` (shared), `c09e347` (api-mobile)
 
-### Mejoras de Seguridad
-
-- [x] bcrypt cost 12 (vs SHA256 inseguro)
-- [x] Refresh tokens con revocación en BD
-- [x] Logout funcional
-- [x] Revocación de todas las sesiones
-- [x] Rate limiting (5 intentos/15 min)
-- [x] Middleware JWT compartido
-- [x] Type-safe helpers (GetUserID, etc.)
-- [x] Access tokens 15 min (vs 24 horas antes)
+- [x] **PASO 0.5**: Rate Limiting ✅
+  - [x] Crear tabla `login_attempts`
+  - [x] Crear LoginAttemptRepository
+  - [x] Implementar rate limiting en AuthService
+  - [x] Max 5 intentos en 15 minutos
+  - [x] Tracking de IP + User-Agent
+  - **Commits**: `204aeea` (api-mobile)
 
 ---
 
-## ✅ FASE 1: Conectar Implementación Real con Container DI - **COMPLETADA**
+## ✅ FASE 1: Container DI
 
 **Estado**: ✅ **COMPLETADA 2024-10-31**
-**Commit**: `3332c05`
-
-### Tareas Completadas
+**Commits**: 1/1 ✅
 
 - [x] Refactorizar cmd/main.go para inicializar PostgreSQL y MongoDB
-- [x] Instanciar Container de dependencias con todas las capas
-- [x] Reemplazar handlers mock por handlers reales del Container
-- [x] Implementar funciones auxiliares de inicialización (DB, logger, middleware)
-- [x] Agregar health check que valida estado de PostgreSQL y MongoDB
-- [x] Implementar JWT middleware para autenticación en rutas protegidas
-- [x] Conectar handlers reales de auth, material, progress, assessment, summary y stats
-
-### Detalles Técnicos Implementados
-
-- Conexión PostgreSQL con pool configurado y validación de ping
-- Conexión MongoDB con timeout y validación de conexión
-- Logger Zap inicializado desde configuración
-- Container DI inicializa repositorios → servicios → handlers
-- CORS middleware configurado
-- Eliminación de archivos .gitkeep de carpetas con contenido
-
-### Variables de Entorno Requeridas
-
-La aplicación ahora requiere las siguientes variables de entorno:
-- `POSTGRES_PASSWORD` - Contraseña de PostgreSQL
-- `MONGODB_URI` - URI de conexión a MongoDB
-- `RABBITMQ_URL` - URL de RabbitMQ
-- `JWT_SECRET` - Secret para firmar tokens JWT
-- `APP_ENV` - Ambiente (local, dev, qa, prod)
+- [x] Instanciar Container de dependencias
+- [x] Reemplazar handlers mock por handlers reales
+- [x] Implementar funciones auxiliares (DB, logger, middleware)
+- [x] Health check con validación de DBs
+- [x] JWT middleware para rutas protegidas
+- **Commit**: `3332c05`
 
 ---
 
-## 🚧 FASE 2: Completar TODOs de Servicios
+## ⏳ FASE 2: Completar TODOs de Servicios
 
-**Estado**: ⏳ PENDIENTE
+**Estado**: ⏳ **PENDIENTE** - Empezar aquí 👈
+**Commits**: 0/3
+**Esfuerzo estimado**: 3-4 días
 
-**Estimación**: 3 commits separados por funcionalidad
+### 📍 PRÓXIMA TAREA: PASO 2.1
 
-### Tareas Pendientes
+- [ ] **PASO 2.1**: Implementar RabbitMQ Messaging (1-2 días)
+  - [ ] Configurar conexión a RabbitMQ en main.go
+  - [ ] Crear publisher/producer para eventos
+  - [ ] Implementar publicación de evento `material_uploaded`
+  - [ ] Implementar publicación de evento `assessment_attempt_recorded`
+  - [ ] Agregar publisher al Container DI
+  - [ ] Integrar eventos con MaterialService y AssessmentService
+  - [ ] **Archivos a crear**:
+    - `internal/infrastructure/messaging/rabbitmq/publisher.go`
+    - `internal/infrastructure/messaging/events.go`
+  - [ ] **Archivos a modificar**:
+    - `cmd/main.go` (inicializar RabbitMQ)
+    - `internal/container/container.go`
+    - `internal/application/service/material_service.go`
+    - `internal/application/service/assessment_service.go`
+  - [ ] Commit: "feat: implementar messaging RabbitMQ para eventos"
 
-#### 2.1. Implementar Funcionalidad S3
+- [ ] **PASO 2.2**: Implementar S3 URLs Firmadas (1 día)
+  - [ ] Configurar cliente AWS S3 desde configuración
+  - [ ] Implementar generación de presigned URLs
+  - [ ] Agregar método en MaterialService
+  - [ ] Integrar con handler CreateMaterial
+  - [ ] **Archivos a crear**:
+    - `internal/infrastructure/storage/s3/client.go`
+  - [ ] **Archivos a modificar**:
+    - `internal/application/service/material_service.go`
+    - `internal/config/config.go` (agregar S3 config)
+    - `config/config.yaml`
+  - [ ] Commit: "feat: implementar generación de URLs firmadas S3"
 
-- [ ] Configurar cliente AWS S3 desde configuración
-- [ ] Implementar generación de URLs firmadas para subida de materiales
-- [ ] Agregar método en MaterialService para generar presigned URLs
-- [ ] Integrar con handler CreateMaterial
-- [ ] Crear commit: "feat: implementar generación de URLs firmadas S3"
-
-**Archivos a modificar**:
-- `internal/application/service/material_service.go`
-- `internal/config/config.go` (agregar config de S3)
-- `config/config.yaml` (agregar configuración S3)
-
-**TODOs relacionados en código**:
-- `internal/handlers/materials.go:line 46` - TODO: Generar URL firmada de S3
-
----
-
-#### 2.2. Implementar Messaging RabbitMQ
-
-- [ ] Configurar conexión a RabbitMQ en main.go
-- [ ] Crear publisher/producer para eventos
-- [ ] Implementar publicación de evento `material_uploaded`
-- [ ] Implementar publicación de evento `assessment_attempt_recorded`
-- [ ] Agregar publisher al Container de dependencias
-- [ ] Integrar eventos con servicios correspondientes
-- [ ] Crear commit: "feat: implementar messaging RabbitMQ para eventos"
-
-**Archivos a crear**:
-- `internal/infrastructure/messaging/rabbitmq/publisher.go`
-- `internal/infrastructure/messaging/events.go` (definir eventos)
-
-**Archivos a modificar**:
-- `cmd/main.go` (inicializar RabbitMQ)
-- `internal/container/container.go` (agregar publisher)
-- `internal/application/service/material_service.go`
-- `internal/application/service/assessment_service.go`
-
-**TODOs relacionados en código**:
-- `internal/handlers/materials.go:line 66` - TODO: Publicar evento material_uploaded a RabbitMQ
-- `internal/handlers/materials.go:line 153` - TODO: Publicar evento assessment_attempt_recorded
-
----
-
-#### 2.3. Implementar Consultas Complejas en Servicios
-
-- [ ] Implementar queries de materiales con versiones
-- [ ] Implementar cálculo de puntajes en AssessmentService
-- [ ] Implementar generación de feedback detallado
-- [ ] Implementar actualización de progreso de lectura (UPSERT)
-- [ ] Implementar query complejo de estadísticas
-- [ ] Crear commit: "feat: implementar consultas complejas en servicios"
-
-**Archivos a modificar**:
-- `internal/application/service/material_service.go`
-- `internal/application/service/assessment_service.go`
-- `internal/application/service/progress_service.go`
-- `internal/application/service/stats_service.go`
-- `internal/infrastructure/persistence/postgres/repository/material_repository_impl.go`
-- `internal/infrastructure/persistence/postgres/repository/progress_repository_impl.go`
-- `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go`
-
-**TODOs relacionados en código**:
-- `internal/handlers/materials.go:line 63` - TODO: Registrar versión en material_version
-- `internal/handlers/materials.go:line 64` - TODO: Calcular file_hash
-- `internal/handlers/materials.go:line 65` - TODO: Verificar deduplicación
-- `internal/handlers/materials.go:line 126` - TODO: Validar cada respuesta comparando con correct_answer
-- `internal/handlers/materials.go:line 127` - TODO: Generar DetailedFeedback
-- `internal/handlers/materials.go:line 128` - TODO: Calcular puntaje
-- `internal/handlers/materials.go:line 129` - TODO: Persistir en quiz_attempt
-- `internal/handlers/materials.go:line 166` - TODO: Upsert en reading_log con GREATEST
-- `internal/handlers/materials.go:line 197` - TODO: Query complejo PostgreSQL
+- [ ] **PASO 2.3**: Implementar Queries Complejas (1-2 días)
+  - [ ] Queries de materiales con versiones
+  - [ ] Cálculo de puntajes en AssessmentService
+  - [ ] Generación de feedback detallado
+  - [ ] Actualización de progreso (UPSERT)
+  - [ ] Query complejo de estadísticas
+  - [ ] **Archivos a modificar**:
+    - `internal/application/service/material_service.go`
+    - `internal/application/service/assessment_service.go`
+    - `internal/application/service/progress_service.go`
+    - `internal/application/service/stats_service.go`
+    - `internal/infrastructure/persistence/postgres/repository/material_repository_impl.go`
+    - `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go`
+  - [ ] Commit: "feat: implementar consultas complejas en servicios"
 
 ---
 
-## 🧹 FASE 3: Limpieza y Consolidación
+## ⏳ FASE 3: Limpieza y Consolidación
 
-**Estado**: ⏳ PENDIENTE
+**Estado**: ⏳ **PENDIENTE**
+**Commits**: 0/1
+**Esfuerzo estimado**: 0.5-1 día
 
-**Estimación**: 1 commit consolidado
+- [ ] **PASO 3.1**: Eliminar Código Duplicado
+  - [ ] Eliminar carpeta `internal/handlers/` (handlers viejos con mocks)
+  - [ ] Eliminar archivo `internal/middleware/auth.go` (middleware viejo)
+  - [ ] Verificar que no hay referencias
+  - [ ] **Archivos a eliminar**:
+    - `internal/handlers/auth.go`
+    - `internal/handlers/materials.go`
+    - `internal/middleware/auth.go`
 
-### Tareas Pendientes
+- [ ] **PASO 3.2**: Consolidar Modelos
+  - [ ] Analizar modelos duplicados en `internal/models/`
+  - [ ] Migrar a `internal/application/dto/`
+  - [ ] Actualizar referencias
+  - [ ] Eliminar carpeta `internal/models/` si queda vacía
 
-#### 3.1. Eliminar Código Duplicado
-
-- [ ] Eliminar carpeta `internal/handlers/` (handlers viejos con mocks)
-- [ ] Eliminar archivo `internal/middleware/auth.go` (middleware viejo)
-- [ ] Verificar que no hay referencias a código eliminado
-- [ ] Actualizar imports si es necesario
-
-**Archivos a eliminar**:
-- `internal/handlers/auth.go`
-- `internal/handlers/materials.go`
-- `internal/middleware/auth.go`
-
----
-
-#### 3.2. Consolidar Modelos
-
-- [ ] Analizar modelos duplicados en `internal/models/`
-- [ ] Migrar modelos necesarios a `internal/application/dto/`
-- [ ] Actualizar referencias en handlers y servicios
-- [ ] Eliminar carpeta `internal/models/` si queda vacía
-
-**Archivos a revisar**:
-- `internal/models/request/` vs `internal/application/dto/`
-- `internal/models/response/` vs `internal/application/dto/`
-- `internal/models/mongodb/` (verificar uso real)
-
-**Decisión pendiente**: Determinar si `internal/models/enum/` debe moverse a `internal/domain/valueobject/` o mantenerse como está.
+- [ ] Commit: "refactor: eliminar handlers mock y consolidar modelos"
 
 ---
 
-- [ ] Crear commit: "refactor: eliminar handlers mock y consolidar modelos"
+## ⏳ FASE 4: Testing de Integración
+
+**Estado**: ⏳ **PENDIENTE**
+**Commits**: 0/1
+**Esfuerzo estimado**: 1-2 días
+
+- [ ] **PASO 4.1**: Crear Tests de Integración
+  - [ ] Test de flujo completo de autenticación
+  - [ ] Test de creación y consulta de materiales
+  - [ ] Test de evaluaciones (assessment → intento → puntaje)
+  - [ ] Test de actualización de progreso
+  - [ ] Test de estadísticas
+  - [ ] Verificar health check con DBs reales
+  - [ ] **Archivos a crear**:
+    - `test/integration/auth_flow_test.go`
+    - `test/integration/material_flow_test.go`
+    - `test/integration/assessment_flow_test.go`
+    - `test/integration/progress_flow_test.go`
+  - [ ] Commit: "test: agregar tests de integración para flujo completo"
 
 ---
 
-## 🧪 FASE 4: Testing
+## 📊 Tracking de Progreso - Última Sesión
 
-**Estado**: ⏳ PENDIENTE
+### **Completado Hoy (2024-10-31)**:
 
-**Estimación**: 1 commit
+```
+✅ FASE 0: Autenticación OAuth2 (100%)
+   ├── ✅ PASO 0.1: bcrypt
+   ├── ✅ PASO 0.3: Refresh tokens
+   ├── ✅ PASO 0.4: Middleware compartido
+   └── ✅ PASO 0.5: Rate limiting
 
-### Tareas Pendientes
+✅ FASE 1: Container DI (100%)
 
-#### 4.1. Tests de Integración
+Commits: 8 en api-mobile + 3 en shared = 11 total
+Tags: auth/v0.0.1, auth/v0.0.2, middleware/gin/v0.0.1
+```
 
-- [ ] Test completo de flujo de autenticación (login → JWT → acceso a recursos)
-- [ ] Test de creación y consulta de materiales
-- [ ] Test de evaluaciones (obtener assessment → registrar intento → validar puntaje)
-- [ ] Test de actualización de progreso de lectura
-- [ ] Test de obtención de estadísticas
-- [ ] Verificar que health check funciona con DBs reales
+### **Próxima Sesión - Empezar Aquí** 👇
 
-**Archivos a crear**:
-- `test/integration/auth_flow_test.go`
-- `test/integration/material_flow_test.go`
-- `test/integration/assessment_flow_test.go`
-- `test/integration/progress_flow_test.go`
-
-**Archivos existentes a completar**:
-- `test/integration/postgres_test.go` (ya existe, agregar más tests)
-
----
-
-- [ ] Crear commit: "test: agregar tests de integración para flujo completo"
+```
+⏳ FASE 2: TODOs de Servicios (0%)
+   ⏳ PASO 2.1: RabbitMQ ← EMPEZAR POR AQUÍ
+   ⏳ PASO 2.2: S3 URLs
+   ⏳ PASO 2.3: Queries complejas
+```
 
 ---
 
-## 📊 Resumen de Progreso
+## 🎯 Resumen de Archivos Modificados/Creados
 
-### Commits por Fase
+### En edugo-shared (3 tags publicados):
+- [x] `auth/password.go` + tests (tag: auth/v0.0.1)
+- [x] `auth/refresh_token.go` + tests (tag: auth/v0.0.2)
+- [x] `middleware/gin/*.go` + tests (tag: middleware/gin/v0.0.1)
 
-| Fase | Commits | Estado |
-|------|---------|--------|
-| Fase 0 | 5/5 | ✅ Completada |
-| Fase 1 | 1/1 | ✅ Completada |
-| Fase 2 | 0/3 | ⏳ Pendiente |
-| Fase 3 | 0/1 | ⏳ Pendiente |
-| Fase 4 | 0/1 | ⏳ Pendiente |
-| **TOTAL** | **6/11** | **55% completado** |
-
----
-
-## 🎯 Cómo Retomar el Trabajo
-
-### **Inicio de Sesión - 3 Pasos**:
-
-1. **Ver estado del proyecto**:
-   ```bash
-   git status
-   git log -5 --oneline
-   ```
-
-2. **Leer vista rápida**:
-   ```bash
-   cat sprint/README.md | head -20
-   # O abrir: sprint/MASTER_PLAN_VISUAL.md
-   ```
-
-3. **Buscar próxima tarea sin marcar**:
-   - Buscar el primer `- [ ]` en este documento
-   - Esa es la siguiente tarea a realizar
-
-### **Durante el Trabajo**:
-
-1. Marcar `- [ ]` como `- [x]` al completar cada tarea
-2. Actualizar sección "📊 Vista Rápida de Progreso" arriba
-3. Hacer commits atómicos (código que compila)
+### En edugo-api-mobile:
+- [x] `scripts/postgresql/03_refresh_tokens.sql`
+- [x] `scripts/postgresql/04_login_attempts.sql`
+- [x] `internal/domain/repository/refresh_token_repository.go`
+- [x] `internal/domain/repository/login_attempt_repository.go`
+- [x] `internal/infrastructure/persistence/postgres/repository/refresh_token_repository_impl.go`
+- [x] `internal/infrastructure/persistence/postgres/repository/login_attempt_repository_impl.go`
+- [x] `internal/application/service/auth_service.go` (actualizado)
+- [x] `internal/application/dto/auth_dto.go` (actualizado)
+- [x] `internal/infrastructure/http/handler/auth_handler.go` (actualizado)
+- [x] `internal/infrastructure/http/handler/material_handler.go` (actualizado)
+- [x] `internal/infrastructure/http/handler/progress_handler.go` (actualizado)
+- [x] `internal/infrastructure/http/handler/assessment_handler.go` (actualizado)
+- [x] `internal/container/container.go` (actualizado)
+- [x] `cmd/main.go` (actualizado)
 
 ---
 
-## 📝 Notas Importantes
+## 📚 Documentación de Referencia
 
-### Decisiones Tomadas
-
-- ✅ Implementación propia de OAuth2 (vs Firebase/Auth0)
-- ✅ bcrypt cost 12 para passwords
-- ✅ Refresh tokens con revocación en BD
-- ✅ Rate limiting: 5 intentos en 15 minutos
-- ✅ Access tokens válidos 15 minutos (renovables)
-- ✅ Middleware compartido en edugo-shared
-- ✅ Health check mejorado con validación de DBs
-
-### Puntos de Atención para FASE 2
-
-- ⚠️ **RabbitMQ**: Configurar antes de publicar eventos
-- ⚠️ **S3**: Configurar cliente AWS antes de generar URLs
-- ⚠️ **Queries complejas**: Implementaciones básicas necesitan refinamiento
-
-### Referencias Útiles
-
-- 📄 **Plan detallado**: [MASTER_PLAN.md](MASTER_PLAN.md) (código completo)
-- 📄 **Plan visual**: [MASTER_PLAN_VISUAL.md](MASTER_PLAN_VISUAL.md) (checkboxes)
-- 📄 **Análisis OAuth2**: [AUTH_PROVIDERS_COMPARISON.md](AUTH_PROVIDERS_COMPARISON.md)
-- 📁 **Container DI**: `internal/container/container.go`
-- 📁 **Handlers**: `internal/infrastructure/http/handler/`
-- 📁 **Servicios**: `internal/application/service/`
+Para detalles completos de implementación de cada paso, ver:
+- **[MASTER_PLAN.md](MASTER_PLAN.md)** - Código completo de cada paso (1,300+ líneas)
+- **[AUTH_PROVIDERS_COMPARISON.md](AUTH_PROVIDERS_COMPARISON.md)** - Por qué implementación propia
+- **[OAUTH2_ARCHITECTURE_PLAN.md](OAUTH2_ARCHITECTURE_PLAN.md)** - Arquitectura técnica
+- **[SOCIAL_LOGIN_ROADMAP.md](SOCIAL_LOGIN_ROADMAP.md)** - Futuro: Google/Apple/Facebook
 
 ---
 
-**Última actualización**: 2024-10-31 23:30
+## 🔥 Comandos Rápidos de Retomo
+
+```bash
+# Ver estado actual
+git status
+git log -5 --oneline
+
+# Ver plan maestro
+cat sprint/MASTER_PLAN_VISUAL.md
+
+# Buscar próxima tarea
+grep "⏳ PASO" sprint/MASTER_PLAN_VISUAL.md | head -1
+
+# Ver documentación detallada del paso
+cat sprint/MASTER_PLAN.md | grep -A 50 "PASO 2.1"
+```
+
+---
+
+**Última sesión**: 2024-10-31 23:30
 **Responsable**: Claude Code + Jhoan Medina
-**Branch**: `feature/conectar`
-**Estado**: ✅ 55% completado | ⏳ 3-4 días restantes
+**Próxima tarea**: FASE 2.1 (RabbitMQ)

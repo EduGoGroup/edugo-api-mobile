@@ -60,6 +60,20 @@ func Load() (*Config, error) {
 	v.BindEnv("database.mongodb.uri", "MONGODB_URI")
 	v.BindEnv("messaging.rabbitmq.url", "RABBITMQ_URL")
 
+	// FIX: Forzar que ENV vars sobrescriban valores del YAML
+	// Viper no sobrescribe valores existentes con BindEnv(), por lo que
+	// debemos usar Set() explícitamente cuando la variable de entorno existe.
+	// Esto garantiza la precedencia: ENV vars > YAML > defaults
+	if password := os.Getenv("POSTGRES_PASSWORD"); password != "" {
+		v.Set("database.postgres.password", password)
+	}
+	if mongoURI := os.Getenv("MONGODB_URI"); mongoURI != "" {
+		v.Set("database.mongodb.uri", mongoURI)
+	}
+	if rabbitURL := os.Getenv("RABBITMQ_URL"); rabbitURL != "" {
+		v.Set("messaging.rabbitmq.url", rabbitURL)
+	}
+
 	// 5. Unmarshal a struct
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
