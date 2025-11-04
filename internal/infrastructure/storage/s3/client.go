@@ -2,9 +2,9 @@ package s3
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -61,7 +61,7 @@ func NewS3Client(ctx context.Context, cfg S3Config, log logger.Logger) (*S3Clien
 	// Cargar configuración de AWS
 	awsConfig, err := config.LoadDefaultConfig(ctx, configOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("error cargando configuración de AWS: %w", err)
+		return nil, errors.NewInternalError("error cargando configuración de AWS", err)
 	}
 
 	// Crear cliente S3
@@ -106,7 +106,7 @@ func (c *S3Client) GeneratePresignedUploadURL(ctx context.Context, key string, c
 			zap.String("key", key),
 			zap.Error(err),
 		)
-		return "", fmt.Errorf("error generando URL presignada: %w", err)
+		return "", errors.NewInternalError("error generando URL presignada", err)
 	}
 
 	c.logger.Info("URL presignada para upload generada",
@@ -137,7 +137,7 @@ func (c *S3Client) GeneratePresignedDownloadURL(ctx context.Context, key string,
 			zap.String("key", key),
 			zap.Error(err),
 		)
-		return "", fmt.Errorf("error generando URL presignada: %w", err)
+		return "", errors.NewInternalError("error generando URL presignada", err)
 	}
 
 	c.logger.Info("URL presignada para download generada",

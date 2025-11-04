@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -183,6 +184,19 @@ func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error", Code: "INTERNAL_ERROR"})
+		return
+	}
+
+	// Validar y sanitizar el nombre del archivo para prevenir path traversal
+	if strings.Contains(req.FileName, "..") || strings.Contains(req.FileName, "/") || strings.Contains(req.FileName, "\\") {
+		h.logger.Warn("invalid file name with path traversal attempt",
+			"material_id", materialID,
+			"file_name", req.FileName,
+		)
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "invalid file name: must not contain path separators",
+			Code:  "INVALID_FILENAME",
+		})
 		return
 	}
 

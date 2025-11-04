@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
 // Config contiene toda la configuración de la aplicación
@@ -99,22 +101,22 @@ func (c *PostgresConfig) GetConnectionString() string {
 // Validate valida que la configuración tenga los campos obligatorios
 func (c *Config) Validate() error {
 	if c.Database.Postgres.Password == "" {
-		return fmt.Errorf("POSTGRES_PASSWORD is required")
+		return errors.NewValidationError("POSTGRES_PASSWORD is required")
 	}
 	if c.Database.MongoDB.URI == "" {
-		return fmt.Errorf("MONGODB_URI is required")
+		return errors.NewValidationError("MONGODB_URI is required")
 	}
 	if c.Messaging.RabbitMQ.URL == "" {
-		return fmt.Errorf("RABBITMQ_URL is required")
+		return errors.NewValidationError("RABBITMQ_URL is required")
 	}
 	if c.Storage.S3.AccessKeyID == "" {
-		return fmt.Errorf("AWS_ACCESS_KEY_ID is required")
+		return errors.NewValidationError("AWS_ACCESS_KEY_ID is required")
 	}
 	if c.Storage.S3.SecretAccessKey == "" {
-		return fmt.Errorf("AWS_SECRET_ACCESS_KEY is required")
+		return errors.NewValidationError("AWS_SECRET_ACCESS_KEY is required")
 	}
 	if c.Storage.S3.BucketName == "" {
-		return fmt.Errorf("S3_BUCKET_NAME is required")
+		return errors.NewValidationError("S3_BUCKET_NAME is required")
 	}
 	return nil
 }
