@@ -1,41 +1,65 @@
-# Dockerfile para API Mobile
-# Puerto: 8080
+# Multi-stage Dockerfile para API Mobile (EduGo)
+# - Builder: compila la aplicación con Go
+# - Final: imagen ligera basada en Alpine con scripts de entrypoint
+#
+# Notas:
+# - Usa variables de entorno proporcionadas por docker-compose o el entorno.
+# - Copia los scripts en /scripts y establece ENTRYPOINT al script de entrada.
+# - Instala netcat (nc) en la imagen final para que wait-for.sh pueda usarlo.
+#
+# Recomendación: construir con --no-cache si cambias dependencias o scripts.
 
-FROM golang:alpine AS builder
+FROM golang:1.25-alpine AS builder
 
-# Instalar dependencias del sistema
+# Dependencias del sistema necesarias en builder
 RUN apk add --no-cache git ca-certificates
 
-# Establecer directorio de trabajo
+# Directorio de trabajo en build
 WORKDIR /app
 
-# Copiar go.mod y go.sum
+# Copiar go.mod / go.sum primero para cachear dependencias
 COPY go.mod go.sum ./
 
-# Variable para bypass checksum (edugo-shared es público pero nuevo)
+# Evitar checksum issue en módulos internos (ajustar según tu entorno)
 ENV GONOSUMDB=github.com/EduGoGroup/*
 
 # Descargar dependencias
 RUN go mod download
 
-# Copiar código fuente completo
+# Copiar el resto del código fuente
 COPY . .
 
-# Compilar la aplicación
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
+# Compilar el binario (estático)
+# Salida: /app/main
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main ./cmd/main.go
 
-# Etapa final - imagen ligera
+# -------------------------
+# Etapa final: imagen ligera
+# -------------------------
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+# Instalar utilidades necesarias (certificados y netcat para wait-for)
+RUN apk add --no-cache ca-certificates netcat-openbsd
 
+# Crear directorios esperados
 WORKDIR /root/
 
-# Copiar binario compilado desde builder
-COPY --from=builder /app/main .
+# Copiar binario desde la etapa builder
+COPY --from=builder /app/main /root/main
 
-# Exponer puerto
+# Copiar scripts de espera y entrypoint desde builder
+# (asegúrate de que scripts/wait-for.sh y scripts/docker-entrypoint.sh existan en el repo)
+COPY --from=builder /app/scripts/wait-for.sh /scripts/wait-for.sh
+COPY --from=builder /app/scripts/docker-entrypoint.sh /scripts/docker-entrypoint.sh
+
+# Permisos de ejecución
+RUN chmod +x /scripts/wait-for.sh /scripts/docker-entrypoint.sh /root/main
+
+# Exponer el puerto que usa la aplicación dentro del contenedor
 EXPOSE 8080
 
-# Comando de inicio
+# Usar el entrypoint que espera por dependencias y luego arranca la app
+ENTRYPOINT ["/scripts/docker-entrypoint.sh"]
+
+# Comando por defecto (puede ser sobreescrito al ejecutar el contenedor)
 CMD ["./main"]
