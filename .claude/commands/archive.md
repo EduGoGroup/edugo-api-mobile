@@ -1,6 +1,5 @@
 ---
 description: Archive current sprint and prepare project for new cycle
-allowed-tools: Bash, Read, Write
 argument-hint: ""
 ---
 

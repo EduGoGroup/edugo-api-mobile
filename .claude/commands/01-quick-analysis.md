@@ -1,6 +1,5 @@
 ---
 description: Quick sprint analysis without diagrams (shortcut for --mode=quick)
-allowed-tools: SlashCommand
 argument-hint: "[--source=sprint|current] [--phase=N]"
 ---
 

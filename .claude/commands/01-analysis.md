@@ -1,6 +1,5 @@
 ---
 description: Analyze sprint requirements and generate architectural documentation
-allowed-tools: Read, Task, Bash
 argument-hint: "[--source=sprint|current] [--phase=N] [--mode=full|quick]"
 ---
 
@@ -219,11 +218,11 @@ Una vez que el agente complete su trabajo:
 ✅ Análisis de Fase ${N} completado exitosamente
 
 📁 Archivos generados en sprint/current/analysis/:
-${MODE === 'full' ? 
+${MODE === 'full' ?
   `- architecture-phase-${N}.md
 - data-model-phase-${N}.md
 - process-diagram-phase-${N}.md
-- readme-phase-${N}.md` : 
+- readme-phase-${N}.md` :
   `- readme-phase-${N}.md`}
 
 📌 Puedes analizar otras fases con:

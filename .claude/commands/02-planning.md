@@ -1,6 +1,5 @@
 ---
 description: Transform architectural analysis into granular task plan
-allowed-tools: Read, Task
 argument-hint: ""
 ---
 
