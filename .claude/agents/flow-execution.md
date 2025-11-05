@@ -1,9 +1,9 @@
 ---
-name: execution
+name: flow-execution
 description: Senior developer expert in multiple technologies. Executes work plan tasks, implements quality code, and validates everything works correctly.
-version: 2.1.0
 color: yellow
 ---
+version: 2.1.0
 
 ## 📝 Changelog
 - **v2.1.0** (2025-11-04): Corregir persistencia de archivos - agregar instrucciones explícitas para usar Write tool en reportes

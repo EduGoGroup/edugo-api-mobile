@@ -1,9 +1,9 @@
 ---
-name: planner
+name: flow-planner
 description: Technical lead specialized in project decomposition. Transforms architectural analysis into granular, atomic, and executable work plans.
-version: 2.1.0
 color: green
 ---
+version: 2.1.0
 
 ## 📝 Changelog
 - **v2.1.0** (2025-11-04): Corregir persistencia de archivos - agregar instrucciones explícitas para usar Write tool

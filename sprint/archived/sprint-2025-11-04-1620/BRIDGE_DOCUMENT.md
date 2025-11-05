@@ -16,7 +16,7 @@
 ### Proyecto: EduGo API Mobile
 API REST backend para plataforma educativa. Implementa Clean Architecture (Hexagonal) con Go + Gin.
 
-**Stack**: 
+**Stack**:
 - Framework: Gin
 - DB: PostgreSQL + MongoDB
 - Messaging: RabbitMQ (pendiente completar)
@@ -45,7 +45,7 @@ API REST backend para plataforma educativa. Implementa Clean Architecture (Hexag
 
 Tareas para próxima sesión:
 - ⏳ Validar Corrección 2: Ejecutar `/01-analysis --source=sprint --phase=2` sin error 400
-- ⏳ Validar Corrección 3: Verificar que agente `analysis` tiene directiva de errores cargada
+- ⏳ Validar Corrección 3: Verificar que agente `flow-analysis` tiene directiva de errores cargada
 - ⏳ Analizar Fase 2 del proyecto real: `sprint/readme.md` (Fase 2: Completar TODOs de Servicios)
 - ⏳ Si análisis pasa: ejecutar `/02-planning` para generar plan de Fase 2
 - ⏳ Si planning pasa: ejecutar `/03-execution phase-2` para implementar tareas
@@ -119,7 +119,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 - **Estado**: ✅ Completado
 
 #### Corrección 2: Error de Herramientas Duplicadas en Agentes ✅ COMPLETADA
-- **Comando/Agente**: `/01-analysis` → `agente: analysis` (afecta a todos los agentes)
+- **Comando/Agente**: `/01-analysis` → `agente: flow-analysis` (afecta a todos los agentes)
 - **Problema**: Error 400 "Tool names must be unique"
 - **Causa raíz**: ✅ IDENTIFICADA
   - El sistema Claude Code tiene un bug al invocar agentes con la herramienta `Task`
@@ -130,7 +130,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
   - Incrementada versión de cada agente (2.x.0 → 2.x.1)
   - Los agentes ahora usan herramientas globales automáticamente
 - **Archivos modificados**:
-  - `.claude/agents/analysis.md` (v2.1.0 → v2.1.1)
+  - `.claude/agents/flow-analysis.md` (v2.1.0 → v2.1.1)
   - `.claude/agents/planner.md` (v2.0.0 → v2.0.1)
   - `.claude/agents/execution.md` (v2.0.0 → v2.0.1)
   - `.claude/agents/review.md` (v2.0.0 → v2.0.1)
@@ -138,9 +138,9 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 - **Próximo paso**: REQUIERE NUEVA SESIÓN para que cambios se carguen en memoria
 
 #### Corrección 3: Agregar Directiva Temporal de Manejo de Errores ✅ COMPLETADA
-- **Comando/Agente**: Todos los agentes (analysis, planner, execution, review)
+- **Comando/Agente**: Todos los agentes (flow-analysis, planner, execution, review)
 - **Problema**: Los agentes no tienen instrucciones claras sobre cómo manejar errores durante la fase de refinamiento
-- **Objetivo**: 
+- **Objetivo**:
   - Distinguir entre errores estructurales (del sistema) y errores de ejecución (del ambiente/plan)
   - Errores tipo A (estructurales): Agente detiene y reporta, Claude corrige
   - Errores tipo B (ejecución): Agente detiene, presenta opciones, usuario decide
@@ -150,7 +150,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
   - Documentada definición de directiva temporal en BRIDGE_DOCUMENT
   - Instrucciones claras sobre cuándo detener y cómo reportar
 - **Archivos modificados**:
-  - `.claude/agents/analysis.md` (v2.1.1 → v2.1.2)
+  - `.claude/agents/flow-analysis.md` (v2.1.1 → v2.1.2)
   - `.claude/agents/planner.md` (v2.0.1 → v2.0.2)
   - `.claude/agents/execution.md` (v2.0.1 → v2.0.2)
   - `.claude/agents/review.md` (v2.0.1 → v2.0.2)
@@ -161,7 +161,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 #### Corrección 4: Eliminación de Referencias al Task Tool ✅ COMPLETADA (MANUAL)
 - **Comando/Agente**: Todos los comandos (`/01-analysis`, `/02-planning`, `/03-execution`, `/04-review`)
 - **Problema**: El Task tool tiene un bug que causa error 400 "Tool names must be unique"
-- **Causa raíz confirmada**: 
+- **Causa raíz confirmada**:
   - El error NO es de los agentes (Correcciones 2 y 3 no resolvieron el problema)
   - El error ocurre en el Task tool mismo, antes de invocar al agente
   - Afecta tanto a agentes específicos como a "general-purpose"
@@ -231,7 +231,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 
 ### Error #1: Tool names must be unique (Sesión 1) - ✅ RESUELTO PARCIALMENTE
 ```
-API Error: 400 
+API Error: 400
 {
   "type":"error",
   "error":{
@@ -241,11 +241,11 @@ API Error: 400
 }
 ```
 
-**Contexto**: 
+**Contexto**:
 - Comando: `/01-analysis --source=sprint --phase=2`
 - Intento de invocar: `Task` tool con `subagent_type: "analysis"`
 
-**Causa raíz**: 
+**Causa raíz**:
 - Agentes tenían `allowed-tools` en frontmatter
 - Esto causaba duplicación al invocar con Task tool
 
@@ -257,7 +257,7 @@ API Error: 400
 
 ### Error #2: Tool names must be unique (Sesión 3) - ⚠️ PERSISTE
 ```
-API Error: 400 
+API Error: 400
 {
   "type":"error",
   "error":{
@@ -267,7 +267,7 @@ API Error: 400
 }
 ```
 
-**Contexto**: 
+**Contexto**:
 - Comando: `/01-analysis --source=sprint --phase=2`
 - Sesión: 3 (nueva sesión después de Correcciones 2 y 3)
 - Intento 1: `Task` tool con `subagent_type: "analysis"` → Error 400
@@ -476,7 +476,7 @@ Ver sección "Corrección 4" arriba para elegir entre:
 
 **Acciones realizadas**:
 1. ✅ Generadas 10 imágenes PNG de diagramas Mermaid (727 KB)
-2. ✅ Creado IMAGENES.md con guía de diagramas  
+2. ✅ Creado IMAGENES.md con guía de diagramas
 3. ✅ Iniciada ejecución de Fase 1 (RabbitMQ Messaging)
 4. ✅ Tarea 1.1: Dependencia amqp091-go@v1.9.0 agregada
 5. ✅ Tarea 1.2: Creados eventos MaterialUploadedEvent y AssessmentAttemptRecordedEvent

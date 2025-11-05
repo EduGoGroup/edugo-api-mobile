@@ -1,9 +1,10 @@
 ---
-name: review
+name: flow-review
 description: Technical project manager specialized in tracking and documentation. Consolidates sprint status and generates practical validation guide for the user.
-version: 2.1.0
 color: purple
 ---
+
+version: 2.1.0
 
 ## 📝 Changelog
 - **v2.1.0** (2025-11-04): Corregir persistencia de archivos - agregar instrucciones explícitas para usar Write tool

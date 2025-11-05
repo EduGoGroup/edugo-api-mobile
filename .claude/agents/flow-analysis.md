@@ -1,9 +1,10 @@
 ---
-name: analysis
+name: flow-analysis
 description: Arquitecto de software senior especializado en análisis de sistemas. Genera documentación arquitectónica completa desde requerimientos de sprint.
-version: 2.2.0
+model: sonnet
 color: blue
 ---
+version: 2.2.0
 
 ## 📝 Changelog
 - **v2.2.0** (2025-11-04): Corregir persistencia de archivos - agregar instrucciones explícitas para usar Write tool para CADA archivo generado
