@@ -290,6 +290,94 @@ El proyecto cuenta con un sistema flexible de análisis arquitectónico:
 
 ---
 
+## 🔧 Sistema de Revisión Automática de PRs
+
+El proyecto cuenta con un sistema automatizado para revisar y corregir Pull Requests.
+
+### Comando: `/05-pr-fix`
+
+Invoca al agente especializado **flow-pr-fixer** que analiza PRs, clasifica comentarios de reviewers y aplica correcciones automáticas.
+
+```bash
+# Sintaxis
+/05-pr-fix [--pr=NUMBER] [--auto-fix] [--branch=NAME]
+
+# Ejemplos
+/05-pr-fix                      # Revisar PR del branch actual
+/05-pr-fix --auto-fix           # Revisar y aplicar correcciones inmediatas
+/05-pr-fix --pr=123             # Revisar PR específico
+/05-pr-fix --pr=456 --auto-fix  # Revisar PR específico con auto-corrección
+```
+
+### Flujo de Trabajo
+
+1. **Conectar al PR**: Obtiene información del PR (activo o especificado)
+2. **Verificar Pipelines**: Revisa estado de checks (build, linting, tests)
+3. **Obtener Comentarios**: Lee comentarios de Copilot, Claude Web, reviewers humanos
+4. **Clasificar Comentarios**: Categoriza según criterios predefinidos
+5. **Aplicar Correcciones**: Corrige automáticamente issues obvios (si --auto-fix)
+6. **Generar Informe**: Crea reporte estructurado con clasificación completa
+
+### Clasificación de Comentarios
+
+| Categoría | Símbolo | Descripción | Acción |
+|-----------|---------|-------------|--------|
+| **2.1 - Corrección Inmediata** | 🟢 | Typos, formato, linting, imports | Corregir automáticamente |
+| **2.2 - Traducciones/Docs** | 🔵 | Traducción texto, mejoras docs | Excluir (fuera de scope) |
+| **2.3 - Deuda Técnica** | 🟡 | Refactorización, arquitectura | Documentar para después |
+| **2.4 - No Relevantes** | ⚪ | Preferencias personales, ya implementados | Descartar con razón |
+| **2.5 - Dudosos** | 🟣 | Ambiguos, múltiples opciones | Pedir decisión al usuario |
+
+### Informe Generado
+
+El agente genera un informe markdown con:
+
+- **Resumen Ejecutivo**: Cantidad de comentarios por categoría
+- **Estado de Pipelines**: Estado de todos los checks (build, linting, tests)
+- **Correcciones Aplicadas**: Lista de fixes automáticos realizados
+- **Deuda Técnica**: Items con justificación, impacto, esfuerzo y prioridad
+- **Comentarios Dudosos**: Opciones para el usuario (inmediato, deuda, descartar)
+- **Próximos Pasos**: Acciones recomendadas
+
+### Ejemplo de Uso Típico
+
+```bash
+# 1. Crear PR y esperar reviews de Copilot/Claude
+git push
+gh pr create
+
+# 2. Revisar comentarios (sin aplicar correcciones)
+/05-pr-fix
+
+# 3. Leer informe y decidir sobre comentarios dudosos
+[Revisar informe generado]
+
+# 4. Aplicar correcciones aprobadas
+/05-pr-fix --auto-fix
+
+# 5. Crear documento de deuda técnica si es necesario
+[Usar informe para crear tech-debt.md]
+
+# 6. Commit y push
+git add .
+git commit -m "fix: aplicar correcciones de PR review"
+git push
+```
+
+### Requisitos
+
+- **GitHub CLI** (`gh`) instalado y autenticado, O
+- **MCP GitHub** configurado en `.claude/settings.json`
+- **Permisos** de lectura/escritura en el repositorio
+- **Branch** debe estar asociado a un PR abierto (si no se usa --pr)
+
+### Documentación Completa
+
+- Agente: `.claude/agents/flow-pr-fixer.md`
+- Comando: `.claude/commands/05-pr-fix.md`
+
+---
+
 ## 📁 Archivos de Configuración
 
 - `config/config.yaml` - Configuración base
@@ -364,5 +452,5 @@ Completar la migración de handlers mock a implementación real, eliminando cód
 
 ---
 
-**Última actualización**: 2024-10-31 (v2 - Agregado flujo edugo-shared)
+**Última actualización**: 2025-11-05 (v3 - Agregado sistema /pr-fix para revisión automática de PRs)
 **Responsable**: Claude Code + Jhoan Medina

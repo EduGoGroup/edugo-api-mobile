@@ -9,9 +9,9 @@ import (
 
 // CreateMaterialRequest solicitud para crear material
 type CreateMaterialRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	SubjectID   string `json:"subject_id"`
+	Title       string `json:"title" binding:"required,min=3,max=200"`
+	Description string `json:"description" binding:"max=1000"`
+	SubjectID   string `json:"subject_id" binding:"omitempty,uuid"`
 }
 
 func (r *CreateMaterialRequest) Validate() error {

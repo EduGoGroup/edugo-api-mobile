@@ -19,14 +19,14 @@ import (
 // MaterialHandler maneja las peticiones HTTP relacionadas con materiales
 type MaterialHandler struct {
 	materialService service.MaterialService
-	s3Client        *s3.S3Client
+	s3Storage       s3.S3Storage // Usar interfaz en lugar de tipo concreto
 	logger          logger.Logger
 }
 
-func NewMaterialHandler(materialService service.MaterialService, s3Client *s3.S3Client, logger logger.Logger) *MaterialHandler {
+func NewMaterialHandler(materialService service.MaterialService, s3Storage s3.S3Storage, logger logger.Logger) *MaterialHandler {
 	return &MaterialHandler{
 		materialService: materialService,
-		s3Client:        s3Client,
+		s3Storage:       s3Storage,
 		logger:          logger,
 	}
 }
@@ -204,7 +204,7 @@ func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
 	s3Key := "materials/" + materialID + "/" + req.FileName
 
 	// Generar URL presignada (válida por 15 minutos)
-	uploadURL, err := h.s3Client.GeneratePresignedUploadURL(
+	uploadURL, err := h.s3Storage.GeneratePresignedUploadURL(
 		c.Request.Context(),
 		s3Key,
 		req.ContentType,
@@ -268,7 +268,7 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 	}
 
 	// Generar URL presignada para descarga (válida por 1 hora)
-	downloadURL, err := h.s3Client.GeneratePresignedDownloadURL(
+	downloadURL, err := h.s3Storage.GeneratePresignedDownloadURL(
 		c.Request.Context(),
 		material.S3Key,
 		1*time.Hour,
