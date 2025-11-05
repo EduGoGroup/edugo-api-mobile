@@ -1,157 +1,169 @@
-# Sprint: Optimización de Queries - Índice en Materials
+# Sprint: Completar Queries Complejas - FASE 2.3
 
 ## Descripción
 
-Implementar índice en la tabla `materials` de PostgreSQL para optimizar queries de ordenamiento por fecha de actualización. Esta es una tarea atómica pequeña pero funcional que mejora el performance de listados de materiales ordenados cronológicamente.
+Completar la implementación de queries complejas en los servicios de la aplicación. Este sprint se enfoca en finalizar el PASO 2.3 del plan maestro, que incluye consultas avanzadas para materiales, evaluaciones, progreso y estadísticas.
 
 ## Contexto
 
-Esta tarea es parte de la Fase 3 del plan general (Implementar Queries Complejas), específicamente la subtarea 3.2. Se eligió como tarea de prueba para validar el sistema de comandos/agentes porque:
+Este sprint es la continuación de la FASE 2 (TODOs de Servicios). Ya se completaron:
+- ✅ PASO 2.1: RabbitMQ Messaging (PR #15 merged)
+- ✅ PASO 2.2: S3 URLs Firmadas (PR #16 merged)
+- 🔵 PASO 2.3: Queries Complejas (20% completado - solo optimización de índice PostgreSQL)
 
-- ✅ Es **atómica** y autocontenida (1 archivo SQL)
-- ✅ Es **funcional** (mejora performance real)
-- ✅ No tiene **dependencias** de otras tareas
-- ✅ Es **verificable** con EXPLAIN en PostgreSQL
-- ✅ Es **segura** (no rompe funcionalidad existente)
+Falta completar el 80% restante del PASO 2.3.
 
-## Objetivo
+## Requisitos Funcionales
 
-Crear script de migración SQL que agregue índice en la columna `updated_at` de la tabla `materials` para optimizar queries con ORDER BY updated_at DESC.
+### RF-1: Queries de Materiales con Versiones
+- [ ] Implementar consulta de materiales que incluya información de versiones
+- [ ] Soportar filtrado por versión específica
+- [ ] Optimizar consulta con joins eficientes
 
-## Requisitos
+### RF-2: Cálculo de Puntajes en AssessmentService
+- [ ] Implementar lógica de cálculo de puntajes basado en respuestas
+- [ ] Soportar diferentes tipos de evaluación (multiple choice, verdadero/falso, etc.)
+- [ ] Almacenar resultados en MongoDB
 
-### Requisito Funcional
+### RF-3: Generación de Feedback Detallado
+- [ ] Generar feedback por pregunta en evaluaciones
+- [ ] Incluir explicaciones de respuestas correctas/incorrectas
+- [ ] Formatear feedback para consumo del frontend
 
-- [ ] **RF-1**: Crear índice descendente en `materials.updated_at`
-  - El índice debe ser descendente (DESC) porque las queries ordenan por más reciente primero
-  - El índice debe mejorar performance de queries tipo: `SELECT * FROM materials ORDER BY updated_at DESC LIMIT 10`
+### RF-4: Actualización de Progreso (UPSERT)
+- [ ] Implementar UPSERT para actualización de progreso de usuario
+- [ ] Evitar duplicados en la tabla de progreso
+- [ ] Actualizar timestamp de última actualización
 
-### Requisitos Técnicos
+### RF-5: Query Complejo de Estadísticas
+- [ ] Implementar query de estadísticas globales
+- [ ] Incluir métricas de materiales, evaluaciones y progreso
+- [ ] Optimizar con agregaciones eficientes
 
-- [ ] **RT-1**: Script SQL debe ser idempotente
-  - Usar `CREATE INDEX IF NOT EXISTS` para evitar errores si ya existe
-  - El script debe poder ejecutarse múltiples veces sin error
+## Requisitos Técnicos
 
-- [ ] **RT-2**: Seguir convención de nombres
-  - Nombre del índice: `idx_materials_updated_at`
-  - Nombre del archivo: `06_indexes_materials.sql`
-  - Ubicación: `scripts/postgresql/`
+### RT-1: Seguir Clean Architecture
+- Mantener separación de capas (domain, application, infrastructure)
+- Usar DTOs para transferencia de datos
+- Implementar interfaces en domain, implementaciones en infrastructure
 
-- [ ] **RT-3**: Incluir comentarios en SQL
-  - Explicar propósito del índice
-  - Documentar queries que se benefician
+### RT-2: Tests Unitarios
+- Crear tests para cada método nuevo implementado
+- Alcanzar mínimo 80% de cobertura en código nuevo
+- Incluir casos edge (datos vacíos, valores nulos, etc.)
 
-### Requisitos de Validación
+### RT-3: Performance
+- Queries deben ejecutar en <100ms para datasets pequeños (<1000 registros)
+- Usar índices apropiados en PostgreSQL
+- Optimizar queries N+1 en MongoDB
 
-- [ ] **RV-1**: Verificar índice con EXPLAIN
-  - Ejecutar EXPLAIN ANALYZE de query antes y después
-  - Confirmar que el plan de ejecución usa el índice
-  - Documentar mejora de performance (si es medible)
-
-- [ ] **RV-2**: Proyecto compila sin errores
-  - `go build ./...` debe pasar
-  - No hay errores de sintaxis SQL
+### RT-4: Manejo de Errores
+- Usar error types de `edugo-shared/common/errors`
+- Logging apropiado con contexto
+- Retornar errores de aplicación en handlers
 
 ## Entregables Esperados
 
-1. **Script SQL**: `scripts/postgresql/06_indexes_materials.sql`
-   - Índice creado con IF NOT EXISTS
-   - Comentarios explicativos
-   - Sintaxis PostgreSQL válida
+### 1. Código Implementado
 
-2. **Documentación** (opcional pero recomendado):
-   - Resultado de EXPLAIN ANALYZE antes/después
-   - Mejora de performance observada
+**Archivos a Modificar**:
+- `internal/application/service/material_service.go`
+- `internal/application/service/assessment_service.go`
+- `internal/application/service/progress_service.go`
+- `internal/application/service/stats_service.go`
+- `internal/infrastructure/persistence/postgres/repository/material_repository_impl.go`
+- `internal/infrastructure/persistence/postgres/repository/progress_repository_impl.go`
+- `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go`
 
-3. **Commit atómico**:
-   - Mensaje: `perf(db): agregar índice en materials.updated_at para optimizar ordenamiento`
-   - Solo incluye el archivo SQL creado
-   - Proyecto compila sin errores
+**Archivos de Tests**:
+- Tests unitarios para cada servicio modificado
+- Tests de repositorio con mocks
 
-## Ejemplo de Implementación Esperada
+### 2. Documentación
 
-```sql
--- scripts/postgresql/06_indexes_materials.sql
+- [ ] Comentarios en código explicando queries complejas
+- [ ] Ejemplos de uso en comentarios
+- [ ] Actualizar README si es necesario
 
--- Propósito: Optimizar queries que ordenan materiales por fecha de actualización
--- Beneficia queries tipo: SELECT * FROM materials ORDER BY updated_at DESC LIMIT N
+### 3. Validación
 
--- Crear índice descendente en updated_at
--- DESC porque las queries más comunes ordenan de más reciente a más antiguo
-CREATE INDEX IF NOT EXISTS idx_materials_updated_at 
-ON materials(updated_at DESC);
+- [ ] `go build ./...` pasa sin errores
+- [ ] `go test ./...` todos los tests pasan
+- [ ] Verificación manual de endpoints (opcional pero recomendado)
 
--- Verificar índice creado:
--- SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'materials';
+### 4. Commit Atómico
+
+**Mensaje sugerido**:
 ```
+feat: implementar consultas complejas en servicios
 
-## Queries que se Benefician
+- Agregar queries de materiales con versiones
+- Implementar cálculo de puntajes en AssessmentService
+- Generar feedback detallado por pregunta
+- Implementar UPSERT para actualización de progreso
+- Agregar query de estadísticas globales
 
-El índice optimizará estas queries comunes:
+Incluye tests unitarios para todos los métodos nuevos.
 
-1. **Listar materiales recientes**:
-   ```sql
-   SELECT * FROM materials 
-   ORDER BY updated_at DESC 
-   LIMIT 20;
-   ```
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-2. **Materiales actualizados en rango de fechas**:
-   ```sql
-   SELECT * FROM materials 
-   WHERE updated_at >= '2025-01-01'
-   ORDER BY updated_at DESC;
-   ```
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
 
 ## Restricciones/Consideraciones
 
-### ✅ Hacer:
-- Usar `IF NOT EXISTS` para idempotencia
-- Crear índice como `DESC` (matches ORDER BY DESC)
-- Ubicar en carpeta `scripts/postgresql/`
-- Seguir numeración secuencial (06_)
+### Base de Datos
+- PostgreSQL 16 para datos estructurados (materiales, usuarios, progreso)
+- MongoDB 7 para datos semi-estructurados (evaluaciones, respuestas)
+- Ya existe índice en `materials.updated_at` (creado en tarea anterior)
 
-### ❌ No Hacer:
-- No modificar código Go (solo SQL)
-- No modificar estructura de tabla (solo índice)
-- No crear índices adicionales no solicitados
-- No hacer commit si el proyecto no compila
+### Dependencias
+- Usar `edugo-shared` para error handling y logging
+- RabbitMQ ya está configurado (PASO 2.1)
+- S3 ya está configurado (PASO 2.2)
 
-### 🔍 Validación Manual
+### Performance
+- Evitar queries N+1
+- Usar eager loading cuando sea apropiado
+- Considerar paginación para queries grandes
 
-Para verificar que el índice funciona:
+### Testing
+- Usar mocks para bases de datos en tests unitarios
+- Testcontainers para tests de integración (opcional para este sprint)
 
-```bash
-# 1. Ejecutar script SQL
-psql -d edugo_db -f scripts/postgresql/06_indexes_materials.sql
+## Criterios de Aceptación
 
-# 2. Verificar índice creado
-psql -d edugo_db -c "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'materials';"
+- [x] ~~Optimización de índice PostgreSQL (materials.updated_at)~~ ✅ COMPLETADO
+- [ ] Queries de materiales con versiones implementadas y testeadas
+- [ ] Cálculo de puntajes funcionando correctamente
+- [ ] Feedback detallado generándose para todas las evaluaciones
+- [ ] UPSERT de progreso funcionando sin duplicados
+- [ ] Query de estadísticas retornando métricas correctas
+- [ ] Todos los tests pasando
+- [ ] Código compilando sin errores
+- [ ] Cobertura de tests ≥80% en código nuevo
 
-# 3. Ver plan de ejecución (debe usar idx_materials_updated_at)
-psql -d edugo_db -c "EXPLAIN ANALYZE SELECT * FROM materials ORDER BY updated_at DESC LIMIT 10;"
-```
+## Estimación de Esfuerzo
 
-## Criterios de Éxito
+**Total**: 1-1.5 días (~6-8 horas)
 
-- [x] Script SQL creado en ubicación correcta
-- [x] Índice usa IF NOT EXISTS (idempotente)
-- [x] Índice es descendente (DESC)
-- [x] Nombre de índice sigue convención: `idx_materials_updated_at`
-- [x] Comentarios explican propósito
-- [x] Proyecto compila sin errores
-- [x] Commit atómico creado con mensaje apropiado
+**Desglose**:
+- Queries de materiales: 1-2 horas
+- Cálculo de puntajes: 2-3 horas
+- Feedback detallado: 1 hora
+- UPSERT progreso: 1 hora
+- Query estadísticas: 1-2 horas
+- Tests y validación: 1 hora
 
-## Estimación
+## Referencias
 
-- **Complejidad**: Baja
-- **Tiempo estimado**: 10-15 minutos
-- **Archivos a crear**: 1 (script SQL)
-- **Archivos a modificar**: 0
+- Plan Maestro: `sprint/docs/MASTER_PLAN_VISUAL.md` (FASE 2, PASO 2.3)
+- Documentación anterior: `sprint/archived/sprint-2025-11-05-2038/`
+- Código existente de servicios: `internal/application/service/`
+- Repositorios: `internal/infrastructure/persistence/`
 
----
+## Próximos Pasos Después de Este Sprint
 
-**Sprint para**: Validación de sistema de comandos/agentes  
-**Tarea**: Fase 3, Subtarea 3.2  
-**Fecha**: 2025-11-04  
-**Branch**: `fix/debug-sprint-commands`
+Una vez completado este sprint (FASE 2.3), continuar con:
+- **FASE 3**: Limpieza y Consolidación (eliminar código duplicado)
+- **FASE 4**: Testing de Integración (tests con testcontainers)
