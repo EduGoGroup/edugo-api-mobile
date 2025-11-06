@@ -93,3 +93,44 @@ type GenerateDownloadURLResponse struct {
 	DownloadURL string `json:"download_url"`
 	ExpiresIn   int    `json:"expires_in"` // En segundos
 }
+
+// MaterialVersionResponse representa una versión de material
+type MaterialVersionResponse struct {
+	ID            string    `json:"id"`
+	VersionNumber int       `json:"version_number"`
+	Title         string    `json:"title"`
+	ContentURL    string    `json:"content_url"`
+	ChangedBy     string    `json:"changed_by"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// MaterialWithVersionsResponse respuesta de material con su historial de versiones
+type MaterialWithVersionsResponse struct {
+	Material *MaterialResponse          `json:"material"`
+	Versions []*MaterialVersionResponse `json:"versions"`
+}
+
+// ToMaterialVersionResponse convierte entidad a DTO
+func ToMaterialVersionResponse(version *entity.MaterialVersion) *MaterialVersionResponse {
+	return &MaterialVersionResponse{
+		ID:            version.ID().String(),
+		VersionNumber: version.VersionNumber(),
+		Title:         version.Title(),
+		ContentURL:    version.ContentURL(),
+		ChangedBy:     version.ChangedBy().String(),
+		CreatedAt:     version.CreatedAt(),
+	}
+}
+
+// ToMaterialWithVersionsResponse convierte material y versiones a DTO
+func ToMaterialWithVersionsResponse(material *entity.Material, versions []*entity.MaterialVersion) *MaterialWithVersionsResponse {
+	versionResponses := make([]*MaterialVersionResponse, len(versions))
+	for i, version := range versions {
+		versionResponses[i] = ToMaterialVersionResponse(version)
+	}
+
+	return &MaterialWithVersionsResponse{
+		Material: ToMaterialResponse(material),
+		Versions: versionResponses,
+	}
+}

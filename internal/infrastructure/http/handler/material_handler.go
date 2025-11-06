@@ -96,6 +96,59 @@ func (h *MaterialHandler) GetMaterial(c *gin.Context) {
 	c.JSON(http.StatusOK, material)
 }
 
+// GetMaterialWithVersions godoc
+// @Summary Get material with version history
+// @Description Get a material including its complete version history
+// @Tags materials
+// @Produce json
+// @Param id path string true "Material ID (UUID format)"
+// @Success 200 {object} dto.MaterialWithVersionsResponse
+// @Failure 400 {object} ErrorResponse "Invalid UUID format"
+// @Failure 404 {object} ErrorResponse "Material not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /materials/{id}/versions [get]
+// @Security BearerAuth
+func (h *MaterialHandler) GetMaterialWithVersions(c *gin.Context) {
+	// Obtener materialID del path parameter
+	id := c.Param("id")
+
+	// Invocar servicio para obtener material con versiones
+	result, err := h.materialService.GetMaterialWithVersions(c.Request.Context(), id)
+	if err != nil {
+		// Convertir error de aplicación a respuesta HTTP apropiada
+		if appErr, ok := errors.GetAppError(err); ok {
+			h.logger.Warn("get material with versions failed",
+				"material_id", id,
+				"error", appErr.Message,
+				"code", appErr.Code,
+			)
+			c.JSON(appErr.StatusCode, ErrorResponse{
+				Error: appErr.Message,
+				Code:  string(appErr.Code),
+			})
+			return
+		}
+
+		// Error inesperado (no es error de aplicación)
+		h.logger.Error("unexpected error getting material with versions",
+			"material_id", id,
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: "internal server error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	// Retornar respuesta exitosa con material y versiones
+	h.logger.Info("material with versions retrieved successfully",
+		"material_id", id,
+		"version_count", len(result.Versions),
+	)
+	c.JSON(http.StatusOK, result)
+}
+
 // NotifyUploadComplete godoc
 // @Summary Notify upload complete
 // @Description Notify that PDF upload to S3 is complete

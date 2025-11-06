@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
@@ -18,6 +19,7 @@ import (
 type MaterialService interface {
 	CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
 	GetMaterial(ctx context.Context, id string) (*dto.MaterialResponse, error)
+	GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	NotifyUploadComplete(ctx context.Context, materialID string, req dto.UploadCompleteRequest) error
 	ListMaterials(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
 }
@@ -181,4 +183,52 @@ func (s *materialService) ListMaterials(ctx context.Context, filters repository.
 	}
 
 	return responses, nil
+}
+
+// GetMaterialWithVersions obtiene un material incluyendo su historial completo de versiones
+// Este método consulta el material junto con todas sus versiones en una sola operación de BD
+func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error) {
+	// Registrar inicio de operación para medir tiempo de ejecución
+	startTime := time.Now()
+
+	// Parsear y validar materialID
+	materialID, err := valueobject.MaterialIDFromString(id)
+	if err != nil {
+		s.logger.Warn("invalid material_id format",
+			zap.String("material_id", id),
+			zap.Error(err),
+		)
+		return nil, errors.NewValidationError("invalid material_id format")
+	}
+
+	// Invocar repository para obtener material con versiones
+	material, versions, err := s.materialRepo.FindByIDWithVersions(ctx, materialID)
+	if err != nil {
+		s.logger.Error("failed to fetch material with versions",
+			zap.String("material_id", materialID.String()),
+			zap.Error(err),
+		)
+		return nil, errors.NewDatabaseError("fetch material with versions", err)
+	}
+
+	// Validar que el material existe
+	if material == nil {
+		s.logger.Warn("material not found",
+			zap.String("material_id", materialID.String()),
+		)
+		return nil, errors.NewNotFoundError("material")
+	}
+
+	// Transformar entidades de domain a DTOs
+	response := dto.ToMaterialWithVersionsResponse(material, versions)
+
+	// Logging contextual con métricas relevantes
+	executionTime := time.Since(startTime)
+	s.logger.Info("material with versions fetched successfully",
+		zap.String("material_id", materialID.String()),
+		zap.Int("version_count", len(versions)),
+		zap.Duration("execution_time", executionTime),
+	)
+
+	return response, nil
 }

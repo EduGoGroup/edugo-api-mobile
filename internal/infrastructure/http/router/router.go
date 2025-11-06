@@ -73,6 +73,9 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 		materials.GET("/:id", c.MaterialHandler.GetMaterial)
 		materials.POST("/:id/upload-complete", c.MaterialHandler.NotifyUploadComplete)
 
+		// Historial de versiones de materiales
+		materials.GET("/:id/versions", c.MaterialHandler.GetMaterialWithVersions)
+
 		// URLs presignadas para S3
 		materials.POST("/:id/upload-url", c.MaterialHandler.GenerateUploadURL)
 		materials.GET("/:id/download-url", c.MaterialHandler.GenerateDownloadURL)
