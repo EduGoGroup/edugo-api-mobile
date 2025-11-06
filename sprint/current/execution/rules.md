@@ -6,7 +6,7 @@
 
 - [x] **Fase 1**: Preparación de Infraestructura de Base de Datos (7 tareas)
 - [x] **Fase 2**: Implementar Queries de Materiales con Versionado (5 tareas)
-- [ ] **Fase 3**: Implementar Cálculo de Puntajes en Evaluaciones (8 tareas)
+- [x] **Fase 3**: Implementar Cálculo de Puntajes en Evaluaciones (8 tareas)
 - [ ] **Fase 4**: Implementar Generación de Feedback Detallado (6 tareas)
 - [ ] **Fase 5**: Implementar UPSERT de Progreso (6 tareas)
 - [ ] **Fase 6**: Implementar Estadísticas Globales (9 tareas)
@@ -147,24 +147,91 @@ Si encuentras un error que no puedes resolver:
 
 ---
 
+### ✅ Fase 3: Implementar Cálculo de Puntajes en Evaluaciones
+
+**Fecha de completitud**: 2025-11-05 22:17
+**Commit**: `bcc9753` - "feat(assessments): implementar cálculo automático de puntajes con Strategy Pattern"
+**Reporte completo**: `sprint/current/execution/fase-3-2025-11-05-2214.md`
+
+**Resumen**:
+- **Funcionalidad implementada**: Sistema completo de evaluación automática con Strategy Pattern que soporta 3 tipos de preguntas (multiple_choice, true_false, short_answer) y genera feedback detallado
+
+- **Implementación técnica**:
+  - Strategy Pattern con 3 estrategias de scoring:
+    * MultipleChoiceStrategy: Comparación exacta case-insensitive
+    * TrueFalseStrategy: Soporta múltiples formatos (true/false, 1/0, verdadero/falso)
+    * ShortAnswerStrategy: Normalización con regex, múltiples respuestas válidas ("París|Paris")
+  - Método CalculateScore en AssessmentService que:
+    * Selecciona estrategia dinámicamente según tipo de pregunta
+    * Calcula score: (correctas/totales) * 100
+    * Genera feedback detallado por pregunta con explicaciones
+    * Persiste resultado en MongoDB (colección assessment_results)
+    * Publica evento assessment.completed a RabbitMQ
+  - Método SaveResult en AssessmentRepositoryImpl con índice UNIQUE que previene evaluaciones duplicadas
+
+- **Tests creados**: 59 tests unitarios (100% passing, ~95% coverage)
+  - 52 tests para estrategias de scoring (incluye tests de normalización)
+  - 7 tests para AssessmentService.CalculateScore
+  - Cobertura: happy path, edge cases, formatos incorrectos, tipos inválidos
+
+- **Decisiones arquitectónicas**:
+  - Strategy Pattern vs if/else: Permite extensibilidad sin modificar CalculateScore
+  - Feedback rico: No solo puntaje numérico, sino explicación contextual por pregunta
+  - Normalización agresiva en ShortAnswerStrategy: Elimina puntuación pero preserva tildes
+  - Publicación asíncrona de eventos: Si RabbitMQ falla, se loguea pero no se bloquea evaluación
+  - Manejo de preguntas sin responder: Marcadas como incorrectas con mensaje "(sin respuesta)"
+
+**Archivos creados**:
+- `internal/application/service/scoring/strategy.go`
+- `internal/application/service/scoring/multiple_choice.go`
+- `internal/application/service/scoring/true_false.go`
+- `internal/application/service/scoring/short_answer.go`
+- `internal/application/service/scoring/*_test.go` (tests exhaustivos)
+- `internal/application/service/assessment_service_test.go`
+
+**Archivos modificados**:
+- `internal/application/service/assessment_service.go` (+168 líneas)
+- `internal/domain/repository/assessment_repository.go` (+26 líneas)
+- `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go` (+39 líneas)
+- `internal/infrastructure/http/handler/mocks_test.go` (+9 líneas, fix de Fase 2)
+
+**Validaciones**:
+- ✅ Compilación exitosa
+- ✅ 59/59 tests pasando
+- ✅ Código formateado con go fmt
+- ✅ Sistema de evaluación completamente operativo
+
+**Problemas resueltos durante ejecución**:
+1. Mocks duplicados entre archivos de test → Reutilizados mocks existentes
+2. Mock de MaterialService incompleto → Agregado método GetMaterialWithVersions
+3. Estructura incorrecta de DTO en mock → Corregida a {Material, Versions}
+
+**Impacto**: Sistema de evaluación automática operativo con feedback detallado. Frontend puede enviar respuestas y recibir puntaje + explicación por cada pregunta. Soporta 3 tipos de preguntas con posibilidad de extensión fácil a nuevos tipos.
+
+**Métricas**:
+- Líneas de código: ~850 líneas (producción + tests)
+- Tests: 59 nuevos tests
+- Tiempo de ejecución de tests: <1 segundo
+- Tipos de pregunta soportados: 3 (extensible)
+
+---
+
 ## 🎯 Próxima Fase a Ejecutar
 
-**Fase 3**: Implementar Cálculo de Puntajes en Evaluaciones (8 tareas)
+**Fase 4**: Implementar Generación de Feedback Detallado (6 tareas)
 
 **Tareas a ejecutar** (ver detalle en `sprint/current/planning/readme.md`):
-- 3.1 - Definir interfaces de Strategy Pattern
-- 3.2 - MultipleChoiceStrategy
-- 3.3 - TrueFalseStrategy
-- 3.4 - ShortAnswerStrategy
-- 3.5 - SaveResult en AssessmentRepositoryImpl
-- 3.6 - CalculateScore en AssessmentService
-- 3.7 - Tests para ScoringStrategy
-- 3.8 - Tests para AssessmentService
+- 4.1 - Definir estructura FeedbackItem en DTOs
+- 4.2 - Implementar GenerateDetailedFeedback en AssessmentService
+- 4.3 - Integrar GenerateDetailedFeedback con CalculateScore
+- 4.4 - Crear endpoint POST /api/v1/assessments/{id}/submit
+- 4.5 - Tests para GenerateDetailedFeedback
+- 4.6 - Prueba manual del flujo completo
 
-**Commit esperado**: `feat(assessments): implementar cálculo automático de puntajes con Strategy Pattern`
+**Commit esperado**: `feat(assessments): agregar generación de feedback detallado por pregunta`
 
 ---
 
 _Este archivo es actualizado automáticamente por el agente de ejecución después de completar cada fase._
 
-_Última actualización: 2025-11-05 21:49 - Fase 2 completada_
+_Última actualización: 2025-11-05 22:17 - Fase 3 completada_

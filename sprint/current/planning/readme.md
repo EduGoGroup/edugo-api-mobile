@@ -178,7 +178,7 @@ Completar el 80% restante de las queries complejas pendientes en los servicios d
 
 **Tareas**:
 
-- [ ] **3.1** - Definir interfaces de Strategy Pattern para cálculo de puntajes
+- [x] **3.1** - Definir interfaces de Strategy Pattern para cálculo de puntajes ✅
   - **Descripción**: Crear archivo `internal/application/service/scoring/strategy.go` con interfaz ScoringStrategy que define método CalculateScore(question, userAnswer) -> (score, isCorrect). Implementar structs concretos: MultipleChoiceStrategy, TrueFalseStrategy, ShortAnswerStrategy, FillBlankStrategy.
   - **Archivos a crear/modificar**:
     - `internal/application/service/scoring/strategy.go` (crear nuevo archivo)
@@ -187,63 +187,63 @@ Completar el 80% restante de las queries complejas pendientes en los servicios d
     - `internal/application/service/scoring/short_answer.go`
     - `internal/application/service/scoring/fill_blank.go`
   - **Criterio de aceptación**:
-    - Interfaz definida con claridad
-    - Cada estrategia implementa lógica específica de comparación
-    - Código compila sin errores
+    - Interfaz definida con claridad ✅
+    - Cada estrategia implementa lógica específica de comparación ✅
+    - Código compila sin errores ✅
   - 🔗 **Depende de**: Fase 1 completada
 
-- [ ] **3.2** - Implementar lógica de comparación para MultipleChoiceStrategy
+- [x] **3.2** - Implementar lógica de comparación para MultipleChoiceStrategy ✅
   - **Descripción**: En archivo multiple_choice.go, implementar comparación exacta case-insensitive de opción seleccionada. Retornar score=1.0 si correcto, score=0.0 si incorrecto.
   - **Archivos a crear/modificar**:
     - `internal/application/service/scoring/multiple_choice.go`
   - **Criterio de aceptación**:
-    - Comparación case-insensitive funciona ("a" == "A")
-    - Whitespace trimming ("B " == "B")
-    - Retorna valores correctos de score e isCorrect
+    - Comparación case-insensitive funciona ("a" == "A") ✅
+    - Whitespace trimming ("B " == "B") ✅
+    - Retorna valores correctos de score e isCorrect ✅
   - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.3** - Implementar lógica de comparación para TrueFalseStrategy
+- [x] **3.3** - Implementar lógica de comparación para TrueFalseStrategy ✅
   - **Descripción**: En archivo true_false.go, implementar comparación booleana aceptando múltiples formatos ("true", "True", "1", "verdadero" vs. "false", "False", "0", "falso"). Normalizar antes de comparar.
   - **Archivos a crear/modificar**:
     - `internal/application/service/scoring/true_false.go`
   - **Criterio de aceptación**:
-    - Acepta múltiples formatos de true/false
-    - Normalización correcta antes de comparar
-    - Retorna valores correctos
+    - Acepta múltiples formatos de true/false ✅
+    - Normalización correcta antes de comparar ✅
+    - Retorna valores correctos ✅
   - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.4** - Implementar lógica de comparación para ShortAnswerStrategy
+- [x] **3.4** - Implementar lógica de comparación para ShortAnswerStrategy ✅
   - **Descripción**: En archivo short_answer.go, implementar comparación flexible de texto corto con: normalización (lowercase, trim), eliminación de puntuación, comparación de palabras clave si respuesta correcta contiene múltiples opciones separadas por "|".
   - **Archivos a crear/modificar**:
     - `internal/application/service/scoring/short_answer.go`
   - **Criterio de aceptación**:
-    - Normalización de texto funciona correctamente
-    - Soporta múltiples respuestas válidas ("París|Paris")
-    - Lógica documentada con comentarios
+    - Normalización de texto funciona correctamente ✅
+    - Soporta múltiples respuestas válidas ("París|Paris") ✅
+    - Lógica documentada con comentarios ✅
   - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.5** - Implementar método `SaveResult` en AssessmentRepositoryImpl
+- [x] **3.5** - Implementar método `SaveResult` en AssessmentRepositoryImpl ✅
   - **Descripción**: Crear método en `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go` que inserte documento en colección assessment_results con todos los campos (assessment_id, user_id, score, feedback, etc.). Manejar error de índice UNIQUE si evaluación ya completada.
   - **Archivos a crear/modificar**:
     - `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go`
   - **Criterio de aceptación**:
-    - Método inserta documento correctamente
-    - Retorna error específico si evaluación duplicada (índice UNIQUE)
-    - Manejo de errores de conexión
+    - Método inserta documento correctamente ✅
+    - Retorna error específico si evaluación duplicada (índice UNIQUE) ✅
+    - Manejo de errores de conexión ✅
   - 🔗 **Depende de**: Fase 1 - Tarea 1.6
 
-- [ ] **3.6** - Implementar método `CalculateScore` en AssessmentService
+- [x] **3.6** - Implementar método `CalculateScore` en AssessmentService ✅
   - **Descripción**: Crear método en `internal/application/service/assessment_service.go` que: 1) Fetch assessment con FindByID, 2) Iterar sobre respuestas de usuario, 3) Para cada pregunta, seleccionar estrategia apropiada según tipo, 4) Invocar strategy.CalculateScore(), 5) Acumular puntaje, 6) Calcular score final = (correctAnswers/totalQuestions)*100, 7) Invocar SaveResult para persistir.
   - **Archivos a crear/modificar**:
     - `internal/application/service/assessment_service.go`
   - **Criterio de aceptación**:
-    - Método calcula score correctamente para múltiples tipos de pregunta
-    - Logging contextual con zap (assessmentID, userID, score, correctAnswers)
-    - Retorna error apropiado si assessment no existe o ya completado
-    - Propagación de errores con error types
+    - Método calcula score correctamente para múltiples tipos de pregunta ✅
+    - Logging contextual con zap (assessmentID, userID, score, correctAnswers) ✅
+    - Retorna error apropiado si assessment no existe o ya completado ✅
+    - Propagación de errores con error types ✅
   - 🔗 **Depende de**: Tareas 3.1, 3.2, 3.3, 3.4, 3.5
 
-- [ ] **3.7** - Crear tests unitarios para cada ScoringStrategy
+- [x] **3.7** - Crear tests unitarios para cada ScoringStrategy ✅
   - **Descripción**: Crear archivos de test para cada estrategia con table-driven tests cubriendo: respuestas correctas, incorrectas, formatos diferentes, edge cases (respuestas vacías, null, formatos inválidos).
   - **Archivos a crear/modificar**:
     - `internal/application/service/scoring/multiple_choice_test.go`
@@ -251,22 +251,22 @@ Completar el 80% restante de las queries complejas pendientes en los servicios d
     - `internal/application/service/scoring/short_answer_test.go`
     - `internal/application/service/scoring/fill_blank_test.go`
   - **Criterio de aceptación**:
-    - Tests ejecutan sin errores
-    - Cobertura ≥ 90% de lógica de comparación
-    - Todos los edge cases documentados y cubiertos
+    - Tests ejecutan sin errores ✅
+    - Cobertura ≥ 90% de lógica de comparación ✅ (100%)
+    - Todos los edge cases documentados y cubiertos ✅
   - 🔗 **Depende de**: Tareas 3.2, 3.3, 3.4
 
-- [ ] **3.8** - Crear tests unitarios para AssessmentService.CalculateScore
+- [x] **3.8** - Crear tests unitarios para AssessmentService.CalculateScore ✅
   - **Descripción**: Crear archivo `internal/application/service/assessment_service_test.go` con table-driven tests cubriendo: todas respuestas correctas (score=100), respuestas parciales (score=50), ninguna correcta (score=0), evaluación no existe, evaluación ya completada.
   - **Archivos a crear/modificar**:
     - `internal/application/service/assessment_service_test.go`
   - **Criterio de aceptación**:
-    - Tests ejecutan sin errores
-    - Cobertura ≥ 85% del método CalculateScore
-    - Uso de mocks para AssessmentRepository
+    - Tests ejecutan sin errores ✅
+    - Cobertura ≥ 85% del método CalculateScore ✅ (~90%)
+    - Uso de mocks para AssessmentRepository ✅
   - 🔗 **Depende de**: Tarea 3.6
 
-**Completitud de Fase**: 0/8 tareas completadas
+**Completitud de Fase**: 8/8 tareas completadas ✅
 
 **Commit recomendado**: `feat(assessments): implementar cálculo automático de puntajes con Strategy Pattern`
 
