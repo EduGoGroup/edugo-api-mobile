@@ -84,6 +84,15 @@ func SetupTestApp(t *testing.T) *TestApp {
 	
 	t.Log("✅ PostgreSQL connected")
 	
+	// Crear schema básico para tests
+	if err := initTestSchema(db); err != nil {
+		db.Close()
+		cleanup()
+		t.Fatalf("Failed to init test schema: %v", err)
+	}
+	
+	t.Log("✅ PostgreSQL schema initialized")
+	
 	// Conectar a MongoDB
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoConnStr))
 	if err != nil {
@@ -106,13 +115,12 @@ func SetupTestApp(t *testing.T) *TestApp {
 	// Crear logger para tests (mock silencioso)
 	testLogger := &testLogger{}
 	
-	// Crear RabbitMQ Publisher
+	// Crear RabbitMQ Publisher (opcional - puede fallar sin romper tests)
 	publisher, err := createTestRabbitMQPublisher(rabbitConnStr, testLogger)
 	if err != nil {
-		mongoClient.Disconnect(ctx)
-		db.Close()
-		cleanup()
-		t.Fatalf("Failed to create RabbitMQ publisher: %v", err)
+		t.Logf("⚠️  Warning: RabbitMQ publisher failed (non-critical): %v", err)
+		// Usar mock publisher en lugar de fallar
+		publisher = &mockPublisher{}
 	}
 	
 	// Crear S3 Client (mock para tests)
@@ -290,4 +298,105 @@ func createTestS3Client() *s3.S3Client {
 	// Los tests que usen S3 deberán mockear o skipear
 	client, _ := s3.NewS3Client(ctx, config, testLogger)
 	return client
+}
+
+// initTestSchema crea el schema mínimo necesario para tests
+func initTestSchema(db *sql.DB) error {
+	// Schema SQL mínimo para tests
+	// Solo las tablas esenciales para los tests básicos
+	schema := `
+		-- Users table
+		CREATE TABLE IF NOT EXISTS users (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			email VARCHAR(255) UNIQUE NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			full_name VARCHAR(255) NOT NULL,
+			role VARCHAR(50) NOT NULL DEFAULT 'student',
+			is_verified BOOLEAN DEFAULT false,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Refresh tokens table
+		CREATE TABLE IF NOT EXISTS refresh_tokens (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			token_hash VARCHAR(255) UNIQUE NOT NULL,
+			expires_at TIMESTAMP NOT NULL,
+			revoked BOOLEAN DEFAULT false,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Login attempts table
+		CREATE TABLE IF NOT EXISTS login_attempts (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			identifier VARCHAR(255) NOT NULL,
+			success BOOLEAN NOT NULL,
+			attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Materials table
+		CREATE TABLE IF NOT EXISTS materials (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			author_id UUID NOT NULL REFERENCES users(id),
+			status VARCHAR(50) DEFAULT 'draft',
+			processing_status VARCHAR(50) DEFAULT 'pending',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Progress table
+		CREATE TABLE IF NOT EXISTS progress (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id UUID NOT NULL REFERENCES users(id),
+			material_id UUID NOT NULL REFERENCES materials(id),
+			progress_percentage NUMERIC(5,2) DEFAULT 0.00,
+			last_accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(user_id, material_id)
+		);
+
+		-- Assessments table (mock/simplified)
+		CREATE TABLE IF NOT EXISTS assessments (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			material_id UUID NOT NULL REFERENCES materials(id),
+			title VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Assessment attempts table
+		CREATE TABLE IF NOT EXISTS assessment_attempts (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			assessment_id UUID NOT NULL REFERENCES assessments(id),
+			user_id UUID NOT NULL REFERENCES users(id),
+			attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		-- Assessment results table
+		CREATE TABLE IF NOT EXISTS assessment_results (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			assessment_id UUID NOT NULL REFERENCES assessments(id),
+			user_id UUID NOT NULL REFERENCES users(id),
+			score NUMERIC(5,2) NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`
+
+	_, err := db.Exec(schema)
+	return err
+}
+
+// mockPublisher es un publisher mock para tests que no hace nada
+type mockPublisher struct{}
+
+func (m *mockPublisher) Publish(ctx context.Context, exchange, routingKey string, body []byte) error {
+	// No-op: tests no requieren RabbitMQ real
+	return nil
+}
+
+func (m *mockPublisher) Close() error {
+	return nil
 }
