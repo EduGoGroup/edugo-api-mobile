@@ -12,6 +12,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	_ "github.com/lib/pq" // PostgreSQL driver
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

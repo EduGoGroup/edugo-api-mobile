@@ -25,7 +25,19 @@ func TestAuthFlow_LoginSuccess(t *testing.T) {
 	
 	// Seed usuario de prueba
 	userID, email := SeedTestUser(t, app.DB)
-	t.Logf("Test user: %s (%s)", email, userID)
+	t.Logf("✅ Test user created: %s (%s)", email, userID)
+	
+	// Verificar que el usuario existe en la BD
+	var count int
+	err := app.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&count)
+	if err != nil {
+		t.Fatalf("Failed to verify user: %v", err)
+	}
+	t.Logf("✅ User count in DB: %d", count)
+	
+	if count == 0 {
+		t.Fatal("User was not seeded properly")
+	}
 	
 	// Crear router Gin con el handler de auth
 	gin.SetMode(gin.TestMode)
@@ -49,6 +61,9 @@ func TestAuthFlow_LoginSuccess(t *testing.T) {
 	router.ServeHTTP(w, req)
 	
 	// Validar response
+	t.Logf("Response status: %d", w.Code)
+	t.Logf("Response body: %s", w.Body.String())
+	
 	assert.Equal(t, http.StatusOK, w.Code, "Login should succeed")
 	
 	var response map[string]interface{}
