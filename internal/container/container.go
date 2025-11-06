@@ -3,142 +3,83 @@ package container
 import (
 	"database/sql"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
-	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
-	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
-	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Container es el contenedor de dependencias de API Mobile
-// Implementa el patrón Dependency Injection
+// Container es el contenedor raíz de dependencias de API Mobile
+// Implementa el patrón Dependency Injection con segregación por capas
+// Resuelve el God Object pattern dividiendo responsabilidades en sub-containers
+//
+// Arquitectura de contenedores:
+//   - Infrastructure: Gestiona recursos externos (DB, Logger, Messaging, Storage)
+//   - Repositories: Gestiona acceso a datos (PostgreSQL y MongoDB)
+//   - Services: Gestiona lógica de negocio (casos de uso)
+//   - Handlers: Gestiona presentación HTTP (REST API)
+//
+// Beneficios:
+//   - SRP: Cada sub-container tiene una responsabilidad clara
+//   - Testabilidad: Se pueden mockear sub-containers completos
+//   - Mantenibilidad: Cambios localizados por capa
+//   - Extensibilidad: Nuevas features se agregan al sub-container correspondiente
 type Container struct {
-	// Infrastructure
-	DB               *sql.DB
-	MongoDB          *mongo.Database
-	Logger           logger.Logger
-	JWTManager       *auth.JWTManager
-	MessagePublisher rabbitmq.Publisher
-	S3Client         *s3.S3Client
-
-	// Repositories
-	UserRepository         repository.UserRepository
-	MaterialRepository     repository.MaterialRepository
-	ProgressRepository     repository.ProgressRepository
-	SummaryRepository      repository.SummaryRepository
-	AssessmentRepository   repository.AssessmentRepository
-	RefreshTokenRepository repository.RefreshTokenRepository
-	LoginAttemptRepository repository.LoginAttemptRepository
-
-	// Services
-	AuthService       service.AuthService
-	MaterialService   service.MaterialService
-	ProgressService   service.ProgressService
-	SummaryService    service.SummaryService
-	AssessmentService service.AssessmentService
-	StatsService      service.StatsService
-
-	// Handlers
-	AuthHandler       *handler.AuthHandler
-	MaterialHandler   *handler.MaterialHandler
-	ProgressHandler   *handler.ProgressHandler
-	SummaryHandler    *handler.SummaryHandler
-	AssessmentHandler *handler.AssessmentHandler
-	StatsHandler      *handler.StatsHandler
+	Infrastructure *InfrastructureContainer
+	Repositories   *RepositoryContainer
+	Services       *ServiceContainer
+	Handlers       *HandlerContainer
 }
 
 // NewContainer crea un nuevo contenedor e inicializa todas las dependencias
-func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publisher, s3Client *s3.S3Client, jwtSecret string, logger logger.Logger) *Container {
-	c := &Container{
-		DB:               db,
-		MongoDB:          mongoDB,
-		MessagePublisher: publisher,
-		S3Client:         s3Client,
-		Logger:           logger,
-		JWTManager:       auth.NewJWTManager(jwtSecret, "edugo-mobile"),
+// de forma jerárquica siguiendo la arquitectura de capas
+//
+// Flujo de inicialización:
+//  1. Infrastructure → Recursos externos (DB, Logger, Messaging, Storage, Auth)
+//  2. Repositories   → Persistencia (depende de Infrastructure)
+//  3. Services       → Lógica de negocio (depende de Repositories e Infrastructure)
+//  4. Handlers       → Presentación HTTP (depende de Services e Infrastructure)
+//
+// Parámetros:
+//   - db: Conexión a PostgreSQL
+//   - mongoDB: Conexión a MongoDB
+//   - publisher: Cliente de RabbitMQ
+//   - s3Client: Cliente de AWS S3
+//   - jwtSecret: Secret para JWT tokens
+//   - logger: Logger compartido
+//
+// Retorna el contenedor raíz con todos los sub-containers inicializados
+func NewContainer(
+	db *sql.DB,
+	mongoDB *mongo.Database,
+	publisher rabbitmq.Publisher,
+	s3Client *s3.S3Client,
+	jwtSecret string,
+	logger logger.Logger,
+) *Container {
+	// Paso 1: Inicializar infraestructura (capa más baja - recursos externos)
+	infra := NewInfrastructureContainer(db, mongoDB, publisher, s3Client, jwtSecret, logger)
+
+	// Paso 2: Inicializar repositorios (dependen de infraestructura)
+	repos := NewRepositoryContainer(infra)
+
+	// Paso 3: Inicializar servicios (dependen de repositorios e infraestructura)
+	services := NewServiceContainer(infra, repos)
+
+	// Paso 4: Inicializar handlers (dependen de servicios e infraestructura)
+	handlers := NewHandlerContainer(infra, services)
+
+	// Retornar contenedor raíz con todos los sub-containers
+	return &Container{
+		Infrastructure: infra,
+		Repositories:   repos,
+		Services:       services,
+		Handlers:       handlers,
 	}
-
-	// Inicializar repositories (capa de infraestructura)
-	c.UserRepository = postgresRepo.NewPostgresUserRepository(db)
-	c.MaterialRepository = postgresRepo.NewPostgresMaterialRepository(db)
-	c.ProgressRepository = postgresRepo.NewPostgresProgressRepository(db)
-	c.RefreshTokenRepository = postgresRepo.NewPostgresRefreshTokenRepository(db)
-	c.LoginAttemptRepository = postgresRepo.NewPostgresLoginAttemptRepository(db)
-	c.SummaryRepository = mongoRepo.NewMongoSummaryRepository(mongoDB)
-	c.AssessmentRepository = mongoRepo.NewMongoAssessmentRepository(mongoDB)
-
-	// Inicializar services (capa de aplicación)
-	c.AuthService = service.NewAuthService(
-		c.UserRepository,
-		c.RefreshTokenRepository,
-		c.LoginAttemptRepository,
-		c.JWTManager,
-		logger,
-	)
-	c.MaterialService = service.NewMaterialService(
-		c.MaterialRepository,
-		c.MessagePublisher,
-		logger,
-	)
-	c.ProgressService = service.NewProgressService(
-		c.ProgressRepository,
-		logger,
-	)
-	c.SummaryService = service.NewSummaryService(
-		c.SummaryRepository,
-		logger,
-	)
-	c.AssessmentService = service.NewAssessmentService(
-		c.AssessmentRepository,
-		c.MessagePublisher,
-		logger,
-	)
-	c.StatsService = service.NewStatsService(
-		logger,
-		c.MaterialRepository,
-		c.AssessmentRepository,
-		c.ProgressRepository,
-	)
-
-	// Inicializar handlers (capa de infraestructura HTTP)
-	c.AuthHandler = handler.NewAuthHandler(
-		c.AuthService,
-		logger,
-	)
-	c.MaterialHandler = handler.NewMaterialHandler(
-		c.MaterialService,
-		c.S3Client,
-		logger,
-	)
-	c.ProgressHandler = handler.NewProgressHandler(
-		c.ProgressService,
-		logger,
-	)
-	c.SummaryHandler = handler.NewSummaryHandler(
-		c.SummaryService,
-		logger,
-	)
-	c.AssessmentHandler = handler.NewAssessmentHandler(
-		c.AssessmentService,
-		logger,
-	)
-	c.StatsHandler = handler.NewStatsHandler(
-		c.StatsService,
-		logger,
-	)
-
-	return c
 }
 
 // Close cierra los recursos del contenedor
+// Delega el cierre al InfrastructureContainer que gestiona las conexiones
 func (c *Container) Close() error {
-	if c.DB != nil {
-		return c.DB.Close()
-	}
-	return nil
+	return c.Infrastructure.Close()
 }

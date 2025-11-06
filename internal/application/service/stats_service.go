@@ -27,22 +27,22 @@ type StatsService interface {
 
 type statsService struct {
 	logger         logger.Logger
-	materialRepo   repository.MaterialRepository
-	assessmentRepo repository.AssessmentRepository
-	progressRepo   repository.ProgressRepository
+	materialStats  repository.MaterialStats  // ISP: Solo necesita estadísticas
+	assessmentStats repository.AssessmentStats // ISP: Solo necesita estadísticas
+	progressStats  repository.ProgressStats  // ISP: Solo necesita estadísticas
 }
 
 func NewStatsService(
 	logger logger.Logger,
-	materialRepo repository.MaterialRepository,
-	assessmentRepo repository.AssessmentRepository,
-	progressRepo repository.ProgressRepository,
+	materialStats repository.MaterialStats,  // ISP: Solo necesita estadísticas
+	assessmentStats repository.AssessmentStats, // ISP: Solo necesita estadísticas
+	progressStats repository.ProgressStats,  // ISP: Solo necesita estadísticas
 ) StatsService {
 	return &statsService{
 		logger:         logger,
-		materialRepo:   materialRepo,
-		assessmentRepo: assessmentRepo,
-		progressRepo:   progressRepo,
+		materialStats:  materialStats,
+		assessmentStats: assessmentStats,
+		progressStats:  progressStats,
 	}
 }
 
@@ -88,7 +88,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Goroutine 1: Contar materiales publicados (PostgreSQL)
 	go func() {
 		defer wg.Done()
-		count, err := s.materialRepo.CountPublishedMaterials(ctx)
+		count, err := s.materialStats.CountPublishedMaterials(ctx)
 		if err != nil {
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
@@ -102,7 +102,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Goroutine 2: Contar evaluaciones completadas (MongoDB)
 	go func() {
 		defer wg.Done()
-		count, err := s.assessmentRepo.CountCompletedAssessments(ctx)
+		count, err := s.assessmentStats.CountCompletedAssessments(ctx)
 		if err != nil {
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
@@ -116,7 +116,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Goroutine 3: Calcular promedio de puntajes (MongoDB)
 	go func() {
 		defer wg.Done()
-		avg, err := s.assessmentRepo.CalculateAverageScore(ctx)
+		avg, err := s.assessmentStats.CalculateAverageScore(ctx)
 		if err != nil {
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
@@ -130,7 +130,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Goroutine 4: Contar usuarios activos (PostgreSQL - últimos 30 días)
 	go func() {
 		defer wg.Done()
-		count, err := s.progressRepo.CountActiveUsers(ctx)
+		count, err := s.progressStats.CountActiveUsers(ctx)
 		if err != nil {
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
@@ -144,7 +144,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Goroutine 5: Calcular promedio de progreso (PostgreSQL)
 	go func() {
 		defer wg.Done()
-		avg, err := s.progressRepo.CalculateAverageProgress(ctx)
+		avg, err := s.progressStats.CalculateAverageProgress(ctx)
 		if err != nil {
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
