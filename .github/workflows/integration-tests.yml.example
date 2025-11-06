@@ -1,0 +1,123 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch: # Permite ejecutar manualmente
+    inputs:
+      run_integration_tests:
+        description: 'Ejecutar tests de integración'
+        required: true
+        type: boolean
+        default: true
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  integration-tests:
+    name: Tests de Integración
+    runs-on: ubuntu-latest
+    
+    # ⚙️ CONTROL: Puedes deshabilitar todo el job con esta condición
+    # if: github.event.inputs.run_integration_tests != 'false'
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      # 🐳 Docker ya está disponible en ubuntu-latest
+      - name: Verificar Docker
+        run: docker ps
+      
+      # ✅ Opción 1: Ejecutar tests (HABILITADOS)
+      - name: Run integration tests
+        if: github.event.inputs.run_integration_tests != 'false'
+        env:
+          RUN_INTEGRATION_TESTS: true
+        run: |
+          go test -v -tags=integration ./test/integration/... -timeout 10m
+      
+      # ⏭️ Opción 2: Skip tests (DESHABILITADOS)
+      # Descomentar si quieres forzar skip temporalmente
+      # - name: Skip integration tests
+      #   if: github.event.inputs.run_integration_tests == 'false'
+      #   env:
+      #     SKIP_INTEGRATION_TESTS: true
+      #   run: |
+      #     echo "⏭️  Integration tests disabled"
+      #     go test -v -tags=integration ./test/integration/... -timeout 10m
+      
+      # 📊 Coverage (opcional)
+      - name: Upload coverage
+        if: github.event.inputs.run_integration_tests != 'false'
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/integration-coverage.out
+          flags: integration
+          name: integration-coverage
+
+  # 🚨 Job separado que SIEMPRE se puede deshabilitar con variable
+  integration-tests-conditional:
+    name: Tests de Integración (Condicional)
+    runs-on: ubuntu-latest
+    
+    # Este job solo corre si la variable está configurada
+    if: vars.ENABLE_INTEGRATION_TESTS == 'true' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Run tests
+        env:
+          RUN_INTEGRATION_TESTS: true
+        run: make test-integration
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📝 CONFIGURACIÓN EN GITHUB
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Para usar variables en GitHub Actions:
+#
+# 1. IR A: Settings → Secrets and variables → Actions → Variables
+#
+# 2. CREAR VARIABLE:
+#    Name: ENABLE_INTEGRATION_TESTS
+#    Value: true  (o false para deshabilitar)
+#
+# 3. USAR EN WORKFLOW:
+#    if: vars.ENABLE_INTEGRATION_TESTS == 'true'
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# CASOS DE USO:
+#
+# 1. Deshabilitar temporalmente (sin modificar código):
+#    - Cambiar ENABLE_INTEGRATION_TESTS a 'false' en GitHub
+#    - Los PRs seguirán corriendo pero tests se skipean
+#
+# 2. Habilitar solo en main/prod:
+#    if: github.ref == 'refs/heads/main'
+#
+# 3. Ejecutar manualmente:
+#    - GitHub UI → Actions → Integration Tests → Run workflow
+#    - Elegir si ejecutar o no tests
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
