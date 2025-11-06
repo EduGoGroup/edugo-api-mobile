@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql:*)",
+      "Bash(docker exec:*)",
+      "Bash(git add:*)",
+      "WebSearch",
+      "Bash(git commit -m \"$(cat <<''EOF''\ndocs(sprint): marcar optimización de índice como completada\n\n- Actualizar sprint/current/planning/readme.md\n- Marcar todas las casillas de Fases 1-5 como completadas\n- Documentar resultados de validación y ejecución\n- Actualizar resumen global del sprint\n\nSprint de optimización PostgreSQL completado exitosamente:\n- 21/21 tareas ejecutadas\n- Script 05_indexes_materials.sql creado\n- Índice idx_materials_updated_at implementado\n- Todas las validaciones pasadas\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
