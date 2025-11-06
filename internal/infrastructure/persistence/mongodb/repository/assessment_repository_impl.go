@@ -14,12 +14,14 @@ import (
 type mongoAssessmentRepository struct {
 	assessments *mongo.Collection
 	attempts    *mongo.Collection
+	results     *mongo.Collection
 }
 
 func NewMongoAssessmentRepository(db *mongo.Database) repository.AssessmentRepository {
 	return &mongoAssessmentRepository{
 		assessments: db.Collection("material_assessments"),
 		attempts:    db.Collection("assessment_attempts"),
+		results:     db.Collection("assessment_results"),
 	}
 }
 
@@ -124,4 +126,41 @@ func (r *mongoAssessmentRepository) GetBestAttempt(ctx context.Context, material
 		Score:       doc["score"].(float64),
 		AttemptedAt: doc["attempted_at"].(string),
 	}, nil
+}
+
+func (r *mongoAssessmentRepository) SaveResult(ctx context.Context, result *repository.AssessmentResult) error {
+	// Convertir feedback items a formato BSON
+	feedbackDocs := make([]bson.M, 0, len(result.Feedback))
+	for _, item := range result.Feedback {
+		feedbackDocs = append(feedbackDocs, bson.M{
+			"question_id":    item.QuestionID,
+			"is_correct":     item.IsCorrect,
+			"user_answer":    item.UserAnswer,
+			"correct_answer": item.CorrectAnswer,
+			"explanation":    item.Explanation,
+		})
+	}
+
+	// Crear documento para insertar
+	doc := bson.M{
+		"assessment_id":    result.AssessmentID,
+		"user_id":          result.UserID.String(),
+		"score":            result.Score,
+		"total_questions":  result.TotalQuestions,
+		"correct_answers":  result.CorrectAnswers,
+		"feedback":         feedbackDocs,
+		"submitted_at":     time.Now(),
+	}
+
+	// InsertOne - el índice UNIQUE en (assessment_id, user_id) previene duplicados
+	_, err := r.results.InsertOne(ctx, doc)
+	if err != nil {
+		// Verificar si es error de duplicado (código 11000)
+		if mongo.IsDuplicateKeyError(err) {
+			return mongo.CommandError{Code: 11000, Name: "DuplicateKey", Message: "assessment already completed by user"}
+		}
+		return err
+	}
+
+	return nil
 }

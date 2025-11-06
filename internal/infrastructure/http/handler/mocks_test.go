@@ -10,10 +10,11 @@ import (
 
 // MockMaterialService para tests de material_handler
 type MockMaterialService struct {
-	CreateMaterialFunc       func(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
-	GetMaterialFunc          func(ctx context.Context, id string) (*dto.MaterialResponse, error)
-	ListMaterialsFunc        func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
-	NotifyUploadCompleteFunc func(ctx context.Context, id string, req dto.UploadCompleteRequest) error
+	CreateMaterialFunc          func(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
+	GetMaterialFunc             func(ctx context.Context, id string) (*dto.MaterialResponse, error)
+	GetMaterialWithVersionsFunc func(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
+	ListMaterialsFunc           func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
+	NotifyUploadCompleteFunc    func(ctx context.Context, id string, req dto.UploadCompleteRequest) error
 }
 
 func (m *MockMaterialService) CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error) {
@@ -35,6 +36,16 @@ func (m *MockMaterialService) ListMaterials(ctx context.Context, filters reposit
 		return m.ListMaterialsFunc(ctx, filters)
 	}
 	return []*dto.MaterialResponse{}, nil
+}
+
+func (m *MockMaterialService) GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error) {
+	if m.GetMaterialWithVersionsFunc != nil {
+		return m.GetMaterialWithVersionsFunc(ctx, id)
+	}
+	return &dto.MaterialWithVersionsResponse{
+		Material: &dto.MaterialResponse{ID: id},
+		Versions: []*dto.MaterialVersionResponse{},
+	}, nil
 }
 
 func (m *MockMaterialService) NotifyUploadComplete(ctx context.Context, id string, req dto.UploadCompleteRequest) error {
