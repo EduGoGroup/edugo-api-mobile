@@ -47,14 +47,14 @@ type FeedbackItem struct {
 // AssessmentResult representa el resultado de una evaluación completada
 // Se almacena en la colección assessment_results (diferente de assessment_attempts)
 type AssessmentResult struct {
-	ID              string
-	AssessmentID    string
-	UserID          valueobject.UserID
-	Score           float64
-	TotalQuestions  int
-	CorrectAnswers  int
-	Feedback        []FeedbackItem
-	SubmittedAt     string
+	ID             string
+	AssessmentID   string
+	UserID         valueobject.UserID
+	Score          float64
+	TotalQuestions int
+	CorrectAnswers int
+	Feedback       []FeedbackItem
+	SubmittedAt    string
 }
 
 // AssessmentRepository define las operaciones para assessments (MongoDB)
@@ -77,4 +77,10 @@ type AssessmentRepository interface {
 	// SaveResult guarda el resultado de una evaluación completada en assessment_results
 	// Retorna error si la evaluación ya fue completada por el usuario (índice UNIQUE)
 	SaveResult(ctx context.Context, result *AssessmentResult) error
+
+	// CountCompletedAssessments cuenta el total de evaluaciones completadas (para estadísticas)
+	CountCompletedAssessments(ctx context.Context) (int64, error)
+
+	// CalculateAverageScore calcula el promedio de puntajes de todas las evaluaciones completadas
+	CalculateAverageScore(ctx context.Context) (float64, error)
 }

@@ -98,7 +98,12 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publis
 		c.MessagePublisher,
 		logger,
 	)
-	c.StatsService = service.NewStatsService(logger)
+	c.StatsService = service.NewStatsService(
+		logger,
+		c.MaterialRepository,
+		c.AssessmentRepository,
+		c.ProgressRepository,
+	)
 
 	// Inicializar handlers (capa de infraestructura HTTP)
 	c.AuthHandler = handler.NewAuthHandler(

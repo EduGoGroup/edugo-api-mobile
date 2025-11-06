@@ -61,7 +61,8 @@ func (s *TrueFalseStrategy) CalculateScore(question repository.AssessmentQuestio
 
 // normalizeToBool convierte diferentes formatos de respuesta a bool
 // Acepta: "true", "True", "1", "verdadero", "Verdadero" -> true
-//         "false", "False", "0", "falso", "Falso" -> false
+//
+//	"false", "False", "0", "falso", "Falso" -> false
 func normalizeToBool(value interface{}) (bool, error) {
 	// Si ya es bool, retornar directamente
 	if boolVal, ok := value.(bool); ok {

@@ -143,13 +143,13 @@ func (r *mongoAssessmentRepository) SaveResult(ctx context.Context, result *repo
 
 	// Crear documento para insertar
 	doc := bson.M{
-		"assessment_id":    result.AssessmentID,
-		"user_id":          result.UserID.String(),
-		"score":            result.Score,
-		"total_questions":  result.TotalQuestions,
-		"correct_answers":  result.CorrectAnswers,
-		"feedback":         feedbackDocs,
-		"submitted_at":     time.Now(),
+		"assessment_id":   result.AssessmentID,
+		"user_id":         result.UserID.String(),
+		"score":           result.Score,
+		"total_questions": result.TotalQuestions,
+		"correct_answers": result.CorrectAnswers,
+		"feedback":        feedbackDocs,
+		"submitted_at":    time.Now(),
 	}
 
 	// InsertOne - el índice UNIQUE en (assessment_id, user_id) previene duplicados
@@ -163,4 +163,48 @@ func (r *mongoAssessmentRepository) SaveResult(ctx context.Context, result *repo
 	}
 
 	return nil
+}
+
+// CountCompletedAssessments cuenta el total de evaluaciones completadas
+// Usado para estadísticas globales del sistema
+func (r *mongoAssessmentRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
+	count, err := r.results.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// CalculateAverageScore calcula el promedio de puntajes de todas las evaluaciones completadas
+// Usa pipeline de agregación de MongoDB para calcular el promedio
+func (r *mongoAssessmentRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
+	// Pipeline: { $group: { _id: null, avgScore: { $avg: "$score" } } }
+	pipeline := mongo.Pipeline{
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "avgScore", Value: bson.D{{Key: "$avg", Value: "$score"}}},
+		}}},
+	}
+
+	cursor, err := r.results.Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0.0, err
+	}
+	defer cursor.Close(ctx)
+
+	// Leer resultado
+	if cursor.Next(ctx) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			return 0.0, err
+		}
+
+		// Extraer avgScore (puede ser nil si no hay documentos)
+		if avgScore, ok := result["avgScore"].(float64); ok {
+			return avgScore, nil
+		}
+	}
+
+	// Si no hay resultados, retornar 0.0 (no hay evaluaciones completadas)
+	return 0.0, nil
 }

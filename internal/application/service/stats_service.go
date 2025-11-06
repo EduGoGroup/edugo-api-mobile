@@ -2,10 +2,15 @@ package service
 
 import (
 	"context"
+	"sync"
+	"time"
 
+	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	"go.uber.org/zap"
 )
 
 type MaterialStats struct {
@@ -17,14 +22,28 @@ type MaterialStats struct {
 
 type StatsService interface {
 	GetMaterialStats(ctx context.Context, materialID string) (*MaterialStats, error)
+	GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO, error)
 }
 
 type statsService struct {
-	logger logger.Logger
+	logger         logger.Logger
+	materialRepo   repository.MaterialRepository
+	assessmentRepo repository.AssessmentRepository
+	progressRepo   repository.ProgressRepository
 }
 
-func NewStatsService(logger logger.Logger) StatsService {
-	return &statsService{logger: logger}
+func NewStatsService(
+	logger logger.Logger,
+	materialRepo repository.MaterialRepository,
+	assessmentRepo repository.AssessmentRepository,
+	progressRepo repository.ProgressRepository,
+) StatsService {
+	return &statsService{
+		logger:         logger,
+		materialRepo:   materialRepo,
+		assessmentRepo: assessmentRepo,
+		progressRepo:   progressRepo,
+	}
 }
 
 func (s *statsService) GetMaterialStats(ctx context.Context, materialID string) (*MaterialStats, error) {
@@ -40,6 +59,132 @@ func (s *statsService) GetMaterialStats(ctx context.Context, materialID string) 
 		TotalAttempts: 45,
 		AvgScore:      78.3,
 	}
+
+	return stats, nil
+}
+
+// GetGlobalStats obtiene estadísticas globales del sistema ejecutando queries en paralelo
+// Usa goroutines con sync.WaitGroup para optimizar performance
+func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO, error) {
+	startTime := time.Now()
+
+	s.logger.Info("iniciando obtención de estadísticas globales")
+
+	// Variables para almacenar resultados de cada query
+	var (
+		totalMaterials   int64
+		totalAssessments int64
+		avgScore         float64
+		activeUsers      int64
+		avgProgress      float64
+		queryErrors      []error
+		mu               sync.Mutex // Proteger acceso a queryErrors
+		wg               sync.WaitGroup
+	)
+
+	// Ejecutar 5 queries en paralelo usando goroutines
+	wg.Add(5)
+
+	// Goroutine 1: Contar materiales publicados (PostgreSQL)
+	go func() {
+		defer wg.Done()
+		count, err := s.materialRepo.CountPublishedMaterials(ctx)
+		if err != nil {
+			mu.Lock()
+			queryErrors = append(queryErrors, err)
+			mu.Unlock()
+			s.logger.Error("error al contar materiales publicados", zap.Error(err))
+			return
+		}
+		totalMaterials = count
+	}()
+
+	// Goroutine 2: Contar evaluaciones completadas (MongoDB)
+	go func() {
+		defer wg.Done()
+		count, err := s.assessmentRepo.CountCompletedAssessments(ctx)
+		if err != nil {
+			mu.Lock()
+			queryErrors = append(queryErrors, err)
+			mu.Unlock()
+			s.logger.Error("error al contar evaluaciones completadas", zap.Error(err))
+			return
+		}
+		totalAssessments = count
+	}()
+
+	// Goroutine 3: Calcular promedio de puntajes (MongoDB)
+	go func() {
+		defer wg.Done()
+		avg, err := s.assessmentRepo.CalculateAverageScore(ctx)
+		if err != nil {
+			mu.Lock()
+			queryErrors = append(queryErrors, err)
+			mu.Unlock()
+			s.logger.Error("error al calcular promedio de puntajes", zap.Error(err))
+			return
+		}
+		avgScore = avg
+	}()
+
+	// Goroutine 4: Contar usuarios activos (PostgreSQL - últimos 30 días)
+	go func() {
+		defer wg.Done()
+		count, err := s.progressRepo.CountActiveUsers(ctx)
+		if err != nil {
+			mu.Lock()
+			queryErrors = append(queryErrors, err)
+			mu.Unlock()
+			s.logger.Error("error al contar usuarios activos", zap.Error(err))
+			return
+		}
+		activeUsers = count
+	}()
+
+	// Goroutine 5: Calcular promedio de progreso (PostgreSQL)
+	go func() {
+		defer wg.Done()
+		avg, err := s.progressRepo.CalculateAverageProgress(ctx)
+		if err != nil {
+			mu.Lock()
+			queryErrors = append(queryErrors, err)
+			mu.Unlock()
+			s.logger.Error("error al calcular promedio de progreso", zap.Error(err))
+			return
+		}
+		avgProgress = avg
+	}()
+
+	// Esperar a que todas las goroutines terminen
+	wg.Wait()
+
+	// Si hubo algún error en las queries, retornar error
+	if len(queryErrors) > 0 {
+		s.logger.Error("errores al obtener estadísticas globales",
+			zap.Int("total_errors", len(queryErrors)))
+		return nil, errors.NewInternalError("error al obtener estadísticas del sistema", queryErrors[0])
+	}
+
+	// Calcular tiempo de ejecución total
+	elapsed := time.Since(startTime).Milliseconds()
+
+	// Construir DTO con resultados
+	stats := &dto.GlobalStatsDTO{
+		TotalPublishedMaterials:   totalMaterials,
+		TotalCompletedAssessments: totalAssessments,
+		AverageAssessmentScore:    avgScore,
+		ActiveUsersLast30Days:     activeUsers,
+		AverageProgress:           avgProgress,
+		GeneratedAt:               time.Now(),
+	}
+
+	s.logger.Info("estadísticas globales obtenidas exitosamente",
+		zap.Int64("total_materials", totalMaterials),
+		zap.Int64("total_assessments", totalAssessments),
+		zap.Float64("avg_score", avgScore),
+		zap.Int64("active_users", activeUsers),
+		zap.Float64("avg_progress", avgProgress),
+		zap.Int64("elapsed_ms", elapsed))
 
 	return stats, nil
 }

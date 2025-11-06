@@ -54,6 +54,15 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 
 		// Rutas de materiales
 		setupMaterialRoutes(protected, c)
+
+		// Rutas de evaluaciones (assessments)
+		setupAssessmentRoutes(protected, c)
+
+		// Rutas de progreso (progress)
+		setupProgressRoutes(protected, c)
+
+		// Rutas de estadísticas globales
+		setupStatsRoutes(protected, c)
 	}
 }
 
@@ -92,5 +101,34 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 
 		// Estadísticas de materiales
 		materials.GET("/:id/stats", c.StatsHandler.GetMaterialStats)
+	}
+}
+
+// setupAssessmentRoutes configura todas las rutas relacionadas con evaluaciones.
+func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
+	assessments := rg.Group("/assessments")
+	{
+		// Submit de evaluación con cálculo automático de score y feedback detallado
+		assessments.POST("/:id/submit", c.AssessmentHandler.SubmitAssessment)
+	}
+}
+
+// setupProgressRoutes configura todas las rutas relacionadas con progreso de usuarios.
+func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
+	progress := rg.Group("/progress")
+	{
+		// Endpoint UPSERT idempotente de progreso (Fase 5)
+		// PUT (no POST) porque la operación es idempotente
+		progress.PUT("", c.ProgressHandler.UpsertProgress)
+	}
+}
+
+// setupStatsRoutes configura todas las rutas relacionadas con estadísticas globales del sistema.
+func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
+	stats := rg.Group("/stats")
+	{
+		// Estadísticas globales del sistema (Fase 6)
+		// TODO: Agregar middleware de autorización para solo admins
+		stats.GET("/global", c.StatsHandler.GetGlobalStats)
 	}
 }

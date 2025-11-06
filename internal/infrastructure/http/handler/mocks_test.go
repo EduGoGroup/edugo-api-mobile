@@ -122,3 +122,38 @@ func (m *MockAuthService) RevokeAllSessions(ctx context.Context, userID string) 
 	}
 	return nil
 }
+
+// MockAssessmentService para tests de assessment_handler
+type MockAssessmentService struct {
+	GetAssessmentFunc  func(ctx context.Context, materialID string) (*repository.MaterialAssessment, error)
+	RecordAttemptFunc  func(ctx context.Context, materialID string, userID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error)
+	CalculateScoreFunc func(ctx context.Context, assessmentID string, userID string, userResponses map[string]interface{}) (*repository.AssessmentResult, error)
+}
+
+func (m *MockAssessmentService) GetAssessment(ctx context.Context, materialID string) (*repository.MaterialAssessment, error) {
+	if m.GetAssessmentFunc != nil {
+		return m.GetAssessmentFunc(ctx, materialID)
+	}
+	return &repository.MaterialAssessment{}, nil
+}
+
+func (m *MockAssessmentService) RecordAttempt(ctx context.Context, materialID string, userID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error) {
+	if m.RecordAttemptFunc != nil {
+		return m.RecordAttemptFunc(ctx, materialID, userID, answers)
+	}
+	return &repository.AssessmentAttempt{}, nil
+}
+
+func (m *MockAssessmentService) CalculateScore(ctx context.Context, assessmentID string, userID string, userResponses map[string]interface{}) (*repository.AssessmentResult, error) {
+	if m.CalculateScoreFunc != nil {
+		return m.CalculateScoreFunc(ctx, assessmentID, userID, userResponses)
+	}
+	return &repository.AssessmentResult{
+		ID:             "result-123",
+		AssessmentID:   assessmentID,
+		Score:          75.0,
+		TotalQuestions: 4,
+		CorrectAnswers: 3,
+		Feedback:       []repository.FeedbackItem{},
+	}, nil
+}

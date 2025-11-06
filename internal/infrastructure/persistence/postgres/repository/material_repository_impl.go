@@ -214,12 +214,12 @@ func (r *postgresMaterialRepository) FindByIDWithVersions(ctx context.Context, i
 
 		// Variables para versión (puede ser NULL si material no tiene versiones)
 		var (
-			versionIDStr      sql.NullString
-			versionNumber     sql.NullInt32
-			versionTitle      sql.NullString
-			versionURL        sql.NullString
-			versionChangedBy  sql.NullString
-			versionCreatedAt  sql.NullTime
+			versionIDStr     sql.NullString
+			versionNumber    sql.NullInt32
+			versionTitle     sql.NullString
+			versionURL       sql.NullString
+			versionChangedBy sql.NullString
+			versionCreatedAt sql.NullTime
 		)
 
 		// Scan de la fila

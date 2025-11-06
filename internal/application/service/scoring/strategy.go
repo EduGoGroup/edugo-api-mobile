@@ -17,10 +17,10 @@ type ScoringStrategy interface {
 
 // ScoringResult encapsula el resultado de evaluar una pregunta
 type ScoringResult struct {
-	QuestionID     string
-	IsCorrect      bool
-	Score          float64
-	UserAnswer     string
-	CorrectAnswer  string
-	Explanation    string
+	QuestionID    string
+	IsCorrect     bool
+	Score         float64
+	UserAnswer    string
+	CorrectAnswer string
+	Explanation   string
 }

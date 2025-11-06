@@ -53,6 +53,16 @@ func (m *MockAssessmentRepository) SaveResult(ctx context.Context, result *repos
 	return args.Error(0)
 }
 
+func (m *MockAssessmentRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockAssessmentRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(float64), args.Error(1)
+}
+
 // Nota: MockPublisher y MockLogger ya están definidos en material_service_test.go
 
 func TestAssessmentService_CalculateScore_TodasRespuestasCorrectas(t *testing.T) {
@@ -71,19 +81,19 @@ func TestAssessmentService_CalculateScore_TodasRespuestasCorrectas(t *testing.T)
 		MaterialID: matID,
 		Questions: []repository.AssessmentQuestion{
 			{
-				ID:              "q1",
-				QuestionText:    "¿Cuál es la capital de Francia?",
-				QuestionType:    enum.AssessmentTypeMultipleChoice,
-				Options:         []string{"A. Madrid", "B. París", "C. Londres"},
-				CorrectAnswer:   "B",
-				Explanation:     "París es la capital de Francia.",
+				ID:            "q1",
+				QuestionText:  "¿Cuál es la capital de Francia?",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				Options:       []string{"A. Madrid", "B. París", "C. Londres"},
+				CorrectAnswer: "B",
+				Explanation:   "París es la capital de Francia.",
 			},
 			{
-				ID:              "q2",
-				QuestionText:    "¿El sol es una estrella?",
-				QuestionType:    enum.AssessmentTypeTrueFalse,
-				CorrectAnswer:   "true",
-				Explanation:     "El sol es una estrella.",
+				ID:            "q2",
+				QuestionText:  "¿El sol es una estrella?",
+				QuestionType:  enum.AssessmentTypeTrueFalse,
+				CorrectAnswer: "true",
+				Explanation:   "El sol es una estrella.",
 			},
 		},
 		CreatedAt: "2025-11-05T00:00:00Z",
@@ -134,32 +144,32 @@ func TestAssessmentService_CalculateScore_RespuestasParciales(t *testing.T) {
 		MaterialID: matID,
 		Questions: []repository.AssessmentQuestion{
 			{
-				ID:              "q1",
-				QuestionText:    "Pregunta 1",
-				QuestionType:    enum.AssessmentTypeMultipleChoice,
-				CorrectAnswer:   "A",
-				Explanation:     "",
+				ID:            "q1",
+				QuestionText:  "Pregunta 1",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+				Explanation:   "",
 			},
 			{
-				ID:              "q2",
-				QuestionText:    "Pregunta 2",
-				QuestionType:    enum.AssessmentTypeTrueFalse,
-				CorrectAnswer:   true,
-				Explanation:     "",
+				ID:            "q2",
+				QuestionText:  "Pregunta 2",
+				QuestionType:  enum.AssessmentTypeTrueFalse,
+				CorrectAnswer: true,
+				Explanation:   "",
 			},
 			{
-				ID:              "q3",
-				QuestionText:    "Pregunta 3",
-				QuestionType:    enum.AssessmentTypeShortAnswer,
-				CorrectAnswer:   "París",
-				Explanation:     "",
+				ID:            "q3",
+				QuestionText:  "Pregunta 3",
+				QuestionType:  enum.AssessmentTypeShortAnswer,
+				CorrectAnswer: "París",
+				Explanation:   "",
 			},
 			{
-				ID:              "q4",
-				QuestionText:    "Pregunta 4",
-				QuestionType:    enum.AssessmentTypeMultipleChoice,
-				CorrectAnswer:   "D",
-				Explanation:     "",
+				ID:            "q4",
+				QuestionText:  "Pregunta 4",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "D",
+				Explanation:   "",
 			},
 		},
 		CreatedAt: "2025-11-05T00:00:00Z",
@@ -189,10 +199,10 @@ func TestAssessmentService_CalculateScore_RespuestasParciales(t *testing.T) {
 	assert.Equal(t, 4, result.TotalQuestions)
 	assert.Equal(t, 2, result.CorrectAnswers)
 	assert.Len(t, result.Feedback, 4)
-	assert.True(t, result.Feedback[0].IsCorrect)   // q1
-	assert.False(t, result.Feedback[1].IsCorrect)  // q2
-	assert.True(t, result.Feedback[2].IsCorrect)   // q3
-	assert.False(t, result.Feedback[3].IsCorrect)  // q4
+	assert.True(t, result.Feedback[0].IsCorrect)  // q1
+	assert.False(t, result.Feedback[1].IsCorrect) // q2
+	assert.True(t, result.Feedback[2].IsCorrect)  // q3
+	assert.False(t, result.Feedback[3].IsCorrect) // q4
 
 	mockRepo.AssertExpectations(t)
 }
@@ -213,18 +223,18 @@ func TestAssessmentService_CalculateScore_NingunaCorrecta(t *testing.T) {
 		MaterialID: matID,
 		Questions: []repository.AssessmentQuestion{
 			{
-				ID:              "q1",
-				QuestionText:    "Pregunta 1",
-				QuestionType:    enum.AssessmentTypeMultipleChoice,
-				CorrectAnswer:   "A",
-				Explanation:     "",
+				ID:            "q1",
+				QuestionText:  "Pregunta 1",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+				Explanation:   "",
 			},
 			{
-				ID:              "q2",
-				QuestionText:    "Pregunta 2",
-				QuestionType:    enum.AssessmentTypeTrueFalse,
-				CorrectAnswer:   true,
-				Explanation:     "",
+				ID:            "q2",
+				QuestionText:  "Pregunta 2",
+				QuestionType:  enum.AssessmentTypeTrueFalse,
+				CorrectAnswer: true,
+				Explanation:   "",
 			},
 		},
 		CreatedAt: "2025-11-05T00:00:00Z",
@@ -274,18 +284,18 @@ func TestAssessmentService_CalculateScore_PreguntaSinResponder(t *testing.T) {
 		MaterialID: matID,
 		Questions: []repository.AssessmentQuestion{
 			{
-				ID:              "q1",
-				QuestionText:    "Pregunta 1",
-				QuestionType:    enum.AssessmentTypeMultipleChoice,
-				CorrectAnswer:   "A",
-				Explanation:     "",
+				ID:            "q1",
+				QuestionText:  "Pregunta 1",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+				Explanation:   "",
 			},
 			{
-				ID:              "q2",
-				QuestionText:    "Pregunta 2",
-				QuestionType:    enum.AssessmentTypeTrueFalse,
-				CorrectAnswer:   true,
-				Explanation:     "",
+				ID:            "q2",
+				QuestionText:  "Pregunta 2",
+				QuestionType:  enum.AssessmentTypeTrueFalse,
+				CorrectAnswer: true,
+				Explanation:   "",
 			},
 		},
 		CreatedAt: "2025-11-05T00:00:00Z",

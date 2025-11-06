@@ -81,7 +81,7 @@ func ReconstructMaterialVersion(
 
 // Getters
 
-func (mv *MaterialVersion) ID() valueobject.MaterialVersionID { return mv.id }
+func (mv *MaterialVersion) ID() valueobject.MaterialVersionID  { return mv.id }
 func (mv *MaterialVersion) MaterialID() valueobject.MaterialID { return mv.materialID }
 func (mv *MaterialVersion) VersionNumber() int                 { return mv.versionNumber }
 func (mv *MaterialVersion) Title() string                      { return mv.title }
