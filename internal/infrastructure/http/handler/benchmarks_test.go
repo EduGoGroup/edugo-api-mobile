@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -213,8 +214,8 @@ func BenchmarkMaterialHandler_ListMaterials(b *testing.B) {
 	materials := make([]*dto.MaterialResponse, 50)
 	for i := 0; i < 50; i++ {
 		materials[i] = &dto.MaterialResponse{
-			ID:    string(rune(i)),
-			Title: "Material " + string(rune(i)),
+			ID:    fmt.Sprintf("material-%d", i),
+			Title: fmt.Sprintf("Material %d", i),
 		}
 	}
 
