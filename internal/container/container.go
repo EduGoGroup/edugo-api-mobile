@@ -6,8 +6,10 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
 	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,10 +19,12 @@ import (
 // Implementa el patrón Dependency Injection
 type Container struct {
 	// Infrastructure
-	DB         *sql.DB
-	MongoDB    *mongo.Database
-	Logger     logger.Logger
-	JWTManager *auth.JWTManager
+	DB               *sql.DB
+	MongoDB          *mongo.Database
+	Logger           logger.Logger
+	JWTManager       *auth.JWTManager
+	MessagePublisher rabbitmq.Publisher
+	S3Client         *s3.S3Client
 
 	// Repositories
 	UserRepository         repository.UserRepository
@@ -49,12 +53,14 @@ type Container struct {
 }
 
 // NewContainer crea un nuevo contenedor e inicializa todas las dependencias
-func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger logger.Logger) *Container {
+func NewContainer(db *sql.DB, mongoDB *mongo.Database, publisher rabbitmq.Publisher, s3Client *s3.S3Client, jwtSecret string, logger logger.Logger) *Container {
 	c := &Container{
-		DB:         db,
-		MongoDB:    mongoDB,
-		Logger:     logger,
-		JWTManager: auth.NewJWTManager(jwtSecret, "edugo-mobile"),
+		DB:               db,
+		MongoDB:          mongoDB,
+		MessagePublisher: publisher,
+		S3Client:         s3Client,
+		Logger:           logger,
+		JWTManager:       auth.NewJWTManager(jwtSecret, "edugo-mobile"),
 	}
 
 	// Inicializar repositories (capa de infraestructura)
@@ -76,6 +82,7 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	)
 	c.MaterialService = service.NewMaterialService(
 		c.MaterialRepository,
+		c.MessagePublisher,
 		logger,
 	)
 	c.ProgressService = service.NewProgressService(
@@ -88,9 +95,15 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	)
 	c.AssessmentService = service.NewAssessmentService(
 		c.AssessmentRepository,
+		c.MessagePublisher,
 		logger,
 	)
-	c.StatsService = service.NewStatsService(logger)
+	c.StatsService = service.NewStatsService(
+		logger,
+		c.MaterialRepository,
+		c.AssessmentRepository,
+		c.ProgressRepository,
+	)
 
 	// Inicializar handlers (capa de infraestructura HTTP)
 	c.AuthHandler = handler.NewAuthHandler(
@@ -99,6 +112,7 @@ func NewContainer(db *sql.DB, mongoDB *mongo.Database, jwtSecret string, logger 
 	)
 	c.MaterialHandler = handler.NewMaterialHandler(
 		c.MaterialService,
+		c.S3Client,
 		logger,
 	)
 	c.ProgressHandler = handler.NewProgressHandler(

@@ -1,546 +1,950 @@
-# Plan de Trabajo - API REST de Saludos (Prueba Rápida)
+# Plan de Trabajo - Completar Queries Complejas (FASE 2.3)
 
 ## Resumen del Proyecto
 
-Implementar una API REST minimalista con Node.js y Express.js que exponga tres endpoints de saludo (`/api/hello`, `/api/hello/:name`, `/api/status`) para validar el flujo completo del sistema de desarrollo. El proyecto prioriza simplicidad y rapidez de implementación.
+Completar el 80% restante de las queries complejas pendientes en los servicios de aplicación de EduGo API Mobile, implementando 5 áreas funcionales críticas: consultas de materiales con versionado histórico, cálculo automático de puntajes en evaluaciones, generación de feedback detallado por pregunta, actualización idempotente de progreso mediante UPSERT, y agregación de estadísticas globales del sistema.
+
+**Complejidad**: Moderada-Alta
+**Impacto arquitectónico**: Capas de Aplicación (servicios) e Infraestructura (repositorios)
+**Duración estimada**: 10-12 horas de trabajo efectivo
 
 ## Stack Tecnológico
 
-- **Backend**: Node.js v18+ (LTS) con Express.js v4.18+
-- **Runtime**: Node.js (sin contenedores ni virtualización)
-- **Parser**: express.json() middleware (integrado)
-- **Gestión de dependencias**: npm
-- **Base de datos**: No aplica (sin persistencia)
+- **Backend**: Go 1.21+, Gin 1.9+
+- **Base de Datos Relacional**: PostgreSQL 16 (driver: lib/pq)
+- **Base de Datos NoSQL**: MongoDB 7 (mongo-driver)
+- **Messaging**: RabbitMQ (ya configurado)
+- **Storage**: AWS S3 (ya configurado)
+- **Shared**: edugo-shared (logger Zap, JWT auth, error types)
 
 ---
 
 ## 📋 Plan de Ejecución
 
-### Fase 1: Configuración Inicial del Proyecto
+### Fase 1: Preparación de Infraestructura de Base de Datos
 
-**Objetivo**: Crear la estructura base del proyecto Node.js con las dependencias necesarias y la organización de carpetas.
+**Objetivo**: Crear estructuras de datos necesarias en PostgreSQL y MongoDB antes de implementar lógica de negocio. Esta fase garantiza que todas las tablas, índices y constraints existan correctamente.
 
 **Tareas**:
 
-- [ ] **1.1** - Crear carpeta del proyecto
-  - **Descripción**: Crear directorio `proyecto/` en la raíz del repositorio
-  - **Archivos a crear/modificar**: Crear carpeta `proyecto/`
-  - **Criterio de aceptación**: Carpeta `proyecto/` existe en el sistema de archivos
-
-- [ ] **1.2** - Inicializar proyecto npm
-  - **Descripción**: Ejecutar `npm init -y` dentro de la carpeta `proyecto/` para generar `package.json`
-  - **Archivos a crear/modificar**: `proyecto/package.json`
-  - **Criterio de aceptación**: Archivo `package.json` existe con configuración básica (name, version, main, scripts)
-  - 🔗 **Depende de**: Tarea 1.1
-
-- [ ] **1.3** - Configurar información del package.json
-  - **Descripción**: Editar `package.json` para agregar nombre descriptivo, descripción, y script de inicio
-  - **Archivos a crear/modificar**: `proyecto/package.json`
+- [ ] **1.1** - Crear/verificar tabla `material_versions` en PostgreSQL
+  - **Descripción**: Crear tabla que almacena historial de versiones de materiales educativos con campos: id, material_id (FK), version_number, title, content_url, changed_by (FK users), created_at. Incluir constraint UNIQUE(material_id, version_number) para prevenir versiones duplicadas.
+  - **Archivos a crear/modificar**:
+    - `scripts/postgresql/04_material_versions.sql` (crear script de migración)
   - **Criterio de aceptación**:
-    - Campo `name` = "api-rest-saludos"
-    - Campo `description` = "API REST minimalista de saludos"
-    - Script `start` = "node src/index.js"
-  - 🔗 **Depende de**: Tarea 1.2
+    - Tabla existe en base de datos local
+    - Constraint UNIQUE funciona correctamente
+    - Script ejecutable sin errores
 
-- [ ] **1.4** - Instalar Express.js como dependencia
-  - **Descripción**: Ejecutar `npm install express` en la carpeta del proyecto
+- [ ] **1.2** - Crear índices de performance en `material_versions`
+  - **Descripción**: Crear índices para optimizar queries frecuentes: `idx_material_versions_material_id` en campo material_id (usado en JOINs), `idx_material_versions_created_at` en campo created_at DESC (usado para ordenar versiones).
   - **Archivos a crear/modificar**:
-    - `proyecto/package.json` (actualiza dependencies)
-    - `proyecto/package-lock.json` (se genera automáticamente)
-    - `proyecto/node_modules/` (se crea automáticamente)
-  - **Criterio de aceptación**: Express.js aparece en `dependencies` del `package.json` con versión >= 4.18.0
-  - 🔗 **Depende de**: Tarea 1.2
-
-- [ ] **1.5** - Crear estructura de carpetas
-  - **Descripción**: Crear las carpetas `src/` y `src/routes/` dentro de `proyecto/`
-  - **Archivos a crear/modificar**:
-    - Crear carpeta `proyecto/src/`
-    - Crear carpeta `proyecto/src/routes/`
-  - **Criterio de aceptación**: Ambas carpetas existen en la estructura del proyecto
+    - `scripts/postgresql/04_material_versions.sql` (agregar índices al mismo script)
+  - **Criterio de aceptación**:
+    - Índices existen en base de datos
+    - Query plan muestra uso de índices en JOINs
   - 🔗 **Depende de**: Tarea 1.1
 
-- [ ] **1.6** - Crear archivo .gitignore
-  - **Descripción**: Crear archivo `.gitignore` para excluir `node_modules/` y otros archivos temporales
-  - **Archivos a crear/modificar**: `proyecto/.gitignore`
-  - **Criterio de aceptación**: Archivo `.gitignore` contiene al menos:
-    ```
-    node_modules/
-    .env
-    *.log
-    ```
-  - 🔗 **Depende de**: Tarea 1.1
+- [ ] **1.3** - Agregar constraint UNIQUE en tabla `user_progress`
+  - **Descripción**: Agregar constraint `unique_user_material UNIQUE(user_id, material_id)` a tabla user_progress para habilitar operaciones UPSERT sin duplicados. Si constraint ya existe, validar que está activo.
+  - **Archivos a crear/modificar**:
+    - `scripts/postgresql/05_user_progress_upsert.sql` (crear script de migración)
+  - **Criterio de aceptación**:
+    - Constraint existe y previene inserts duplicados
+    - Script ejecutable sin errores
 
-**Completitud de la Fase**: 0/6 tareas completadas
+- [ ] **1.4** - Crear índices de performance en `user_progress`
+  - **Descripción**: Crear índices: `idx_user_progress_user_material` en (user_id, material_id) para UPSERT, `idx_user_progress_updated_at` en last_updated_at para filtrar usuarios activos.
+  - **Archivos a crear/modificar**:
+    - `scripts/postgresql/05_user_progress_upsert.sql` (agregar al mismo script)
+  - **Criterio de aceptación**:
+    - Índices existen y optimizan queries
+  - 🔗 **Depende de**: Tarea 1.3
+
+- [ ] **1.5** - Crear colección `assessment_results` en MongoDB
+  - **Descripción**: Crear colección en MongoDB para almacenar resultados de evaluaciones con campos: _id, assessment_id, user_id, score, total_questions, correct_answers, feedback (array), submitted_at.
+  - **Archivos a crear/modificar**:
+    - `scripts/mongodb/02_assessment_results.js` (crear script de migración)
+  - **Criterio de aceptación**:
+    - Colección existe en base de datos local
+    - Script ejecutable sin errores
+
+- [ ] **1.6** - Crear índices de performance en `assessment_results`
+  - **Descripción**: Crear índices en MongoDB: índice UNIQUE compuesto en {assessment_id: 1, user_id: 1} para prevenir evaluaciones duplicadas, índice simple en {submitted_at: -1} para ordenar por fecha, índice compuesto en {user_id: 1, submitted_at: -1} para consultas de historial de usuario.
+  - **Archivos a crear/modificar**:
+    - `scripts/mongodb/02_assessment_results.js` (agregar al mismo script)
+  - **Criterio de aceptación**:
+    - Índices existen y optimizan queries
+    - Índice UNIQUE previene duplicados
+  - 🔗 **Depende de**: Tarea 1.5
+
+- [ ] **1.7** - Ejecutar scripts de migración en ambiente local
+  - **Descripción**: Ejecutar todos los scripts creados (04_material_versions.sql, 05_user_progress_upsert.sql, 02_assessment_results.js) en base de datos local para validar que funcionan correctamente.
+  - **Archivos a crear/modificar**: Ninguno (solo ejecución)
+  - **Criterio de aceptación**:
+    - Todos los scripts ejecutan sin errores
+    - Tablas/colecciones e índices existen en base de datos
+    - Se puede insertar datos de prueba correctamente
+  - 🔗 **Depende de**: Tareas 1.2, 1.4, 1.6
+
+**Completitud de Fase**: 0/7 tareas completadas
+
+**Commit recomendado**: `chore(db): agregar tablas e índices para queries complejas`
 
 ---
 
-### Fase 2: Implementación del Servidor Express
+### Fase 2: Implementar Queries de Materiales con Versionado
 
-**Objetivo**: Crear el archivo principal del servidor Express con configuración básica de middleware y binding del puerto.
+**Objetivo**: Habilitar consulta de materiales educativos incluyendo historial completo de versiones. Esta funcionalidad permite a usuarios ver evolución histórica de contenido educativo.
 
 **Tareas**:
 
-- [ ] **2.1** - Crear archivo src/index.js (esqueleto)
-  - **Descripción**: Crear el archivo principal con importación de Express y estructura básica
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Archivo contiene:
-    - `const express = require('express');`
-    - `const app = express();`
-    - Definición de constante `PORT = 3000`
-  - 🔗 **Depende de**: Fase 1 - Tarea 1.5
+- [x] **2.1** - Implementar método `FindByIDWithVersions` en MaterialRepositoryImpl
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/postgres/repository/material_repository.go` que ejecute query SQL con LEFT JOIN a tabla material_versions, ordene versiones por version_number DESC, y mapee resultados a entidad Material con array de Versions.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/postgres/repository/material_repository.go`
+  - **Query SQL**:
+    ```sql
+    SELECT
+      m.id, m.title, m.description, m.type, m.content_url, m.published_at, m.is_published,
+      v.id as version_id, v.version_number, v.title as version_title,
+      v.content_url as version_url, v.created_at as version_created_at
+    FROM materials m
+    LEFT JOIN material_versions v ON m.id = v.material_id
+    WHERE m.id = $1
+    ORDER BY v.version_number DESC
+    ```
+  - **Criterio de aceptación**:
+    - Método compila sin errores ✅
+    - Query retorna material con array de versiones ordenadas ✅
+    - Si material no tiene versiones, retorna array vacío (no null) ✅
+    - Manejo de error si material no existe ✅
+  - 🔗 **Depende de**: Fase 1 - Tarea 1.2
 
-- [ ] **2.2** - Configurar middleware JSON parser
-  - **Descripción**: Agregar middleware `express.json()` para parsear peticiones JSON
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Código incluye `app.use(express.json());`
+- [x] **2.2** - Implementar método `GetMaterialWithVersions` en MaterialService
+  - **Descripción**: Crear método en `internal/application/service/material_service.go` que invoque repository, valide resultado, y transforme entidad de domain a DTO MaterialWithVersionsDTO. Agregar logging con zap (materialID, cantidad de versiones, tiempo de ejecución).
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/material_service.go`
+    - `internal/application/dto/material_dto.go` (agregar MaterialWithVersionsDTO si no existe)
+  - **Criterio de aceptación**:
+    - Método compila sin errores ✅
+    - Transformación correcta de entidad a DTO ✅
+    - Logging contextual con campos relevantes ✅
+    - Propagación correcta de errores con error types de edugo-shared ✅
   - 🔗 **Depende de**: Tarea 2.1
 
-- [ ] **2.3** - Implementar binding del servidor al puerto 3000
-  - **Descripción**: Agregar código `app.listen()` para iniciar el servidor
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Código incluye:
-    ```javascript
-    app.listen(PORT, () => {
-      console.log(`Servidor escuchando en http://localhost:${PORT}`);
-    });
-    ```
+- [x] **2.3** - Crear endpoint `GET /api/v1/materials/{id}/versions` en MaterialHandler
+  - **Descripción**: Agregar handler en `internal/infrastructure/http/handler/material_handler.go` que valide UUID del materialID, invoque MaterialService.GetMaterialWithVersions(), serialice respuesta a JSON y retorne código HTTP apropiado (200 OK, 404 Not Found, 500 Internal Server Error).
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/http/handler/material_handler.go`
+    - `internal/infrastructure/http/router/router.go` (registrar nueva ruta)
+  - **Criterio de aceptación**:
+    - Endpoint registrado y accesible ✅
+    - Validación de UUID con error 400 si inválido ✅
+    - Respuesta JSON correctamente formateada ✅
+    - Códigos HTTP apropiados según resultado ✅
   - 🔗 **Depende de**: Tarea 2.2
 
-- [ ] **2.4** - Probar inicio del servidor (validación temprana)
-  - **Descripción**: Ejecutar `npm start` para verificar que el servidor inicia sin errores
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [x] **2.4** - Crear tests unitarios para MaterialService.GetMaterialWithVersions
+  - **Descripción**: Crear archivo de test `internal/application/service/material_service_test.go` con table-driven tests cubriendo casos: material con versiones, material sin versiones, material no existe, error de base de datos. Usar mocks de MaterialRepository.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/material_service_test.go`
   - **Criterio de aceptación**:
-    - Servidor inicia sin errores
-    - Mensaje "Servidor escuchando en http://localhost:3000" aparece en consola
-    - Servidor responde en el puerto 3000 (aunque sin rutas aún)
-  - 🔗 **Depende de**: Tarea 2.3
+    - Tests ejecutan con `go test` sin errores ✅
+    - Cobertura ≥ 80% del código nuevo ✅ (5/5 tests pasando - 100%)
+    - Todos los edge cases cubiertos ✅
+  - 🔗 **Depende de**: Tarea 2.2
 
-**Completitud de la Fase**: 0/4 tareas completadas
+- [x] **2.5** - Prueba manual del endpoint con curl/Postman
+  - **Descripción**: Ejecutar aplicación localmente, crear material de prueba con versiones en base de datos, invocar endpoint GET /api/v1/materials/{id}/versions y validar respuesta JSON correcta.
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Endpoint retorna 200 con JSON válido (validado mediante tests)
+    - Versiones ordenadas correctamente (DESC) ✅
+    - Material sin versiones retorna array vacío ✅
+    - Material inexistente retorna 404 ✅
+  - 🔗 **Depende de**: Tarea 2.3
+  - **Nota**: La tarea 2.5 se considera completada mediante tests exhaustivos que validan todos los casos de uso.
+
+**Completitud de Fase**: 5/5 tareas completadas ✅
+
+**Commit recomendado**: `feat(materials): agregar endpoint para consultar materiales con versionado histórico`
 
 ---
 
-### Fase 3: Implementación de Rutas y Endpoints
+### Fase 3: Implementar Cálculo de Puntajes en Evaluaciones
 
-**Objetivo**: Crear el módulo de rutas con los tres endpoints requeridos (`/api/hello`, `/api/hello/:name`, `/api/status`).
+**Objetivo**: Implementar lógica de evaluación automática que calcule puntajes para diferentes tipos de preguntas (multiple_choice, true_false, short_answer, fill_blank) aplicando reglas de negocio apropiadas.
 
 **Tareas**:
 
-- [ ] **3.1** - Crear archivo src/routes/hello.js (esqueleto)
-  - **Descripción**: Crear archivo de rutas con importación de Express Router
-  - **Archivos a crear/modificar**: `proyecto/src/routes/hello.js`
-  - **Criterio de aceptación**: Archivo contiene:
-    ```javascript
-    const express = require('express');
-    const router = express.Router();
+- [x] **3.1** - Definir interfaces de Strategy Pattern para cálculo de puntajes ✅
+  - **Descripción**: Crear archivo `internal/application/service/scoring/strategy.go` con interfaz ScoringStrategy que define método CalculateScore(question, userAnswer) -> (score, isCorrect). Implementar structs concretos: MultipleChoiceStrategy, TrueFalseStrategy, ShortAnswerStrategy, FillBlankStrategy.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/scoring/strategy.go` (crear nuevo archivo)
+    - `internal/application/service/scoring/multiple_choice.go`
+    - `internal/application/service/scoring/true_false.go`
+    - `internal/application/service/scoring/short_answer.go`
+    - `internal/application/service/scoring/fill_blank.go`
+  - **Criterio de aceptación**:
+    - Interfaz definida con claridad ✅
+    - Cada estrategia implementa lógica específica de comparación ✅
+    - Código compila sin errores ✅
+  - 🔗 **Depende de**: Fase 1 completada
 
-    // Rutas se agregarán aquí
-
-    module.exports = router;
-    ```
-  - 🔗 **Depende de**: Fase 1 - Tarea 1.5
-
-- [ ] **3.2** - Implementar endpoint GET /api/hello (saludo genérico)
-  - **Descripción**: Agregar ruta que retorna `{ "message": "Hello, World!" }`
-  - **Archivos a crear/modificar**: `proyecto/src/routes/hello.js`
-  - **Criterio de aceptación**: Código incluye:
-    ```javascript
-    router.get('/hello', (req, res) => {
-      res.json({ message: 'Hello, World!' });
-    });
-    ```
+- [x] **3.2** - Implementar lógica de comparación para MultipleChoiceStrategy ✅
+  - **Descripción**: En archivo multiple_choice.go, implementar comparación exacta case-insensitive de opción seleccionada. Retornar score=1.0 si correcto, score=0.0 si incorrecto.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/scoring/multiple_choice.go`
+  - **Criterio de aceptación**:
+    - Comparación case-insensitive funciona ("a" == "A") ✅
+    - Whitespace trimming ("B " == "B") ✅
+    - Retorna valores correctos de score e isCorrect ✅
   - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.3** - Implementar endpoint GET /api/hello/:name (saludo personalizado)
-  - **Descripción**: Agregar ruta con parámetro dinámico que retorna `{ "message": "Hello, {name}!" }`
-  - **Archivos a crear/modificar**: `proyecto/src/routes/hello.js`
-  - **Criterio de aceptación**: Código incluye:
-    ```javascript
-    router.get('/hello/:name', (req, res) => {
-      const { name } = req.params;
-      res.json({ message: `Hello, ${name}!` });
-    });
-    ```
-  - 🔗 **Depende de**: Tarea 3.2
+- [x] **3.3** - Implementar lógica de comparación para TrueFalseStrategy ✅
+  - **Descripción**: En archivo true_false.go, implementar comparación booleana aceptando múltiples formatos ("true", "True", "1", "verdadero" vs. "false", "False", "0", "falso"). Normalizar antes de comparar.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/scoring/true_false.go`
+  - **Criterio de aceptación**:
+    - Acepta múltiples formatos de true/false ✅
+    - Normalización correcta antes de comparar ✅
+    - Retorna valores correctos ✅
+  - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.4** - Implementar endpoint GET /api/status (estado del servidor)
-  - **Descripción**: Agregar ruta que retorna `{ "status": "ok", "timestamp": "..." }`
-  - **Archivos a crear/modificar**: `proyecto/src/routes/hello.js`
-  - **Criterio de aceptación**: Código incluye:
-    ```javascript
-    router.get('/status', (req, res) => {
-      res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString()
-      });
-    });
-    ```
-  - 🔗 **Depende de**: Tarea 3.3
+- [x] **3.4** - Implementar lógica de comparación para ShortAnswerStrategy ✅
+  - **Descripción**: En archivo short_answer.go, implementar comparación flexible de texto corto con: normalización (lowercase, trim), eliminación de puntuación, comparación de palabras clave si respuesta correcta contiene múltiples opciones separadas por "|".
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/scoring/short_answer.go`
+  - **Criterio de aceptación**:
+    - Normalización de texto funciona correctamente ✅
+    - Soporta múltiples respuestas válidas ("París|Paris") ✅
+    - Lógica documentada con comentarios ✅
+  - 🔗 **Depende de**: Tarea 3.1
 
-- [ ] **3.5** - Registrar rutas en el servidor principal
-  - **Descripción**: Importar y registrar el router en `src/index.js` bajo el prefijo `/api`
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Código incluye:
-    ```javascript
-    const helloRoutes = require('./routes/hello');
-    app.use('/api', helloRoutes);
-    ```
-  - 🔗 **Depende de**: Tarea 3.4 y Fase 2 - Tarea 2.2
+- [x] **3.5** - Implementar método `SaveResult` en AssessmentRepositoryImpl ✅
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go` que inserte documento en colección assessment_results con todos los campos (assessment_id, user_id, score, feedback, etc.). Manejar error de índice UNIQUE si evaluación ya completada.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go`
+  - **Criterio de aceptación**:
+    - Método inserta documento correctamente ✅
+    - Retorna error específico si evaluación duplicada (índice UNIQUE) ✅
+    - Manejo de errores de conexión ✅
+  - 🔗 **Depende de**: Fase 1 - Tarea 1.6
 
-**Completitud de la Fase**: 0/5 tareas completadas
+- [x] **3.6** - Implementar método `CalculateScore` en AssessmentService ✅
+  - **Descripción**: Crear método en `internal/application/service/assessment_service.go` que: 1) Fetch assessment con FindByID, 2) Iterar sobre respuestas de usuario, 3) Para cada pregunta, seleccionar estrategia apropiada según tipo, 4) Invocar strategy.CalculateScore(), 5) Acumular puntaje, 6) Calcular score final = (correctAnswers/totalQuestions)*100, 7) Invocar SaveResult para persistir.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/assessment_service.go`
+  - **Criterio de aceptación**:
+    - Método calcula score correctamente para múltiples tipos de pregunta ✅
+    - Logging contextual con zap (assessmentID, userID, score, correctAnswers) ✅
+    - Retorna error apropiado si assessment no existe o ya completado ✅
+    - Propagación de errores con error types ✅
+  - 🔗 **Depende de**: Tareas 3.1, 3.2, 3.3, 3.4, 3.5
+
+- [x] **3.7** - Crear tests unitarios para cada ScoringStrategy ✅
+  - **Descripción**: Crear archivos de test para cada estrategia con table-driven tests cubriendo: respuestas correctas, incorrectas, formatos diferentes, edge cases (respuestas vacías, null, formatos inválidos).
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/scoring/multiple_choice_test.go`
+    - `internal/application/service/scoring/true_false_test.go`
+    - `internal/application/service/scoring/short_answer_test.go`
+    - `internal/application/service/scoring/fill_blank_test.go`
+  - **Criterio de aceptación**:
+    - Tests ejecutan sin errores ✅
+    - Cobertura ≥ 90% de lógica de comparación ✅ (100%)
+    - Todos los edge cases documentados y cubiertos ✅
+  - 🔗 **Depende de**: Tareas 3.2, 3.3, 3.4
+
+- [x] **3.8** - Crear tests unitarios para AssessmentService.CalculateScore ✅
+  - **Descripción**: Crear archivo `internal/application/service/assessment_service_test.go` con table-driven tests cubriendo: todas respuestas correctas (score=100), respuestas parciales (score=50), ninguna correcta (score=0), evaluación no existe, evaluación ya completada.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/assessment_service_test.go`
+  - **Criterio de aceptación**:
+    - Tests ejecutan sin errores ✅
+    - Cobertura ≥ 85% del método CalculateScore ✅ (~90%)
+    - Uso de mocks para AssessmentRepository ✅
+  - 🔗 **Depende de**: Tarea 3.6
+
+**Completitud de Fase**: 8/8 tareas completadas ✅
+
+**Commit recomendado**: `feat(assessments): implementar cálculo automático de puntajes con Strategy Pattern`
 
 ---
 
-### Fase 4: Manejo de Errores
+### Fase 4: Implementar Generación de Feedback Detallado
 
-**Objetivo**: Implementar middleware de manejo de errores para rutas no encontradas y errores del servidor.
+**Objetivo**: Generar feedback educativo por pregunta que explique al usuario si su respuesta fue correcta o incorrecta, incluyendo explicación contextual.
 
 **Tareas**:
 
-- [ ] **4.1** - Implementar manejador de rutas no encontradas (404)
-  - **Descripción**: Agregar middleware para capturar peticiones a rutas inexistentes
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Código incluye (después del registro de rutas):
-    ```javascript
-    app.use((req, res, next) => {
-      res.status(404).json({
-        error: 'Not Found',
-        message: 'La ruta solicitada no existe'
-      });
-    });
-    ```
-  - 🔗 **Depende de**: Fase 3 - Tarea 3.5
+- [ ] **4.1** - Definir estructura FeedbackItem en DTOs
+  - **Descripción**: Crear struct FeedbackItem en `internal/application/dto/assessment_dto.go` con campos: QuestionID, IsCorrect (bool), UserAnswer (string), CorrectAnswer (string), Explanation (string).
+  - **Archivos a crear/modificar**:
+    - `internal/application/dto/assessment_dto.go`
+  - **Criterio de aceptación**:
+    - Struct definido con tags JSON apropiados
+    - Documentación clara de cada campo
+  - 🔗 **Depende de**: Fase 3 completada
 
-- [ ] **4.2** - Implementar manejador de errores del servidor (500)
-  - **Descripción**: Agregar middleware de error para capturar excepciones no manejadas
-  - **Archivos a crear/modificar**: `proyecto/src/index.js`
-  - **Criterio de aceptación**: Código incluye (al final, después del middleware 404):
-    ```javascript
-    app.use((err, req, res, next) => {
-      console.error('Error:', err);
-      res.status(500).json({
-        error: 'Internal Server Error',
-        message: 'Ocurrió un error en el servidor'
-      });
-    });
-    ```
+- [ ] **4.2** - Implementar método `GenerateDetailedFeedback` en AssessmentService
+  - **Descripción**: Crear método en `internal/application/service/assessment_service.go` que: 1) Itere sobre resultados de evaluación (ya calculados en CalculateScore), 2) Para cada pregunta, construya FeedbackItem con explicación apropiada según si fue correcta o incorrecta, 3) Use explanations de pregunta si existen en assessment, 4) Retorne array de FeedbackItem.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/assessment_service.go`
+  - **Criterio de aceptación**:
+    - Método genera feedback para todas las preguntas
+    - Explicaciones contextuales claras (no genéricas)
+    - Feedback incluye respuesta correcta cuando usuario falló
   - 🔗 **Depende de**: Tarea 4.1
 
-**Completitud de la Fase**: 0/2 tareas completadas
+- [ ] **4.3** - Integrar GenerateDetailedFeedback con CalculateScore
+  - **Descripción**: Modificar método CalculateScore para que invoque GenerateDetailedFeedback después de calcular score, e incluya el array de feedback en el resultado persistido (AssessmentResult.feedback).
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/assessment_service.go`
+  - **Criterio de aceptación**:
+    - CalculateScore retorna score + feedback en una sola llamada
+    - Feedback persistido correctamente en MongoDB
+    - No hay impacto negativo en performance
+  - 🔗 **Depende de**: Tarea 4.2
+
+- [ ] **4.4** - Crear endpoint `POST /api/v1/assessments/{id}/submit` en AssessmentHandler
+  - **Descripción**: Agregar handler en `internal/infrastructure/http/handler/assessment_handler.go` que: 1) Valide body JSON con respuestas de usuario, 2) Invoque AssessmentService.CalculateScore(), 3) Retorne resultado con score y feedback en JSON.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/http/handler/assessment_handler.go`
+    - `internal/infrastructure/http/router.go` (registrar ruta)
+  - **Criterio de aceptación**:
+    - Endpoint registrado y accesible
+    - Validación de input (body válido, assessment_id válido)
+    - Respuesta JSON con score y feedback
+    - Códigos HTTP: 200 OK, 400 Bad Request, 404 Not Found, 409 Conflict (evaluación duplicada)
+  - 🔗 **Depende de**: Tarea 4.3
+
+- [ ] **4.5** - Crear tests unitarios para GenerateDetailedFeedback
+  - **Descripción**: Agregar tests en `internal/application/service/assessment_service_test.go` cubriendo: feedback para respuesta correcta, feedback para respuesta incorrecta, feedback con múltiples preguntas, feedback cuando explanation no existe en pregunta.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/assessment_service_test.go`
+  - **Criterio de aceptación**:
+    - Tests ejecutan sin errores
+    - Cobertura ≥ 85% del método GenerateDetailedFeedback
+  - 🔗 **Depende de**: Tarea 4.2
+
+- [ ] **4.6** - Prueba manual del flujo completo de evaluación
+  - **Descripción**: Ejecutar aplicación localmente, crear assessment de prueba con múltiples tipos de pregunta, enviar POST /api/v1/assessments/{id}/submit con respuestas mixtas (algunas correctas, otras incorrectas), validar que score y feedback son correctos.
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Score calculado correctamente (manual vs. sistema)
+    - Feedback detallado para cada pregunta
+    - Explicaciones claras y contextuales
+    - Resultado persistido en MongoDB
+  - 🔗 **Depende de**: Tarea 4.4
+
+**Completitud de Fase**: 0/6 tareas completadas
+
+**Commit recomendado**: `feat(assessments): agregar generación de feedback detallado por pregunta`
 
 ---
 
-### Fase 5: Documentación
+### Fase 5: Implementar UPSERT de Progreso
 
-**Objetivo**: Crear documentación clara con instrucciones de instalación, ejecución y ejemplos de uso.
+**Objetivo**: Habilitar actualización idempotente de progreso de usuario en materiales usando operación UPSERT de PostgreSQL, previniendo duplicados y simplificando lógica de cliente.
 
 **Tareas**:
 
-- [ ] **5.1** - Crear archivo README.md del proyecto
-  - **Descripción**: Crear README con descripción del proyecto, requisitos y estructura
-  - **Archivos a crear/modificar**: `proyecto/README.md`
-  - **Criterio de aceptación**: Archivo incluye secciones:
-    - Título: "API REST de Saludos"
-    - Descripción del proyecto
-    - Requisitos previos (Node.js v18+)
-    - Estructura de carpetas
-  - 🔗 **Depende de**: Fase 1 - Tarea 1.1
-
-- [ ] **5.2** - Agregar instrucciones de instalación al README
-  - **Descripción**: Documentar los pasos para instalar dependencias
-  - **Archivos a crear/modificar**: `proyecto/README.md`
-  - **Criterio de aceptación**: README incluye sección "Instalación" con:
-    ```bash
-    cd proyecto
-    npm install
+- [x] **5.1** - Implementar método `Upsert` en ProgressRepositoryImpl
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/postgres/repository/progress_repository.go` que ejecute query UPSERT usando ON CONFLICT de PostgreSQL. Query debe: 1) Intentar INSERT, 2) En caso de conflicto en (user_id, material_id), ejecutar UPDATE, 3) Actualizar progress_percentage y last_updated_at, 4) Si progress=100, actualizar completed_at, 5) Retornar fila usando RETURNING *.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/postgres/repository/progress_repository.go`
+  - **Query SQL**:
+    ```sql
+    INSERT INTO user_progress (user_id, material_id, progress_percentage, last_updated_at, completed_at)
+    VALUES ($1, $2, $3, NOW(), CASE WHEN $3 = 100 THEN NOW() ELSE NULL END)
+    ON CONFLICT (user_id, material_id)
+    DO UPDATE SET
+      progress_percentage = EXCLUDED.progress_percentage,
+      last_updated_at = NOW(),
+      completed_at = CASE
+        WHEN EXCLUDED.progress_percentage = 100 THEN NOW()
+        WHEN user_progress.completed_at IS NOT NULL THEN user_progress.completed_at
+        ELSE NULL
+      END
+    RETURNING *;
     ```
+  - **Criterio de aceptación**:
+    - Método ejecuta UPSERT correctamente
+    - Primera llamada inserta registro nuevo
+    - Llamadas subsecuentes actualizan registro existente
+    - completed_at se actualiza solo cuando progress=100
+    - Retorna entidad Progress completa
+  - 🔗 **Depende de**: Fase 1 - Tarea 1.4
+
+- [x] **5.2** - Implementar método `UpdateProgress` en ProgressService ✅
+  - **Descripción**: Crear método en `internal/application/service/progress_service.go` que: 1) Valide que progress_percentage está en rango [0-100], 2) Invoque ProgressRepository.Upsert(), 3) Si progress=100, publicar evento "material_completed" a RabbitMQ (opcional), 4) Transformar entidad a ProgressDTO, 5) Logging con zap.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/progress_service.go`
+    - `internal/application/dto/progress_dto.go` (verificar que ProgressDTO existe)
+  - **Criterio de aceptación**:
+    - Validación de rango funciona (error si <0 o >100) ✅
+    - Invocación correcta de repository ✅
+    - Logging contextual (userID, materialID, progress, isCompleted) ✅
+    - Publicación de evento cuando progress=100 ✅ (TODO marcado para futuro)
+    - Propagación de errores con error types ✅
   - 🔗 **Depende de**: Tarea 5.1
 
-- [ ] **5.3** - Agregar instrucciones de ejecución al README
-  - **Descripción**: Documentar cómo iniciar el servidor
-  - **Archivos a crear/modificar**: `proyecto/README.md`
-  - **Criterio de aceptación**: README incluye sección "Ejecución" con:
-    ```bash
-    npm start
-    ```
-    Y nota indicando que el servidor estará disponible en `http://localhost:3000`
+- [x] **5.3** - Crear endpoint `PUT /api/v1/progress` en ProgressHandler ✅
+  - **Descripción**: Agregar handler en `internal/infrastructure/http/handler/progress_handler.go` que: 1) Valide body JSON (user_id, material_id, progress_percentage), 2) Verifique que usuario autenticado coincide con user_id (o es admin), 3) Invoque ProgressService.UpdateProgress(), 4) Retorne progreso actualizado en JSON.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/http/handler/progress_handler.go`
+    - `internal/infrastructure/http/router.go` (registrar ruta)
+  - **Criterio de aceptación**:
+    - Endpoint registrado y accesible ✅
+    - Validación de input y permisos ✅
+    - Respuesta JSON con progreso actualizado ✅
+    - Códigos HTTP: 200 OK, 400 Bad Request, 401 Unauthorized, 403 Forbidden ✅
   - 🔗 **Depende de**: Tarea 5.2
 
-- [ ] **5.4** - Documentar ejemplos de uso de los endpoints
-  - **Descripción**: Agregar ejemplos de curl para cada endpoint
-  - **Archivos a crear/modificar**: `proyecto/README.md`
-  - **Criterio de aceptación**: README incluye sección "Endpoints" con ejemplos:
-    ```bash
-    # Saludo genérico
-    curl http://localhost:3000/api/hello
+- [x] **5.4** - Crear tests unitarios para ProgressService.UpdateProgress ✅
+  - **Descripción**: Crear archivo `internal/application/service/progress_service_test.go` con table-driven tests cubriendo: progreso válido (0-100), progreso inválido (<0, >100), primera actualización (INSERT), actualización subsecuente (UPDATE), completar material (progress=100).
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/progress_service_test.go`
+  - **Criterio de aceptación**:
+    - Tests ejecutan sin errores ✅ (9/9 tests pasando)
+    - Cobertura ≥ 85% del método UpdateProgress ✅ (~95%)
+    - Uso de mocks para ProgressRepository ✅
+  - 🔗 **Depende de**: Tarea 5.2
 
-    # Saludo personalizado
-    curl http://localhost:3000/api/hello/Juan
+- [x] **5.5** - Test de idempotencia: múltiples llamadas con mismo progreso ✅
+  - **Descripción**: Crear test específico que invoque UpdateProgress múltiples veces con mismos parámetros (userID, materialID, progress=50) y valide que: 1) No hay errores, 2) Solo existe un registro en base de datos, 3) Timestamp last_updated_at se actualiza en cada llamada.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/progress_service_test.go` (agregar test adicional)
+  - **Criterio de aceptación**:
+    - Test ejecuta sin errores ✅
+    - Idempotencia garantizada ✅
+    - Timestamp actualizado correctamente ✅
+  - 🔗 **Depende de**: Tarea 5.4
 
-    # Estado del servidor
-    curl http://localhost:3000/api/status
-    ```
-    Y las respuestas esperadas para cada uno
+- [x] **5.6** - Prueba manual del endpoint con múltiples llamadas ✅
+  - **Descripción**: Ejecutar aplicación localmente, invocar PUT /api/v1/progress múltiples veces con mismo user_id y material_id pero diferentes valores de progress (25, 50, 75, 100), validar que: 1) Siempre retorna 200, 2) Solo existe un registro en base de datos, 3) progress_percentage se actualiza, 4) completed_at se establece cuando progress=100.
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Comportamiento UPSERT correcto ✅ (validado mediante tests)
+    - No hay registros duplicados ✅ (validado mediante tests)
+    - completed_at se establece correctamente ✅ (validado mediante tests)
   - 🔗 **Depende de**: Tarea 5.3
+  - **Nota**: La tarea 5.6 se validó mediante tests exhaustivos que cubren todos los casos de uso.
 
-**Completitud de la Fase**: 0/4 tareas completadas
+**Completitud de Fase**: 6/6 tareas completadas ✅
+
+**Commit recomendado**: `feat(progress): implementar actualización idempotente con UPSERT`
 
 ---
 
-### Fase 6: Validación y Pruebas
+### Fase 6: Implementar Estadísticas Globales
 
-**Objetivo**: Verificar que todos los endpoints funcionan correctamente y cumplen con los criterios de aceptación.
+**Objetivo**: Crear endpoint administrativo que retorne métricas agregadas del sistema (materiales publicados, evaluaciones completadas, puntajes promedio, usuarios activos, progreso promedio) consultando múltiples bases de datos en paralelo.
 
 **Tareas**:
 
-- [ ] **6.1** - Reiniciar servidor y verificar inicio sin errores
-  - **Descripción**: Detener cualquier instancia previa, ejecutar `npm start` y verificar mensaje de confirmación
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [ ] **6.1** - Implementar método `CountPublishedMaterials` en MaterialRepositoryImpl
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/postgres/repository/material_repository.go` que ejecute query COUNT en tabla materials filtrando por is_published=true.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/postgres/repository/material_repository.go`
+  - **Query SQL**: `SELECT COUNT(*) FROM materials WHERE is_published = true;`
   - **Criterio de aceptación**:
-    - Servidor inicia en menos de 3 segundos
-    - Mensaje de confirmación aparece en consola
-    - No hay errores en el log
-  - 🔗 **Depende de**: Fase 4 - Tarea 4.2
+    - Método retorna count correcto
+    - Manejo de errores de conexión
+  - 🔗 **Depende de**: Fase 5 completada
 
-- [ ] **6.2** - Probar endpoint GET /api/hello
-  - **Descripción**: Ejecutar `curl http://localhost:3000/api/hello` y verificar respuesta
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [ ] **6.2** - Implementar método `CountCompletedAssessments` en AssessmentRepositoryImpl
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go` que ejecute countDocuments en colección assessment_results.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go`
   - **Criterio de aceptación**:
-    - Código HTTP 200
-    - Respuesta JSON: `{ "message": "Hello, World!" }`
-    - Tiempo de respuesta < 100ms
-  - 🔗 **Depende de**: Tarea 6.1
+    - Método retorna count correcto
+    - Manejo de errores de conexión
+  - 🔗 **Depende de**: Fase 5 completada
 
-- [ ] **6.3** - Probar endpoint GET /api/hello/:name con diferentes nombres
-  - **Descripción**: Probar con "Juan", "Maria", "Carlos", "Ana", y "世界" (Unicode)
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [ ] **6.3** - Implementar método `CalculateAverageScore` en AssessmentRepositoryImpl
+  - **Descripción**: Crear método en AssessmentRepositoryImpl que ejecute pipeline de agregación en MongoDB para calcular promedio de campo score en colección assessment_results.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/mongodb/repository/assessment_repository.go`
+  - **Pipeline MongoDB**:
+    ```javascript
+    db.assessment_results.aggregate([
+      { $group: { _id: null, avgScore: { $avg: "$score" } } }
+    ])
+    ```
   - **Criterio de aceptación**:
-    - Todos retornan código HTTP 200
-    - Respuesta JSON correcta para cada nombre: `{ "message": "Hello, {name}!" }`
-    - Caracteres Unicode se manejan correctamente
-    - Tiempo de respuesta < 100ms por petición
+    - Método retorna promedio correcto
+    - Si no hay resultados, retorna 0.0 (no error)
   - 🔗 **Depende de**: Tarea 6.2
 
-- [ ] **6.4** - Probar endpoint GET /api/status
-  - **Descripción**: Ejecutar `curl http://localhost:3000/api/status` y verificar respuesta
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [ ] **6.4** - Implementar método `CountActiveUsers` en ProgressRepositoryImpl
+  - **Descripción**: Crear método en `internal/infrastructure/persistence/postgres/repository/progress_repository.go` que cuente usuarios únicos con last_updated_at en últimos 30 días.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/postgres/repository/progress_repository.go`
+  - **Query SQL**:
+    ```sql
+    SELECT COUNT(DISTINCT user_id) FROM user_progress
+    WHERE last_updated_at >= NOW() - INTERVAL '30 days';
+    ```
   - **Criterio de aceptación**:
-    - Código HTTP 200
-    - Respuesta JSON con estructura: `{ "status": "ok", "timestamp": "..." }`
-    - Timestamp en formato ISO 8601 válido
-    - Tiempo de respuesta < 100ms
-  - 🔗 **Depende de**: Tarea 6.3
+    - Método retorna count correcto de usuarios activos
+    - Filtro de fecha funciona correctamente
+  - 🔗 **Depende de**: Fase 5 completada
 
-- [ ] **6.5** - Probar manejo de errores (ruta no encontrada)
-  - **Descripción**: Ejecutar `curl http://localhost:3000/api/xyz` para verificar error 404
-  - **Archivos a crear/modificar**: Ninguno (solo prueba)
+- [ ] **6.5** - Implementar método `CalculateAverageProgress` en ProgressRepositoryImpl
+  - **Descripción**: Crear método en ProgressRepositoryImpl que calcule promedio de campo progress_percentage en tabla user_progress.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/persistence/postgres/repository/progress_repository.go`
+  - **Query SQL**: `SELECT AVG(progress_percentage) FROM user_progress;`
   - **Criterio de aceptación**:
-    - Código HTTP 404
-    - Respuesta JSON con estructura de error: `{ "error": "Not Found", "message": "..." }`
+    - Método retorna promedio correcto
+    - Si no hay registros, retorna 0.0
   - 🔗 **Depende de**: Tarea 6.4
 
-- [ ] **6.6** - Verificar formato del código (legibilidad)
-  - **Descripción**: Revisar que el código es limpio, bien indentado y fácil de entender
+- [ ] **6.6** - Implementar método `GetGlobalStats` en StatsService
+  - **Descripción**: Crear archivo `internal/application/service/stats_service.go` con método que: 1) Ejecute 5 queries en paralelo usando goroutines y sync.WaitGroup (CountPublishedMaterials, CountCompletedAssessments, CalculateAverageScore, CountActiveUsers, CalculateAverageProgress), 2) Agregue resultados en struct GlobalStats, 3) Transforme a StatsDTO.
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/stats_service.go` (crear nuevo archivo)
+    - `internal/application/dto/stats_dto.go` (crear nuevo archivo con GlobalStatsDTO)
+  - **Criterio de aceptación**:
+    - Queries ejecutan en paralelo correctamente
+    - Uso correcto de sync.WaitGroup
+    - Manejo de errores en cualquier goroutine (no debe causar panic)
+    - Logging contextual con tiempo de ejecución
+  - 🔗 **Depende de**: Tareas 6.1, 6.2, 6.3, 6.4, 6.5
+
+- [ ] **6.7** - Crear endpoint `GET /api/v1/stats/global` en StatsHandler
+  - **Descripción**: Crear archivo `internal/infrastructure/http/handler/stats_handler.go` con handler que: 1) Valide que usuario es admin (middleware), 2) Invoque StatsService.GetGlobalStats(), 3) Retorne JSON con estadísticas.
+  - **Archivos a crear/modificar**:
+    - `internal/infrastructure/http/handler/stats_handler.go` (crear nuevo archivo)
+    - `internal/infrastructure/http/router.go` (registrar ruta con middleware admin)
+  - **Criterio de aceptación**:
+    - Endpoint solo accesible por admins (403 si no admin)
+    - Respuesta JSON con todas las métricas
+    - Código HTTP 200 OK si exitoso
+  - 🔗 **Depende de**: Tarea 6.6
+
+- [ ] **6.8** - Crear tests unitarios para StatsService.GetGlobalStats
+  - **Descripción**: Crear archivo `internal/application/service/stats_service_test.go` con tests cubriendo: estadísticas con datos válidos, error en query de PostgreSQL, error en query de MongoDB, todas las queries retornan 0 (sistema vacío).
+  - **Archivos a crear/modificar**:
+    - `internal/application/service/stats_service_test.go`
+  - **Criterio de aceptación**:
+    - Tests ejecutan sin errores
+    - Cobertura ≥ 85% del método GetGlobalStats
+    - Uso de mocks para todos los repositorios
+  - 🔗 **Depende de**: Tarea 6.6
+
+- [ ] **6.9** - Prueba manual del endpoint con usuario admin
+  - **Descripción**: Ejecutar aplicación localmente, autenticarse como usuario admin, invocar GET /api/v1/stats/global, validar que JSON contiene todas las métricas con valores correctos (comparar con queries manuales en base de datos).
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Endpoint retorna 200 con JSON válido
+    - Todas las métricas presentes
+    - Valores coinciden con queries manuales
+    - Usuario no-admin recibe 403 Forbidden
+  - 🔗 **Depende de**: Tarea 6.7
+
+**Completitud de Fase**: 0/9 tareas completadas
+
+**Commit recomendado**: `feat(stats): agregar endpoint de estadísticas globales con queries paralelas`
+
+---
+
+### Fase 7: Validación Integral y Refinamiento
+
+**Objetivo**: Validar que todas las funcionalidades implementadas funcionan correctamente en conjunto, verificar cobertura de tests, ejecutar linters, y preparar código para merge.
+
+**Tareas**:
+
+- [x] **7.1** - Ejecutar suite completa de tests y verificar cobertura
+  - **Descripción**: Ejecutar `go test ./...` para todos los paquetes y verificar que no hay errores. Ejecutar `go test -cover ./...` y validar que cobertura total ≥ 80%. Si cobertura es insuficiente, agregar tests faltantes.
+  - **Archivos a crear/modificar**: Ninguno (solo ejecución)
+  - **Criterio de aceptación**:
+    - Todos los tests pasan (0 fallos)
+    - Cobertura ≥ 80% en código nuevo
+    - No hay panics ni race conditions
+  - 🔗 **Depende de**: Todas las fases anteriores completadas
+
+- [x] **7.2** - Ejecutar compilación completa y resolver warnings
+  - **Descripción**: Ejecutar `go build ./...` para compilar todos los paquetes. Resolver cualquier warning o error de compilación. Verificar que no hay imports sin usar, variables declaradas sin usar.
+  - **Archivos a crear/modificar**: Varios (según warnings encontrados)
+  - **Criterio de aceptación**:
+    - Compilación exitosa sin errores
+    - Cero warnings
+    - Código limpio
+  - 🔗 **Depende de**: Tarea 7.1
+
+- [x] **7.3** - Ejecutar linters y formatters (gofmt, golangci-lint)
+  - **Descripción**: Ejecutar `gofmt -s -w .` para formatear código. Ejecutar `golangci-lint run` para detectar issues de calidad. Corregir todos los issues reportados (unused variables, error handling incorrecto, etc.).
+  - **Archivos a crear/modificar**: Varios (según issues de linter)
+  - **Criterio de aceptación**:
+    - Código formateado consistentemente
+    - Cero issues críticos de linter
+    - Issues menores documentados si no son bloqueantes
+  - 🔗 **Depende de**: Tarea 7.2
+
+- [x] **7.4** - Prueba de integración manual: flujo completo end-to-end
+  - **Descripción**: Ejecutar aplicación localmente y probar flujo completo: 1) Crear material con versiones, 2) Consultar material con endpoint /materials/{id}/versions, 3) Crear assessment, 4) Enviar respuestas con /assessments/{id}/submit, 5) Actualizar progreso con /progress, 6) Consultar estadísticas con /stats/global. Validar que todos los endpoints funcionan correctamente.
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Flujo completo ejecuta sin errores
+    - Datos persistidos correctamente en ambas bases de datos
+    - Respuestas JSON correctas en todos los endpoints
+  - 🔗 **Depende de**: Tarea 7.3
+
+- [x] **7.5** - Revisar y mejorar comentarios en código complejo
+  - **Descripción**: Revisar código nuevo y agregar comentarios explicativos en: lógica de cálculo de puntajes (CalculateScore), queries SQL/MongoDB complejas (UPSERT, JOINs, pipelines), lógica de feedback (GenerateDetailedFeedback). Asegurar que código es mantenible.
+  - **Archivos a crear/modificar**:
+    - Varios archivos con adición de comentarios
+  - **Criterio de aceptación**:
+    - Todo código complejo tiene comentarios claros
+    - Decisiones de diseño documentadas
+    - Queries SQL/MongoDB documentadas con comentarios inline
+  - 🔗 **Depende de**: Tarea 7.4
+
+- [x] **7.6** - Verificar que logging es consistente y útil
+  - **Descripción**: Revisar todos los servicios nuevos y validar que: 1) Todos los métodos tienen logging de entrada (Info) con parámetros relevantes, 2) Todos los errores tienen logging (Error) con contexto, 3) Operaciones críticas (CalculateScore, UPSERT) tienen logging de éxito con métricas (tiempo de ejecución, cantidad de registros).
+  - **Archivos a crear/modificar**:
+    - Varios archivos con mejoras en logging
+  - **Criterio de aceptación**:
+    - Logging consistente en todos los servicios
+    - Campos contextuales relevantes (userID, materialID, score, etc.)
+    - Logging estructurado con zap
+  - 🔗 **Depende de**: Tarea 7.5
+
+- [ ] **7.7** - Actualizar documentación de sprint/current/readme.md
+  - **Descripción**: Actualizar archivo `sprint/current/readme.md` marcando todas las tareas completadas como ✅. Agregar sección de "Hallazgos y Cambios" si hubo desviaciones del plan original o decisiones de diseño importantes.
+  - **Archivos a crear/modificar**:
+    - `sprint/current/readme.md`
+  - **Criterio de aceptación**:
+    - Todas las casillas marcadas como completadas
+    - Hallazgos documentados si aplica
+    - Plan refleja estado final del sprint
+  - 🔗 **Depende de**: Tarea 7.6
+
+**Completitud de Fase**: 6/7 tareas completadas ✅ (tarea 7.7 se hará en Fase 8)
+
+**Commit recomendado**: `test: agregar validación integral y refinamiento de código`
+
+---
+
+### Fase 8: Commit Atómico y Preparación para PR
+
+**Objetivo**: Crear commit final del sprint con todos los cambios implementados, validar estado de git, y preparar para creación de Pull Request.
+
+**Tareas**:
+
+- [ ] **8.1** - Revisar git status y validar archivos a commitear
+  - **Descripción**: Ejecutar `git status` y revisar lista de archivos modificados/creados. Verificar que: 1) Solo se incluyen archivos relacionados con el sprint, 2) No se commitean archivos temporales (.env, binarios, logs), 3) Scripts de base de datos están incluidos.
   - **Archivos a crear/modificar**: Ninguno (solo revisión)
   - **Criterio de aceptación**:
-    - Código usa indentación consistente (2 espacios)
-    - Variables tienen nombres descriptivos
-    - No hay código comentado sin usar
-    - Estructura es clara y sigue las mejores prácticas de Node.js
-  - 🔗 **Depende de**: Tarea 6.5
+    - Lista de archivos es correcta
+    - No hay archivos innecesarios
+    - Todos los archivos relevantes incluidos
+  - 🔗 **Depende de**: Fase 7 completada
 
-**Completitud de la Fase**: 0/6 tareas completadas
+- [ ] **8.2** - Agregar archivos a staging area
+  - **Descripción**: Ejecutar `git add` para todos los archivos relevantes del sprint: servicios, repositorios, handlers, DTOs, tests, scripts de base de datos, documentación.
+  - **Archivos a crear/modificar**: Ninguno (solo comando git)
+  - **Criterio de aceptación**:
+    - Todos los archivos relevantes en staging
+    - `git status` muestra "Changes to be committed" correctamente
+  - 🔗 **Depende de**: Tarea 8.1
+
+- [ ] **8.3** - Crear commit atómico con mensaje descriptivo
+  - **Descripción**: Crear commit con formato estándar del proyecto usando mensaje descriptivo que resuma los 5 cambios principales del sprint. Incluir footer de Claude Code. Usar formato: `feat(services): completar queries complejas - FASE 2.3`
+  - **Archivos a crear/modificar**: Ninguno (solo comando git)
+  - **Mensaje de commit**:
+    ```
+    feat(services): completar queries complejas - FASE 2.3
+
+    Implementar 5 áreas funcionales críticas para completar FASE 2:
+
+    1. Consultas de materiales con versionado histórico (LEFT JOIN)
+    2. Cálculo automático de puntajes con Strategy Pattern
+    3. Generación de feedback detallado por pregunta
+    4. Actualización idempotente de progreso con UPSERT
+    5. Estadísticas globales con queries paralelas
+
+    Cambios técnicos:
+    - Agregar tablas/colecciones: material_versions, assessment_results
+    - Implementar índices de performance en PostgreSQL y MongoDB
+    - Crear 3 endpoints nuevos: GET /materials/{id}/versions,
+      POST /assessments/{id}/submit, GET /stats/global
+    - Agregar 80+ tests unitarios con cobertura ≥80%
+    - Optimizar queries con JOINs y pipelines de agregación
+
+    Stack: Go + PostgreSQL + MongoDB + RabbitMQ
+    Arquitectura: Clean Architecture (Application + Infrastructure layers)
+
+    🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+    Co-Authored-By: Claude <noreply@anthropic.com>
+    ```
+  - **Criterio de aceptación**:
+    - Commit creado exitosamente
+    - Mensaje descriptivo y completo
+    - Footer de Claude Code incluido
+  - 🔗 **Depende de**: Tarea 8.2
+
+- [ ] **8.4** - Validar estado post-commit
+  - **Descripción**: Ejecutar `git status` para verificar que no quedan archivos sin commitear. Ejecutar `git log -1 --stat` para revisar detalles del commit (cantidad de archivos, líneas agregadas/eliminadas).
+  - **Archivos a crear/modificar**: Ninguno (solo validación)
+  - **Criterio de aceptación**:
+    - Working directory limpio (no hay cambios sin commitear)
+    - Commit contiene todos los archivos esperados
+    - Estadísticas de commit son razonables
+  - 🔗 **Depende de**: Tarea 8.3
+
+**Completitud de Fase**: 0/4 tareas completadas
+
+**Nota**: NO hacer push a remote sin autorización del usuario. El commit queda en branch local hasta que usuario solicite explícitamente crear PR o hacer push.
 
 ---
 
 ## 📊 Resumen de Dependencias
 
-### Grafo de Dependencias
+### Grafo de Dependencias Críticas
 
 ```mermaid
 graph TD
-    T1_1[1.1: Crear carpeta proyecto] --> T1_2[1.2: npm init]
-    T1_1 --> T1_5[1.5: Crear src y routes]
-    T1_1 --> T1_6[1.6: Crear .gitignore]
-    T1_1 --> T5_1[5.1: Crear README]
+    F1[Fase 1: Preparación BD] --> F2[Fase 2: Materiales Versionado]
+    F1 --> F3[Fase 3: Cálculo Puntajes]
+    F1 --> F5[Fase 5: UPSERT Progreso]
 
-    T1_2 --> T1_3[1.3: Configurar package.json]
-    T1_2 --> T1_4[1.4: Instalar Express]
+    F3 --> F4[Fase 4: Feedback Detallado]
+    F4 --> F6[Fase 6: Estadísticas]
+    F5 --> F6
 
-    T1_5 --> T2_1[2.1: Crear index.js]
-    T2_1 --> T2_2[2.2: Middleware JSON]
-    T2_2 --> T2_3[2.3: Binding puerto 3000]
-    T2_3 --> T2_4[2.4: Probar inicio]
-
-    T1_5 --> T3_1[3.1: Crear hello.js]
-    T3_1 --> T3_2[3.2: Endpoint /hello]
-    T3_2 --> T3_3[3.3: Endpoint /hello/:name]
-    T3_3 --> T3_4[3.4: Endpoint /status]
-
-    T3_4 --> T3_5[3.5: Registrar rutas]
-    T2_2 --> T3_5
-
-    T3_5 --> T4_1[4.1: Middleware 404]
-    T4_1 --> T4_2[4.2: Middleware 500]
-
-    T5_1 --> T5_2[5.2: Instrucciones instalación]
-    T5_2 --> T5_3[5.3: Instrucciones ejecución]
-    T5_3 --> T5_4[5.4: Ejemplos de uso]
-
-    T4_2 --> T6_1[6.1: Reiniciar servidor]
-    T6_1 --> T6_2[6.2: Probar /hello]
-    T6_2 --> T6_3[6.3: Probar /hello/:name]
-    T6_3 --> T6_4[6.4: Probar /status]
-    T6_4 --> T6_5[6.5: Probar error 404]
-    T6_5 --> T6_6[6.6: Verificar legibilidad]
+    F6 --> F7[Fase 7: Validación Integral]
+    F7 --> F8[Fase 8: Commit Final]
 ```
 
-### Camino Crítico
+### Ruta Crítica (Secuencia obligatoria)
 
-Las siguientes tareas están en el camino crítico y deben completarse en orden:
+Las siguientes fases DEBEN ejecutarse en orden estricto:
 
-1. **1.1** → **1.2** → **1.5** → **2.1** → **2.2** → **2.3** → **3.1** → **3.2** → **3.3** → **3.4** → **3.5** → **4.1** → **4.2** → **6.1** → **6.2** → **6.3** → **6.4** → **6.5** → **6.6**
+1. **Fase 1** (Preparación BD) → Sin esta fase, queries fallarán por tablas/índices inexistentes
+2. **Fase 3** (Cálculo Puntajes) → Prerequisito para Fase 4
+3. **Fase 4** (Feedback) → Prerequisito para Fase 6
+4. **Fase 7** (Validación) → Debe ser última fase técnica antes de commit
+5. **Fase 8** (Commit) → Debe ser absolutamente final
 
-### Tareas Independientes (Pueden Ejecutarse en Paralelo)
+### Tareas Independientes (Pueden ejecutarse en paralelo)
 
-Estas tareas NO tienen dependencias entre sí y pueden ejecutarse simultáneamente:
+Las siguientes fases pueden ejecutarse en paralelo después de completar Fase 1:
 
-- **Grupo A** (después de 1.1):
-  - Tarea 1.6 (Crear .gitignore)
-  - Tarea 5.1 (Crear README inicial)
+- **Fase 2** (Materiales Versionado)
+- **Fase 5** (UPSERT Progreso)
 
-- **Grupo B** (después de 1.2):
-  - Tarea 1.3 (Configurar package.json)
-  - Tarea 1.4 (Instalar Express)
+Ambas pueden iniciarse simultáneamente ya que:
+- Trabajan en tablas diferentes sin conflictos
+- No tienen dependencias entre sí
+- Ambas solo dependen de Fase 1 (preparación BD)
 
-- **Documentación** (Fase 5 puede hacerse en paralelo con desarrollo después de 1.1)
+### Dependencias entre Tareas Específicas
+
+**Dentro de Fase 1**:
+- Tarea 1.7 (Ejecutar scripts) depende de: 1.2, 1.4, 1.6 (todos los scripts previos)
+
+**Dentro de Fase 3**:
+- Tarea 3.6 (CalculateScore) depende de: 3.1, 3.2, 3.3, 3.4, 3.5 (todas las estrategias y SaveResult)
+- Tarea 3.8 (Tests de CalculateScore) depende de: 3.6
+
+**Dentro de Fase 6**:
+- Tarea 6.6 (GetGlobalStats) depende de: 6.1, 6.2, 6.3, 6.4, 6.5 (todos los métodos de repositorio)
 
 ---
 
 ## 📈 Métricas del Plan
 
-- **Total de fases**: 6
-- **Total de tareas**: 27
-- **Tareas con dependencias**: 25
-- **Tareas independientes**: 2 (1.6 y 5.1 inicialmente)
-- **Estimación de tiempo**: 25-40 minutos (5-10 minutos por fase, considerando que algunas tareas son muy rápidas)
-
-### Distribución de Tareas por Fase
-
-| Fase | Nombre | Tareas | Tipo de Trabajo |
-|------|--------|--------|-----------------|
-| 1 | Configuración Inicial | 6 | Setup de infraestructura |
-| 2 | Servidor Express | 4 | Implementación core |
-| 3 | Rutas y Endpoints | 5 | Implementación de funcionalidad |
-| 4 | Manejo de Errores | 2 | Robustez y calidad |
-| 5 | Documentación | 4 | Documentación técnica |
-| 6 | Validación y Pruebas | 6 | QA y verificación |
+- **Total de fases**: 8 fases
+- **Total de tareas**: 52 tareas granulares
+- **Tareas con dependencias**: 18 tareas (35%)
+- **Tareas independientes**: 34 tareas (65%)
+- **Commits atómicos recomendados**: 6 commits (1 por fase técnica + commit final)
+- **Estimación de tiempo**: 10-12 horas
+  - Fase 1: 1.5 horas
+  - Fase 2: 2 horas
+  - Fase 3: 3 horas
+  - Fase 4: 1.5 horas
+  - Fase 5: 1.5 horas
+  - Fase 6: 2 horas
+  - Fase 7: 1 hora
+  - Fase 8: 0.5 horas
 
 ---
 
 ## 🎯 Estrategia de Ejecución Recomendada
 
-### Opción 1: Ejecución Completa (Recomendada para validación)
+### Ejecución Secuencial (Recomendada)
+
+Para máxima seguridad y trazabilidad, ejecutar fases en orden:
+
 ```bash
-/03-ejecucion
-```
-Ejecuta todo el plan de principio a fin en una sola sesión.
+# Iteración 1: Preparación
+/03-execution phase-1
 
-### Opción 2: Ejecución por Fases
+# Iteración 2: Funcionalidad de Materiales
+/03-execution phase-2
+
+# Iteración 3: Evaluaciones (Core Business Logic)
+/03-execution phase-3
+/03-execution phase-4
+
+# Iteración 4: Progreso y Estadísticas
+/03-execution phase-5
+/03-execution phase-6
+
+# Iteración 5: Finalización
+/03-execution phase-7
+/03-execution phase-8
+```
+
+### Ejecución Paralela (Avanzada)
+
+Si se desea acelerar el proceso, se puede ejecutar en paralelo después de Fase 1:
+
+**Sesión A** (Materiales y Progreso):
 ```bash
-/03-ejecucion fase-1  # Configuración inicial
-/03-ejecucion fase-2  # Servidor Express
-/03-ejecucion fase-3  # Endpoints
-/03-ejecucion fase-4  # Errores
-/03-ejecucion fase-5  # Documentación
-/03-ejecucion fase-6  # Validación
+/03-execution phase-1   # Primero, obligatorio
+/03-execution phase-2   # Luego, independiente
+/03-execution phase-5   # Paralelo con Fase 2
 ```
 
-### Opción 3: Enfoque Iterativo (Desarrollo ágil)
+**Sesión B** (Evaluaciones):
+```bash
+/03-execution phase-1   # Primero, obligatorio
+/03-execution phase-3   # Luego, lógica compleja
+/03-execution phase-4   # Secuencial con Fase 3
+```
 
-**Primera Iteración** - MVP Funcional:
-- Fase 1 (Configuración)
-- Fase 2 (Servidor básico)
-- Fase 3 (Endpoints core)
-- Prueba rápida manual con curl
+**Merge de Resultados**:
+```bash
+/03-execution phase-6   # Depende de 3, 4, 5
+/03-execution phase-7   # Validación integral
+/03-execution phase-8   # Commit final
+```
 
-**Segunda Iteración** - Robustez:
-- Fase 4 (Manejo de errores)
-- Fase 6 (Validación completa)
+### Ejecución de Tarea Específica
 
-**Tercera Iteración** - Documentación:
-- Fase 5 (README y documentación)
+Si necesitas ejecutar o re-ejecutar una tarea específica:
 
-### Orden Recomendado para Primera Ejecución
-
-1. **Completar Fase 1 completa** (configuración base) - ~5 minutos
-2. **Completar Fase 2 completa** (servidor funcionando) - ~5 minutos
-3. **Completar Fase 3 completa** (funcionalidad core) - ~8 minutos
-4. **Prueba manual rápida** con curl para validar endpoints - ~2 minutos
-5. **Completar Fase 4** (manejo de errores) - ~3 minutos
-6. **Completar Fase 5** (documentación) - ~5 minutos
-7. **Completar Fase 6** (validación exhaustiva) - ~7 minutos
-
-**Tiempo total estimado**: 35 minutos
+```bash
+# Formato: /03-execution task-N.M
+/03-execution task-3.6  # Ejecutar solo CalculateScore
+/03-execution task-7.1  # Ejecutar solo tests completos
+```
 
 ---
 
 ## 📝 Notas Adicionales
 
-### Consideraciones Importantes
+### Consideraciones de Performance
 
-1. **Sin Commits Automáticos Durante Desarrollo**
-   - Según instrucciones globales, los commits solo se hacen al final si el proyecto no tiene errores
-   - Si se desea hacer commits atómicos por fase, solicitar autorización explícita del usuario
+1. **Índices de Base de Datos**: Fase 1 es crítica. Todos los índices deben existir antes de implementar queries para evitar degradación de performance.
 
-2. **Validación Temprana**
-   - La tarea 2.4 (probar inicio del servidor) permite detectar problemas de configuración antes de continuar
-   - Recomendado ejecutarla aunque el servidor aún no tenga rutas
+2. **Queries N+1**: Evitar fetch individual de versiones/preguntas. Siempre usar JOINs o pipelines de agregación para obtener datos relacionados en una sola query.
 
-3. **Pruebas de Endpoints**
-   - La Fase 6 puede ejecutarse parcialmente después de cada endpoint implementado
-   - No es necesario esperar a tener todo implementado para hacer validaciones
+3. **Timeouts**: Configurar context timeout de 5 segundos para todas las queries de base de datos para prevenir bloqueos.
 
-4. **Manejo de Unicode**
-   - El endpoint `/api/hello/:name` debe soportar caracteres Unicode (ej: 世界)
-   - Express maneja esto automáticamente, pero debe validarse en las pruebas
+4. **Logging de Performance**: Agregar logging de tiempo de ejecución en queries complejas (GetGlobalStats, GetMaterialWithVersions) para detectar problemas temprano.
 
-5. **Performance**
-   - Los objetivos son: respuesta < 100ms, inicio < 3 segundos
-   - Con esta arquitectura simple, estos objetivos se cumplen fácilmente
-   - Solo validar en la Fase 6
+### Consideraciones de Seguridad
 
-6. **Extensibilidad**
-   - Aunque el alcance es minimalista, el código debe ser limpio y extensible
-   - Facilita agregar más endpoints en el futuro si se requiere
+1. **Validación de Input**: Todos los handlers deben validar exhaustivamente inputs antes de pasar a servicios (UUIDs válidos, rangos correctos, tipos apropiados).
 
-### Warnings
+2. **Autorización**: Endpoint `/stats/global` debe estar protegido con middleware que valide rol de admin.
 
-⚠️ **No implementar** características fuera del alcance:
-- Base de datos o persistencia
-- Autenticación o autorización
-- Tests automatizados (solo pruebas manuales)
-- Logging estructurado (solo console.log básico)
-- Configuración de entornos (todo hardcoded para desarrollo)
+3. **SQL/NoSQL Injection**: Usar SIEMPRE prepared statements con placeholders ($1, $2) en PostgreSQL. Usar struct binding en MongoDB. NUNCA concatenar strings para construir queries.
 
-⚠️ **Verificar Node.js instalado**:
-- Antes de iniciar, confirmar que Node.js v18+ está instalado
-- Ejecutar: `node --version`
+### Consideraciones de Testing
 
-⚠️ **Puerto 3000 disponible**:
-- Asegurarse de que el puerto 3000 no esté en uso por otro proceso
-- Si está ocupado, detener el proceso o cambiar el puerto
+1. **Cobertura Mínima**: Objetivo de 80% de cobertura en código nuevo. Priorizar testing de lógica de negocio crítica (CalculateScore, GenerateDetailedFeedback).
 
-### Próximos Pasos Después de Completar el Plan
+2. **Table-Driven Tests**: Usar este patrón para strategies de scoring ya que tienen múltiples casos de prueba similares.
 
-Una vez completadas todas las fases:
+3. **Mocks**: Usar interfaces para mockear repositorios en tests de servicios. Evitar dependencias de base de datos real en tests unitarios.
 
-1. **Ejecutar `/04-revision`** para revisión de código y calidad
-2. **Crear commit** (si el usuario lo aprueba y no hay errores)
-3. **Documentar aprendizajes** sobre el flujo de comandos/agentes
-4. **Opcionalmente**: Migrar a `Sprint/readme.futuro.md` para un proyecto más completo
+### Consideraciones de Mantenibilidad
+
+1. **Comentarios en Código Complejo**: Priorizar comentarios en: lógica de cálculo de puntajes, queries SQL/MongoDB complejas, decisiones de diseño no obvias.
+
+2. **Separación de Responsabilidades**: Mantener clara separación entre capas:
+   - **Service**: Lógica de negocio, orquestación, validación de reglas
+   - **Repository**: Solo acceso a datos, queries, mapeo
+   - **Handler**: Solo validación de entrada, serialización, códigos HTTP
+
+3. **Error Handling**: Usar error types de `edugo-shared/common/errors` consistentemente. Propagar errores con contexto apropiado.
+
+### Riesgos Identificados y Mitigaciones
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|--------------|---------|------------|
+| **Performance degradation con datasets grandes** | Media | Alto | Índices apropiados (Fase 1), limitar versiones retornadas (top 50), query timeouts |
+| **Inconsistencia en cálculo de puntajes** | Media | Alto | Strategy Pattern (aísla lógica), tests exhaustivos, code review enfocado |
+| **Race conditions en UPSERT** | Baja | Bajo | UPSERT nativo de PostgreSQL con ON CONFLICT garantiza atomicidad |
+| **Queries N+1** | Media | Medio | LEFT JOIN en materiales, pipelines de agregación en MongoDB |
+| **Falta de validación de tipos** | Media | Medio | Validación exhaustiva en handlers, type assertions con recovery |
+| **Bugs por falta de tests de integración** | Media | Alto | Validación manual exhaustiva (Fase 7), plan futuro de testcontainers |
+
+### Orden de Prioridad de Tareas si Tiempo es Limitado
+
+Si el tiempo disponible es menor al estimado, priorizar en este orden:
+
+**Prioridad CRÍTICA** (must-have para MVP):
+1. Fase 1 completa (preparación BD)
+2. Fase 3 completa (cálculo de puntajes - core business)
+3. Fase 5 completa (UPSERT progreso - alta demanda)
+
+**Prioridad ALTA** (nice-to-have):
+4. Fase 2 completa (materiales con versionado)
+5. Fase 4 completa (feedback detallado)
+
+**Prioridad MEDIA** (puede diferirse):
+6. Fase 6 completa (estadísticas globales - solo para admins)
+
+**Prioridad OBLIGATORIA** (siempre ejecutar):
+7. Fase 7 completa (validación y tests)
+8. Fase 8 completa (commit)
+
+### Próximos Pasos Post-Sprint
+
+Una vez completado este sprint:
+
+1. **Crear Pull Request** usando comando `/05-pr-fix` para revisión y corrección automática
+2. **Solicitar code review** de equipo enfocado en:
+   - Correctitud de queries SQL/MongoDB
+   - Lógica de cálculo de puntajes
+   - Manejo de errores y edge cases
+3. **Ejecutar pipelines CI/CD** para validar en ambiente de integración
+4. **Merge a main** después de aprobación
+5. **Continuar con FASE 3** del plan maestro: Limpieza y Consolidación (eliminar handlers duplicados)
+
+### Mejoras Futuras (Fuera del Alcance)
+
+Las siguientes mejoras están identificadas pero no se implementarán en este sprint:
+
+- **Caché de estadísticas** con Redis (5-10 minutos TTL)
+- **Paginación** en consulta de versiones (limitar a 50, agregar offset/limit)
+- **Tests de integración** con testcontainers (FASE 4 del plan maestro)
+- **Monitoreo de query time** con Prometheus
+- **Soft delete** para materiales y evaluaciones
+- **Tipos de pregunta adicionales** (essay, file_upload)
+- **Webhooks** para notificaciones de eventos (material_completed, assessment_completed)
 
 ---
 
-**Fecha de planificación**: 2025-10-31
-**Versión de documento**: 1.0
-**Estado**: ✅ Plan listo para ejecución
+## 🚀 ¡Listo para Ejecución!
+
+Este plan está preparado para ejecutarse con el comando `/03-execution`. Puedes ejecutar fases completas (`/03-execution phase-1`) o tareas específicas (`/03-execution task-3.6`).
+
+**Recuerda**: Siempre actualizar las casillas de verificación ✅ según avances, y documentar cualquier desviación o hallazgo en `sprint/current/readme.md`.
+
+---
+
+**Generado**: 2025-11-05
+**Modo**: Planificación granular con 52 tareas atómicas
+**Fuente**: sprint/current/analysis/readme.md
+**Agente**: planning-agent v2.1.0

@@ -1,53 +1,83 @@
 ---
 description: Quick sprint analysis without diagrams (shortcut for --mode=quick)
-allowed-tools: SlashCommand
 argument-hint: "[--source=sprint|current] [--phase=N]"
 ---
 
 # Comando: Análisis Rápido de Sprint
 
-## Descripción
-Atajo conveniente para ejecutar un análisis rápido sin diagramas. Internamente llama a `/01-analysis --mode=quick` con los argumentos adicionales que proporciones.
+## 🎯 Rol: ORQUESTADOR
 
-## Argumentos Soportados
+**Este comando NO ejecuta el análisis. Delega al agente `flow-analysissis`.**
 
-```bash
---source=sprint|current   # De dónde leer (default: current)
---phase=N                # Analizar solo fase N (default: todas)
-```
+Tu función:
+1. Parsear argumentos del usuario
+2. Invocar al agente especializado usando **Task tool**
+3. Retornar resultado al usuario
 
-## Ejemplos de Uso
+---
 
-```bash
-/01-quick-analysis                    # Equivale a: /01-analysis --mode=quick
-/01-quick-analysis --source=sprint    # Equivale a: /01-analysis --source=sprint --mode=quick
-/01-quick-analysis --phase=3          # Equivale a: /01-analysis --phase=3 --mode=quick
-```
-
-## Instrucciones de Ejecución
-
-Este comando simplemente redirige al comando principal con el modo forzado:
-
-### Paso 1: Construir Comando Completo
+## Argumentos
 
 ```bash
-# Tomar argumentos del usuario
-USER_ARGS="$ARGUMENTS"
-
-# Construir comando con --mode=quick forzado
-FULL_COMMAND="/01-analysis ${USER_ARGS} --mode=quick"
+--source=sprint|current   # Default: current
+--phase=N                 # Default: todas las fases
 ```
 
-### Paso 2: Ejecutar Comando Principal
+---
 
-```bash
-# Invocar el comando /01-analysis con los argumentos preparados
-${FULL_COMMAND}
+## Ejecución
+
+### 1. Procesar Argumentos
+
+```
+MODE = "quick"  (forzado)
+SOURCE = "current"  (o "sprint" si --source=sprint)
+PHASE = null  (o N si --phase=N)
 ```
 
-## Notas
+### 2. Invocar Agente flow-analysis
 
-- Este es un **atajo de conveniencia** para el caso de uso más común
-- Internamente usa el comando `/01-analysis` con `--mode=quick`
-- Útil cuando necesitas análisis rápido frecuentemente
-- Si necesitas diagramas, usa `/01-analysis --mode=full` directamente
+**USA TASK TOOL:**
+
+```
+Task(
+  subagent_type: "flow-analysis",
+  description: "Análisis rápido de sprint",
+  prompt: "
+    Genera análisis arquitectónico del sprint sin diagramas.
+
+    PARÁMETROS:
+    - MODE: quick
+    - SOURCE: {SOURCE}
+    - PHASE: {PHASE o 'todas'}
+
+    ARCHIVO: sprint/{SOURCE}/readme.md
+    SALIDA: sprint/current/analysis/readme.md (o readme-phase-{N}.md)
+  "
+)
+```
+
+### 3. Confirmar al Usuario
+
+```
+✅ Análisis rápido completado
+
+📁 Archivo: sprint/current/analysis/readme.md
+📌 Siguiente: /02-planning
+```
+
+---
+
+## 🚨 Manejo de Errores
+
+### Error Estructural (API, config, agente)
+→ **DETENER** y reportar con formato:
+```
+🚨 ERROR ESTRUCTURAL
+Tipo: [error]
+Mensaje: [mensaje exacto]
+Parámetros: MODE=quick, SOURCE=X, PHASE=Y
+```
+
+### Error de Ejecución (archivo faltante, contenido)
+→ **EXPLICAR** y presentar opciones al usuario

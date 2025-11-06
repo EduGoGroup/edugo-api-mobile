@@ -45,3 +45,29 @@ func (h *StatsHandler) GetMaterialStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+// GetGlobalStats godoc
+// @Summary Get global system statistics
+// @Description Obtiene estadísticas globales del sistema (solo admins)
+// @Tags stats
+// @Produce json
+// @Success 200 {object} dto.GlobalStatsDTO
+// @Failure 403 {object} ErrorResponse "Forbidden - solo admins"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/v1/stats/global [get]
+// @Security BearerAuth
+func (h *StatsHandler) GetGlobalStats(c *gin.Context) {
+	// Obtener estadísticas globales del servicio
+	stats, err := h.statsService.GetGlobalStats(c.Request.Context())
+	if err != nil {
+		h.logger.Error("error al obtener estadísticas globales")
+		if appErr, ok := errors.GetAppError(err); ok {
+			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "error interno del servidor", Code: "INTERNAL_ERROR"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

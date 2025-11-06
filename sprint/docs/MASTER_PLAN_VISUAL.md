@@ -1,14 +1,14 @@
 # 🎯 PLAN MAESTRO - Vista Rápida con Checkboxes
 
-**📅 Última actualización**: 2024-10-31 23:30
-**🌿 Branch**: `feature/conectar`
-**📊 Progreso**: 6/11 commits (55%) | 9 horas invertidas
+**📅 Última actualización**: 2025-11-05
+**🌿 Branch**: `fix/debug-sprint-commands`
+**📊 Progreso**: 10/11 commits (91%) | ~15 horas invertidas
 
 ---
 
 ## 🚀 PRÓXIMA TAREA
 
-**👉 FASE 2.1: Implementar RabbitMQ Messaging** (1-2 días)
+**👉 FASE 2.3: Completar Queries Complejas** (1 día restante)
 
 Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios) abajo ⬇️
 
@@ -18,8 +18,8 @@ Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios
 
 - [✅ FASE 0: Autenticación OAuth2](#fase-0-autenticación-oauth2) - **COMPLETADA**
 - [✅ FASE 1: Container DI](#fase-1-container-di) - **COMPLETADA**
-- [⏳ FASE 2: TODOs de Servicios](#fase-2-completar-todos-de-servicios) - **SIGUIENTE**
-- [⏳ FASE 3: Limpieza](#fase-3-limpieza-y-consolidación) - PENDIENTE
+- [🔵 FASE 2: TODOs de Servicios](#fase-2-completar-todos-de-servicios) - **EN PROGRESO** (67% - 2/3 pasos)
+- [⏳ FASE 3: Limpieza](#fase-3-limpieza-y-consolidación) - **SIGUIENTE**
 - [⏳ FASE 4: Testing](#fase-4-testing-de-integración) - PENDIENTE
 
 ---
@@ -82,58 +82,68 @@ Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios
 
 ---
 
-## ⏳ FASE 2: Completar TODOs de Servicios
+## 🔵 FASE 2: Completar TODOs de Servicios
 
-**Estado**: ⏳ **PENDIENTE** - Empezar aquí 👈
-**Commits**: 0/3
-**Esfuerzo estimado**: 3-4 días
+**Estado**: 🔵 **EN PROGRESO** (67% completado)
+**Commits**: 2/3 ✅
+**Esfuerzo estimado**: 1 día restante
 
-### 📍 PRÓXIMA TAREA: PASO 2.1
+### 📍 PRÓXIMA TAREA: PASO 2.3 (completar queries restantes)
 
-- [ ] **PASO 2.1**: Implementar RabbitMQ Messaging (1-2 días)
-  - [ ] Configurar conexión a RabbitMQ en main.go
-  - [ ] Crear publisher/producer para eventos
-  - [ ] Implementar publicación de evento `material_uploaded`
-  - [ ] Implementar publicación de evento `assessment_attempt_recorded`
-  - [ ] Agregar publisher al Container DI
-  - [ ] Integrar eventos con MaterialService y AssessmentService
-  - [ ] **Archivos a crear**:
-    - `internal/infrastructure/messaging/rabbitmq/publisher.go`
-    - `internal/infrastructure/messaging/events.go`
-  - [ ] **Archivos a modificar**:
-    - `cmd/main.go` (inicializar RabbitMQ)
-    - `internal/container/container.go`
-    - `internal/application/service/material_service.go`
-    - `internal/application/service/assessment_service.go`
-  - [ ] Commit: "feat: implementar messaging RabbitMQ para eventos"
+- [x] **PASO 2.1**: Implementar RabbitMQ Messaging ✅ (PR #15 merged - commit ce03298)
+  - [x] Configurar conexión a RabbitMQ en main.go
+  - [x] Crear publisher/producer para eventos
+  - [x] Implementar publicación de evento `material_uploaded`
+  - [x] Implementar publicación de evento `assessment_attempt_recorded`
+  - [x] Agregar publisher al Container DI
+  - [x] Integrar eventos con MaterialService y AssessmentService
+  - [x] **Archivos creados**:
+    - `internal/infrastructure/messaging/rabbitmq/publisher.go` ✅
+    - `internal/infrastructure/messaging/rabbitmq/publisher_test.go` ✅
+  - [x] **Archivos modificados**:
+    - `cmd/main.go` (inicializar RabbitMQ) ✅
+    - `internal/container/container.go` ✅
+    - `internal/application/service/material_service.go` ✅
+    - `internal/application/service/assessment_service.go` ✅
+  - [x] Commit: "feat: implementar messaging RabbitMQ para eventos de dominio" ✅
 
-- [ ] **PASO 2.2**: Implementar S3 URLs Firmadas (1 día)
-  - [ ] Configurar cliente AWS S3 desde configuración
-  - [ ] Implementar generación de presigned URLs
-  - [ ] Agregar método en MaterialService
-  - [ ] Integrar con handler CreateMaterial
-  - [ ] **Archivos a crear**:
-    - `internal/infrastructure/storage/s3/client.go`
-  - [ ] **Archivos a modificar**:
-    - `internal/application/service/material_service.go`
-    - `internal/config/config.go` (agregar S3 config)
-    - `config/config.yaml`
-  - [ ] Commit: "feat: implementar generación de URLs firmadas S3"
+- [x] **PASO 2.2**: Implementar S3 URLs Firmadas ✅ (PR #16 merged - commit 2f2a8af)
+  - [x] Configurar cliente AWS S3 desde configuración
+  - [x] Implementar generación de presigned URLs (upload + download)
+  - [x] Agregar método en MaterialService
+  - [x] Integrar con handler CreateMaterial
+  - [x] Crear interface S3Storage para testabilidad (commit 5cb1af4)
+  - [x] **Archivos creados**:
+    - `internal/infrastructure/storage/s3/client.go` ✅
+    - `internal/infrastructure/storage/s3/client_test.go` ✅
+    - `internal/infrastructure/storage/s3/interface.go` ✅
+  - [x] **Archivos modificados**:
+    - `internal/application/service/material_service.go` ✅
+    - `internal/infrastructure/http/handler/material_handler.go` ✅
+    - `internal/container/container.go` ✅
+    - `internal/config/config.go` (agregar S3 config) ✅
+    - `config/config.yaml` ✅
+  - [x] Commit: "feat: implementar URLs presignadas de AWS S3 para materiales" ✅
 
-- [ ] **PASO 2.3**: Implementar Queries Complejas (1-2 días)
-  - [ ] Queries de materiales con versiones
-  - [ ] Cálculo de puntajes en AssessmentService
-  - [ ] Generación de feedback detallado
-  - [ ] Actualización de progreso (UPSERT)
-  - [ ] Query complejo de estadísticas
-  - [ ] **Archivos a modificar**:
+- [🔵] **PASO 2.3**: Implementar Queries Complejas ⏳ (EN PROGRESO - ~20% completado)
+  - [x] **Optimización PostgreSQL**: Índice en `materials.updated_at` ✅ (commits 896ca73 + 59062dd)
+    - [x] Crear script SQL `scripts/postgresql/05_indexes_materials.sql`
+    - [x] Índice descendente para queries `ORDER BY updated_at DESC`
+    - [x] Validar con EXPLAIN ANALYZE (46% mejora local, 5-10x estimado producción)
+    - [x] Tests y compilación pasando
+  - [ ] Queries de materiales con versiones (PENDIENTE)
+  - [ ] Cálculo de puntajes en AssessmentService (PENDIENTE)
+  - [ ] Generación de feedback detallado (PENDIENTE)
+  - [ ] Actualización de progreso (UPSERT) (PENDIENTE)
+  - [ ] Query complejo de estadísticas (PENDIENTE)
+  - [ ] **Archivos pendientes a modificar**:
     - `internal/application/service/material_service.go`
     - `internal/application/service/assessment_service.go`
     - `internal/application/service/progress_service.go`
     - `internal/application/service/stats_service.go`
     - `internal/infrastructure/persistence/postgres/repository/material_repository_impl.go`
     - `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go`
-  - [ ] Commit: "feat: implementar consultas complejas en servicios"
+  - [ ] Commit pendiente: "feat: implementar consultas complejas en servicios"
 
 ---
 
@@ -186,7 +196,7 @@ Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios
 
 ## 📊 Tracking de Progreso - Última Sesión
 
-### **Completado Hoy (2024-10-31)**:
+### **Completado Recientemente (2025-11-05)**:
 
 ```
 ✅ FASE 0: Autenticación OAuth2 (100%)
@@ -197,17 +207,25 @@ Ver detalles completos en sección [FASE 2](#fase-2-completar-todos-de-servicios
 
 ✅ FASE 1: Container DI (100%)
 
-Commits: 8 en api-mobile + 3 en shared = 11 total
+🔵 FASE 2: TODOs de Servicios (67% - 2/3 pasos completados)
+   ├── ✅ PASO 2.1: RabbitMQ (PR #15 merged)
+   ├── ✅ PASO 2.2: S3 URLs (PR #16 merged)
+   └── 🔵 PASO 2.3: Queries complejas (20% - índice materials completado)
+
+Commits: 10 en api-mobile + 3 en shared = 13 total
 Tags: auth/v0.0.1, auth/v0.0.2, middleware/gin/v0.0.1
+PRs merged: #15 (RabbitMQ), #16 (S3)
 ```
 
 ### **Próxima Sesión - Empezar Aquí** 👇
 
 ```
-⏳ FASE 2: TODOs de Servicios (0%)
-   ⏳ PASO 2.1: RabbitMQ ← EMPEZAR POR AQUÍ
-   ⏳ PASO 2.2: S3 URLs
-   ⏳ PASO 2.3: Queries complejas
+🔵 FASE 2.3: Completar Queries Complejas (80% restante) ← CONTINUAR AQUÍ
+   ⏳ Queries de materiales con versiones
+   ⏳ Cálculo de puntajes en AssessmentService
+   ⏳ Generación de feedback detallado
+   ⏳ Actualización de progreso (UPSERT)
+   ⏳ Query complejo de estadísticas
 ```
 
 ---
@@ -219,7 +237,7 @@ Tags: auth/v0.0.1, auth/v0.0.2, middleware/gin/v0.0.1
 - [x] `auth/refresh_token.go` + tests (tag: auth/v0.0.2)
 - [x] `middleware/gin/*.go` + tests (tag: middleware/gin/v0.0.1)
 
-### En edugo-api-mobile:
+### En edugo-api-mobile (FASE 0 + 1):
 - [x] `scripts/postgresql/03_refresh_tokens.sql`
 - [x] `scripts/postgresql/04_login_attempts.sql`
 - [x] `internal/domain/repository/refresh_token_repository.go`
@@ -234,6 +252,15 @@ Tags: auth/v0.0.1, auth/v0.0.2, middleware/gin/v0.0.1
 - [x] `internal/infrastructure/http/handler/assessment_handler.go` (actualizado)
 - [x] `internal/container/container.go` (actualizado)
 - [x] `cmd/main.go` (actualizado)
+
+### Archivos Nuevos (FASE 2):
+- [x] `internal/infrastructure/messaging/rabbitmq/publisher.go` ✅ (PASO 2.1)
+- [x] `internal/infrastructure/messaging/rabbitmq/publisher_test.go` ✅ (PASO 2.1)
+- [x] `internal/infrastructure/storage/s3/client.go` ✅ (PASO 2.2)
+- [x] `internal/infrastructure/storage/s3/client_test.go` ✅ (PASO 2.2)
+- [x] `internal/infrastructure/storage/s3/interface.go` ✅ (PASO 2.2)
+- [x] `scripts/postgresql/05_indexes_materials.sql` ✅ (PASO 2.3)
+- [x] `internal/infrastructure/http/handler/benchmarks_test.go` ✅ (Testing)
 
 ---
 
@@ -266,6 +293,6 @@ cat sprint/MASTER_PLAN.md | grep -A 50 "PASO 2.1"
 
 ---
 
-**Última sesión**: 2024-10-31 23:30
+**Última actualización**: 2025-11-05
 **Responsable**: Claude Code + Jhoan Medina
-**Próxima tarea**: FASE 2.1 (RabbitMQ)
+**Próxima tarea**: FASE 2.3 (Completar Queries Complejas restantes)

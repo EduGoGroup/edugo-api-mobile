@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"time"
+
+	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
 // Config contiene toda la configuración de la aplicación
@@ -10,6 +12,7 @@ type Config struct {
 	Server    ServerConfig    `mapstructure:"server"`
 	Database  DatabaseConfig  `mapstructure:"database"`
 	Messaging MessagingConfig `mapstructure:"messaging"`
+	Storage   StorageConfig   `mapstructure:"storage"`
 	Logging   LoggingConfig   `mapstructure:"logging"`
 }
 
@@ -69,6 +72,20 @@ type ExchangeConfig struct {
 	Materials string `mapstructure:"materials"`
 }
 
+// StorageConfig configuración de almacenamiento
+type StorageConfig struct {
+	S3 S3Config `mapstructure:"s3"`
+}
+
+// S3Config configuración de AWS S3
+type S3Config struct {
+	Region          string `mapstructure:"region"`
+	BucketName      string `mapstructure:"bucket_name"`
+	AccessKeyID     string `mapstructure:"access_key_id"`     // Desde ENV
+	SecretAccessKey string `mapstructure:"secret_access_key"` // Desde ENV
+	Endpoint        string `mapstructure:"endpoint"`          // Opcional, para Localstack
+}
+
 // LoggingConfig configuración de logging
 type LoggingConfig struct {
 	Level  string `mapstructure:"level"`  // debug, info, warn, error
@@ -84,13 +101,22 @@ func (c *PostgresConfig) GetConnectionString() string {
 // Validate valida que la configuración tenga los campos obligatorios
 func (c *Config) Validate() error {
 	if c.Database.Postgres.Password == "" {
-		return fmt.Errorf("POSTGRES_PASSWORD is required")
+		return errors.NewValidationError("POSTGRES_PASSWORD is required")
 	}
 	if c.Database.MongoDB.URI == "" {
-		return fmt.Errorf("MONGODB_URI is required")
+		return errors.NewValidationError("MONGODB_URI is required")
 	}
 	if c.Messaging.RabbitMQ.URL == "" {
-		return fmt.Errorf("RABBITMQ_URL is required")
+		return errors.NewValidationError("RABBITMQ_URL is required")
+	}
+	if c.Storage.S3.AccessKeyID == "" {
+		return errors.NewValidationError("AWS_ACCESS_KEY_ID is required")
+	}
+	if c.Storage.S3.SecretAccessKey == "" {
+		return errors.NewValidationError("AWS_SECRET_ACCESS_KEY is required")
+	}
+	if c.Storage.S3.BucketName == "" {
+		return errors.NewValidationError("S3_BUCKET_NAME is required")
 	}
 	return nil
 }

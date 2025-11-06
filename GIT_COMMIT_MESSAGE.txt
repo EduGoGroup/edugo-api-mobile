@@ -1,0 +1,38 @@
+refactor: separar responsabilidades de main.go en módulos especializados
+
+Refactorización completa de cmd/main.go para mejorar separación de 
+responsabilidades, testabilidad y mantenibilidad siguiendo Clean Architecture.
+
+Cambios principales:
+- Reducción de main.go de 230 a 135 líneas (-41%)
+- Creación de 5 nuevos módulos especializados
+- Delegación de inicialización de DBs a infrastructure/database/
+- Delegación de configuración de rutas a infrastructure/http/router/
+- Health check como handler estructurado
+- Middleware CORS reutilizable
+
+Archivos creados:
+- internal/infrastructure/database/postgres.go
+- internal/infrastructure/database/mongodb.go  
+- internal/infrastructure/http/handler/health_handler.go
+- internal/infrastructure/http/middleware/cors.go
+- internal/infrastructure/http/router/router.go
+
+Documentación:
+- docs/REFACTORING_MAIN.md (guía detallada)
+- docs/REFACTORING_STRUCTURE.md (diagramas)
+- docs/REFACTORING_SUMMARY.md (resumen ejecutivo)
+
+Beneficios:
+- Testabilidad mejorada (módulos independientes)
+- Mantenibilidad (cambios localizados)
+- Reutilización (4/5 módulos portables)
+- Logging estructurado consistente
+- Cumplimiento de SOLID principles
+
+TODOs pendientes:
+- Tests de integración con testcontainers
+- CORS dinámico según ambiente
+- Graceful shutdown
+
+Sprint: Fase 2 - Conectar Implementación Real

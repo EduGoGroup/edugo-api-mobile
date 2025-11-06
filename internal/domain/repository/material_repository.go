@@ -16,6 +16,9 @@ type MaterialRepository interface {
 	// FindByID busca un material por ID
 	FindByID(ctx context.Context, id valueobject.MaterialID) (*entity.Material, error)
 
+	// FindByIDWithVersions busca un material por ID incluyendo su historial de versiones
+	FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*entity.Material, []*entity.MaterialVersion, error)
+
 	// Update actualiza un material
 	Update(ctx context.Context, material *entity.Material) error
 
@@ -30,6 +33,9 @@ type MaterialRepository interface {
 
 	// UpdateProcessingStatus actualiza el estado de procesamiento
 	UpdateProcessingStatus(ctx context.Context, id valueobject.MaterialID, status enum.ProcessingStatus) error
+
+	// CountPublishedMaterials cuenta total de materiales publicados (para estadísticas)
+	CountPublishedMaterials(ctx context.Context) (int64, error)
 }
 
 // ListFilters filtros para listar materiales

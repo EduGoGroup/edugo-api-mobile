@@ -9,7 +9,7 @@
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     token_hash VARCHAR(64) NOT NULL UNIQUE,  -- SHA256 del token (no se guarda token original)
-    user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     client_info JSONB,                       -- Info del cliente: {"ip": "192.168.1.1", "user_agent": "..."}
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -116,7 +116,7 @@ SELECT
     (rt.expires_at - NOW()) AS time_until_expiry,
     rt.replaced_by IS NOT NULL AS was_rotated
 FROM refresh_tokens rt
-JOIN "user" u ON u.id = rt.user_id
+JOIN users u ON u.id = rt.user_id
 WHERE rt.revoked_at IS NULL
   AND rt.expires_at > NOW()
 ORDER BY rt.created_at DESC;

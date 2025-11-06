@@ -9,9 +9,9 @@ import (
 
 // CreateMaterialRequest solicitud para crear material
 type CreateMaterialRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	SubjectID   string `json:"subject_id"`
+	Title       string `json:"title" binding:"required,min=3,max=200"`
+	Description string `json:"description" binding:"max=1000"`
+	SubjectID   string `json:"subject_id" binding:"omitempty,uuid"`
 }
 
 func (r *CreateMaterialRequest) Validate() error {
@@ -37,6 +37,7 @@ type MaterialResponse struct {
 	Description      string    `json:"description"`
 	AuthorID         string    `json:"author_id"`
 	SubjectID        string    `json:"subject_id,omitempty"`
+	S3Key            string    `json:"s3_key,omitempty"`
 	S3URL            string    `json:"s3_url,omitempty"`
 	Status           string    `json:"status"`
 	ProcessingStatus string    `json:"processing_status"`
@@ -51,6 +52,7 @@ func ToMaterialResponse(material *entity.Material) *MaterialResponse {
 		Description:      material.Description(),
 		AuthorID:         material.AuthorID().String(),
 		SubjectID:        material.SubjectID(),
+		S3Key:            material.S3Key(),
 		S3URL:            material.S3URL(),
 		Status:           material.Status().String(),
 		ProcessingStatus: material.ProcessingStatus().String(),
@@ -71,4 +73,64 @@ func (r *UploadCompleteRequest) Validate() error {
 	v.Required(r.S3URL, "s3_url")
 	v.URL(r.S3URL, "s3_url")
 	return v.GetError()
+}
+
+// GenerateUploadURLRequest solicitud para generar URL de subida presignada
+type GenerateUploadURLRequest struct {
+	FileName    string `json:"file_name" binding:"required"`
+	ContentType string `json:"content_type" binding:"required"`
+}
+
+// GenerateUploadURLResponse respuesta con URL presignada de subida
+type GenerateUploadURLResponse struct {
+	UploadURL string `json:"upload_url"`
+	S3Key     string `json:"s3_key"`
+	ExpiresIn int    `json:"expires_in"` // En segundos
+}
+
+// GenerateDownloadURLResponse respuesta con URL presignada de descarga
+type GenerateDownloadURLResponse struct {
+	DownloadURL string `json:"download_url"`
+	ExpiresIn   int    `json:"expires_in"` // En segundos
+}
+
+// MaterialVersionResponse representa una versión de material
+type MaterialVersionResponse struct {
+	ID            string    `json:"id"`
+	VersionNumber int       `json:"version_number"`
+	Title         string    `json:"title"`
+	ContentURL    string    `json:"content_url"`
+	ChangedBy     string    `json:"changed_by"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// MaterialWithVersionsResponse respuesta de material con su historial de versiones
+type MaterialWithVersionsResponse struct {
+	Material *MaterialResponse          `json:"material"`
+	Versions []*MaterialVersionResponse `json:"versions"`
+}
+
+// ToMaterialVersionResponse convierte entidad a DTO
+func ToMaterialVersionResponse(version *entity.MaterialVersion) *MaterialVersionResponse {
+	return &MaterialVersionResponse{
+		ID:            version.ID().String(),
+		VersionNumber: version.VersionNumber(),
+		Title:         version.Title(),
+		ContentURL:    version.ContentURL(),
+		ChangedBy:     version.ChangedBy().String(),
+		CreatedAt:     version.CreatedAt(),
+	}
+}
+
+// ToMaterialWithVersionsResponse convierte material y versiones a DTO
+func ToMaterialWithVersionsResponse(material *entity.Material, versions []*entity.MaterialVersion) *MaterialWithVersionsResponse {
+	versionResponses := make([]*MaterialVersionResponse, len(versions))
+	for i, version := range versions {
+		versionResponses[i] = ToMaterialVersionResponse(version)
+	}
+
+	return &MaterialWithVersionsResponse{
+		Material: ToMaterialResponse(material),
+		Versions: versionResponses,
+	}
 }

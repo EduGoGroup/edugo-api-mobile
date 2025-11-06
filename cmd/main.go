@@ -11,6 +11,8 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/database"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/router"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -71,6 +73,37 @@ func main() {
 		appLogger.Fatal("error inicializando MongoDB", zap.Error(err))
 	}
 
+	// Inicializar RabbitMQ Publisher
+	publisher, err := rabbitmq.NewRabbitMQPublisher(
+		cfg.Messaging.RabbitMQ.URL,
+		cfg.Messaging.RabbitMQ.Exchanges.Materials,
+		appLogger.With(zap.String("component", "rabbitmq-publisher")),
+	)
+	if err != nil {
+		appLogger.Fatal("error inicializando RabbitMQ Publisher", zap.Error(err))
+	}
+	defer publisher.Close()
+	appLogger.Info("RabbitMQ Publisher inicializado correctamente",
+		zap.String("exchange", cfg.Messaging.RabbitMQ.Exchanges.Materials),
+	)
+
+	// Inicializar cliente S3
+	s3Config := s3.S3Config{
+		Region:          cfg.Storage.S3.Region,
+		BucketName:      cfg.Storage.S3.BucketName,
+		AccessKeyID:     cfg.Storage.S3.AccessKeyID,
+		SecretAccessKey: cfg.Storage.S3.SecretAccessKey,
+		Endpoint:        cfg.Storage.S3.Endpoint,
+	}
+	s3Client, err := s3.NewS3Client(ctx, s3Config, appLogger.With(zap.String("component", "s3-client")))
+	if err != nil {
+		appLogger.Fatal("error inicializando cliente S3", zap.Error(err))
+	}
+	appLogger.Info("cliente S3 inicializado correctamente",
+		zap.String("region", cfg.Storage.S3.Region),
+		zap.String("bucket", cfg.Storage.S3.BucketName),
+	)
+
 	// Obtener JWT secret desde variable de entorno
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
@@ -78,7 +111,7 @@ func main() {
 	}
 
 	// Crear container de dependencias (DI)
-	c := container.NewContainer(db, mongoDB, jwtSecret, appLogger)
+	c := container.NewContainer(db, mongoDB, publisher, s3Client, jwtSecret, appLogger)
 	defer c.Close()
 	appLogger.Info("container de dependencias inicializado correctamente")
 
