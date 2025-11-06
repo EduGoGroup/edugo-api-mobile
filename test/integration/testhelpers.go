@@ -15,6 +15,7 @@ import (
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // TestApp encapsula todo lo necesario para tests de integración
@@ -251,12 +252,18 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 	t.Helper()
 	
 	email = "test@edugo.com"
-	// Password: "password123" (bcrypt hash)
-	passwordHash := "$2a$10$X3LY5LHH7vP0XrLxqX7r0.3pR9hQg0Wz3hJF1V0U7Ny3Xb7V8F0W2"
+	password := "password123"
 	
-	err := db.QueryRow(`
-		INSERT INTO users (email, password_hash, full_name, role, is_verified)
-		VALUES ($1, $2, 'Test User', 'student', true)
+	// Generar bcrypt hash dinámicamente
+	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatalf("Failed to generate password hash: %v", err)
+	}
+	passwordHash := string(passwordHashBytes)
+	
+	err = db.QueryRow(`
+		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
+		VALUES ($1, $2, 'Test', 'User', 'student', true)
 		RETURNING id
 	`, email, passwordHash).Scan(&userID)
 	
@@ -264,7 +271,7 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 		t.Fatalf("Failed to seed test user: %v", err)
 	}
 	
-	t.Logf("👤 Test user created: %s (%s)", email, userID)
+	t.Logf("👤 Test user created: %s (%s) with password: %s", email, userID, password)
 	return userID, email
 }
 
@@ -311,9 +318,10 @@ func initTestSchema(db *sql.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			email VARCHAR(255) UNIQUE NOT NULL,
 			password_hash VARCHAR(255) NOT NULL,
-			full_name VARCHAR(255) NOT NULL,
+			first_name VARCHAR(255) NOT NULL,
+			last_name VARCHAR(255) NOT NULL,
 			role VARCHAR(50) NOT NULL DEFAULT 'student',
-			is_verified BOOLEAN DEFAULT false,
+			is_active BOOLEAN DEFAULT true,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
@@ -321,8 +329,9 @@ func initTestSchema(db *sql.DB) error {
 		-- Refresh tokens table
 		CREATE TABLE IF NOT EXISTS refresh_tokens (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			token_hash VARCHAR(255) UNIQUE NOT NULL,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			client_info JSONB,
 			expires_at TIMESTAMP NOT NULL,
 			revoked BOOLEAN DEFAULT false,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
