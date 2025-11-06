@@ -26,8 +26,9 @@ type ServiceContainer struct {
 func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContainer) *ServiceContainer {
 	return &ServiceContainer{
 		// AuthService gestiona autenticación, tokens JWT y sesiones
+		// ISP: Usa UserReader (solo lectura) en lugar de UserRepository completo
 		AuthService: service.NewAuthService(
-			repos.UserRepository,
+			repos.UserRepository, // También es UserReader
 			repos.RefreshTokenRepository,
 			repos.LoginAttemptRepository,
 			infra.JWTManager,
@@ -62,11 +63,12 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 
 		// StatsService gestiona estadísticas globales y por material
 		// Usa queries paralelas con goroutines para optimización
+		// ISP: Solo necesita interfaces Stats segregadas
 		StatsService: service.NewStatsService(
 			infra.Logger,
-			repos.MaterialRepository,
-			repos.AssessmentRepository,
-			repos.ProgressRepository,
+			repos.MaterialRepository,   // También es MaterialStats
+			repos.AssessmentRepository, // También es AssessmentStats
+			repos.ProgressRepository,   // También es ProgressStats
 		),
 	}
 }

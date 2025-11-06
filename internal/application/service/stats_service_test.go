@@ -31,9 +31,9 @@ func TestGetGlobalStats_Success(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -77,9 +77,9 @@ func TestGetGlobalStats_MaterialRepoError(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -112,9 +112,9 @@ func TestGetGlobalStats_AssessmentRepoError(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -146,9 +146,9 @@ func TestGetGlobalStats_ProgressRepoError(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -180,9 +180,9 @@ func TestGetGlobalStats_AllZeros(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -222,9 +222,9 @@ func TestGetGlobalStats_DTOStructure(t *testing.T) {
 
 	service := &statsService{
 		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
