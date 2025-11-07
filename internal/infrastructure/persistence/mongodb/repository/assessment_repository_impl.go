@@ -6,6 +6,7 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -72,6 +73,7 @@ func (r *mongoAssessmentRepository) FindAssessmentByMaterialID(ctx context.Conte
 			question := repository.AssessmentQuestion{
 				ID:            getString(qMap, "id"),
 				QuestionText:  getString(qMap, "text"),
+				QuestionType:  enum.AssessmentType(getString(qMap, "question_type")),
 				Options:       options,
 				CorrectAnswer: qMap["answer"],
 			}

@@ -226,22 +226,37 @@ func CleanDatabase(t *testing.T, db *sql.DB) {
 	t.Log("🧹 Database cleaned")
 }
 
-// CleanMongoCollections limpia todas las colecciones de MongoDB
+// CleanMongoCollections limpia las colecciones de MongoDB y crea índices necesarios
 func CleanMongoCollections(t *testing.T, mongodb *mongo.Database) {
 	t.Helper()
-	ctx := context.Background()
 	
+	// Lista de colecciones a limpiar
 	collections := []string{
-		"materials",
-		"assessments",
+		"material_assessments",
+		"assessment_attempts",
 		"assessment_results",
 	}
 	
-	for _, coll := range collections {
-		err := mongodb.Collection(coll).Drop(ctx)
-		if err != nil {
-			t.Logf("⚠️  Warning: Failed to drop collection %s: %v", coll, err)
+	ctx := context.Background()
+	for _, collName := range collections {
+		coll := mongodb.Collection(collName)
+		if err := coll.Drop(ctx); err != nil {
+			t.Logf("Warning: Failed to drop collection %s: %v", collName, err)
 		}
+	}
+	
+	// Crear índice UNIQUE en assessment_results (assessment_id, user_id) para prevenir duplicados
+	resultsCollection := mongodb.Collection("assessment_results")
+	indexModel := mongo.IndexModel{
+		Keys: map[string]interface{}{
+			"assessment_id": 1,
+			"user_id":       1,
+		},
+		Options: options.Index().SetUnique(true),
+	}
+	_, err := resultsCollection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		t.Logf("Warning: Failed to create unique index on assessment_results: %v", err)
 	}
 	
 	t.Log("🧹 MongoDB collections cleaned")
@@ -311,18 +326,20 @@ func SeedTestAssessment(t *testing.T, mongodb *mongo.Database, materialID string
 		"material_id": materialID,
 		"questions": []map[string]interface{}{
 			{
-				"id":       "q1",
-				"text":     "¿Qué es Go?",
-				"options":  []string{"A) Un lenguaje de programación", "B) Una base de datos", "C) Un framework", "D) Un editor"},
-				"answer":   "A",
-				"points":   1,
+				"id":            "q1",
+				"text":          "¿Qué es Go?",
+				"question_type": "multiple_choice",
+				"options":       []string{"A) Un lenguaje de programación", "B) Una base de datos", "C) Un framework", "D) Un editor"},
+				"answer":        "A",
+				"points":        1,
 			},
 			{
-				"id":       "q2",
-				"text":     "¿Go es compilado o interpretado?",
-				"options":  []string{"A) Interpretado", "B) Compilado", "C) Ambos", "D) Ninguno"},
-				"answer":   "B",
-				"points":   1,
+				"id":            "q2",
+				"text":          "¿Go es compilado o interpretado?",
+				"question_type": "multiple_choice",
+				"options":       []string{"A) Interpretado", "B) Compilado", "C) Ambos", "D) Ninguno"},
+				"answer":        "B",
+				"points":        1,
 			},
 		},
 		"created_at": "2024-01-01T00:00:00Z",
