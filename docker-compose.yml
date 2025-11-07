@@ -75,12 +75,11 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: edugo-api-mobile
+    env_file:
+      - .env
     environment:
+      # Override specific values for Docker environment if needed
       APP_ENV: ${APP_ENV:-local}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edugo123}
-      MONGODB_URI: ${MONGODB_URI:-mongodb://edugo:edugo123@mongodb:27017/edugo?authSource=admin}
-      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://edugo:edugo123@rabbitmq:5672/}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
     ports:
       - "9090:8080"
     volumes:

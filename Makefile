@@ -27,11 +27,11 @@ BLUE=\033[1;34m
 RED=\033[1;31m
 RESET=\033[0m
 
-# Environment variables con defaults
-export APP_ENV ?= local
-export POSTGRES_PASSWORD ?= edugo_pass
-export MONGODB_URI ?= mongodb://edugo_admin:edugo_pass@localhost:27017/edugo?authSource=admin
-export RABBITMQ_URL ?= amqp://edugo_user:edugo_pass@localhost:5672/
+# Load .env file if it exists
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
 
 .DEFAULT_GOAL := help
 
@@ -157,6 +157,17 @@ tools: ## Instalar herramientas
 	@go install github.com/swaggo/swag/cmd/swag@latest
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "$(GREEN)✓ Herramientas instaladas$(RESET)"
+
+configctl: ## Build configctl CLI
+	@echo "$(YELLOW)🔧 Building configctl...$(RESET)"
+	@go build -o bin/configctl ./tools/configctl/
+	@echo "$(GREEN)✓ configctl: bin/configctl$(RESET)"
+
+config-validate: configctl ## Validar archivos de configuración
+	@./bin/configctl validate
+
+config-docs: configctl ## Generar documentación de configuración
+	@./bin/configctl generate-docs
 
 # ============================================
 # Swagger
