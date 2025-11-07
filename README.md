@@ -14,7 +14,7 @@ Esta API maneja:
 
 ## Tecnologías
 
-- **Lenguaje**: Go 1.21+
+- **Lenguaje**: Go 1.25.3
 - **Framework Web**: Gin
 - **Documentación API**: Swagger/OpenAPI (Swaggo)
 - **Base de Datos**: PostgreSQL + MongoDB (mock)
@@ -22,7 +22,7 @@ Esta API maneja:
 
 ## Requisitos Previos
 
-- Go 1.21+
+- Go 1.25.3
 - PostgreSQL 12+
 - MongoDB 5.0+
 - RabbitMQ 3.12+
