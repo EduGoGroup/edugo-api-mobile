@@ -267,26 +267,53 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 	t.Helper()
 	
 	email = "test@edugo.com"
-	password := "password123"
+	password := "Test1234!"
 	
-	// Generar bcrypt hash dinámicamente
-	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// Generar hash de contraseña
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		t.Fatalf("Failed to generate password hash: %v", err)
+		t.Fatalf("Failed to hash password: %v", err)
 	}
-	passwordHash := string(passwordHashBytes)
 	
-	err = db.QueryRow(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'Test', 'User', 'student', true)
+	// Insertar usuario usando el ID generado dinámicamente
+	query := `
+		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
+		VALUES ($1, $2, 'Test', 'User', 'student', true, NOW(), NOW())
 		RETURNING id
-	`, email, passwordHash).Scan(&userID)
-	
+	`
+	err = db.QueryRow(query, email, string(hashedPassword)).Scan(&userID)
 	if err != nil {
 		t.Fatalf("Failed to seed test user: %v", err)
 	}
 	
-	t.Logf("👤 Test user created: %s (%s) with password: %s", email, userID, password)
+	t.Logf("👤 Test user created: %s (email: %s)", userID, email)
+	return userID, email
+}
+
+// SeedTestUserWithEmail crea un usuario de prueba con un email específico
+func SeedTestUserWithEmail(t *testing.T, db *sql.DB, email string) (userID string, emailOut string) {
+	t.Helper()
+	
+	password := "Test1234!"
+	
+	// Generar hash de contraseña
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+	
+	// Insertar usuario usando el ID generado dinámicamente
+	query := `
+		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
+		VALUES ($1, $2, 'Test', 'User', 'student', true, NOW(), NOW())
+		RETURNING id
+	`
+	err = db.QueryRow(query, email, string(hashedPassword)).Scan(&userID)
+	if err != nil {
+		t.Fatalf("Failed to seed test user: %v", err)
+	}
+	
+	t.Logf("👤 Test user created: %s (email: %s)", userID, email)
 	return userID, email
 }
 
@@ -442,16 +469,18 @@ func initTestSchema(db *sql.DB) error {
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 
-		-- Progress table
-		CREATE TABLE IF NOT EXISTS progress (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id UUID NOT NULL REFERENCES users(id),
+		-- Material Progress table (nombre correcto según repositorio)
+		CREATE TABLE IF NOT EXISTS material_progress (
 			material_id UUID NOT NULL REFERENCES materials(id),
-			progress_percentage NUMERIC(5,2) DEFAULT 0.00,
+			user_id UUID NOT NULL REFERENCES users(id),
+			percentage INT DEFAULT 0 CHECK (percentage >= 0 AND percentage <= 100),
+			last_page INT DEFAULT 0,
+			status VARCHAR(50) DEFAULT 'in_progress',
 			last_accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(user_id, material_id)
+			completed_at TIMESTAMP NULL,
+			PRIMARY KEY (material_id, user_id)
 		);
 
 		-- Assessments table (mock/simplified)
