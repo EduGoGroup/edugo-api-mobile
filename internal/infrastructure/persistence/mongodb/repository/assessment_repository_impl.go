@@ -61,7 +61,7 @@ func (r *mongoAssessmentRepository) FindAssessmentByMaterialID(ctx context.Conte
 		questions := make([]repository.AssessmentQuestion, 0, len(questionsData))
 		for _, qData := range questionsData {
 			qMap := qData.(bson.M)
-			
+
 			// Parsear options si existen
 			var options []string
 			if opts, ok := qMap["options"].(bson.A); ok {
@@ -69,7 +69,7 @@ func (r *mongoAssessmentRepository) FindAssessmentByMaterialID(ctx context.Conte
 					options = append(options, opt.(string))
 				}
 			}
-			
+
 			question := repository.AssessmentQuestion{
 				ID:            getString(qMap, "id"),
 				QuestionText:  getString(qMap, "text"),

@@ -26,23 +26,23 @@ type StatsService interface {
 }
 
 type statsService struct {
-	logger         logger.Logger
-	materialStats  repository.MaterialStats  // ISP: Solo necesita estadísticas
+	logger          logger.Logger
+	materialStats   repository.MaterialStats   // ISP: Solo necesita estadísticas
 	assessmentStats repository.AssessmentStats // ISP: Solo necesita estadísticas
-	progressStats  repository.ProgressStats  // ISP: Solo necesita estadísticas
+	progressStats   repository.ProgressStats   // ISP: Solo necesita estadísticas
 }
 
 func NewStatsService(
 	logger logger.Logger,
-	materialStats repository.MaterialStats,  // ISP: Solo necesita estadísticas
+	materialStats repository.MaterialStats, // ISP: Solo necesita estadísticas
 	assessmentStats repository.AssessmentStats, // ISP: Solo necesita estadísticas
-	progressStats repository.ProgressStats,  // ISP: Solo necesita estadísticas
+	progressStats repository.ProgressStats, // ISP: Solo necesita estadísticas
 ) StatsService {
 	return &statsService{
-		logger:         logger,
-		materialStats:  materialStats,
+		logger:          logger,
+		materialStats:   materialStats,
 		assessmentStats: assessmentStats,
-		progressStats:  progressStats,
+		progressStats:   progressStats,
 	}
 }
 

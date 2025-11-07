@@ -30,7 +30,7 @@ func TestGetGlobalStats_Success(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
@@ -76,7 +76,7 @@ func TestGetGlobalStats_MaterialRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
@@ -111,7 +111,7 @@ func TestGetGlobalStats_AssessmentRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
@@ -145,7 +145,7 @@ func TestGetGlobalStats_ProgressRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
@@ -179,7 +179,7 @@ func TestGetGlobalStats_AllZeros(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
@@ -221,7 +221,7 @@ func TestGetGlobalStats_DTOStructure(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
+		logger:          mockLogger,
 		materialStats:   mockMaterialRepo,
 		assessmentStats: mockAssessmentRepo,
 		progressStats:   mockProgressRepo,
