@@ -275,6 +275,30 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 	return userID, email
 }
 
+// SeedTestMaterial crea un material de prueba en PostgreSQL
+func SeedTestMaterial(t *testing.T, db *sql.DB, authorID string) (materialID string) {
+	t.Helper()
+	return SeedTestMaterialWithTitle(t, db, authorID, "Test Material")
+}
+
+// SeedTestMaterialWithTitle crea un material de prueba con un título específico
+func SeedTestMaterialWithTitle(t *testing.T, db *sql.DB, authorID, title string) (materialID string) {
+	t.Helper()
+	
+	err := db.QueryRow(`
+		INSERT INTO materials (author_id, title, description, status, processing_status)
+		VALUES ($1, $2, 'Test material description', 'published', 'completed')
+		RETURNING id
+	`, authorID, title).Scan(&materialID)
+	
+	if err != nil {
+		t.Fatalf("Failed to seed test material: %v", err)
+	}
+	
+	t.Logf("📚 Test material created: %s (%s)", title, materialID)
+	return materialID
+}
+
 // createTestRabbitMQPublisher crea un publisher de RabbitMQ para tests
 func createTestRabbitMQPublisher(url string, log logger.Logger) (rabbitmq.Publisher, error) {
 	// Crear publisher real con RabbitMQ testcontainer
@@ -351,8 +375,12 @@ func initTestSchema(db *sql.DB) error {
 			title VARCHAR(255) NOT NULL,
 			description TEXT,
 			author_id UUID NOT NULL REFERENCES users(id),
+			subject_id VARCHAR(255),
 			status VARCHAR(50) DEFAULT 'draft',
 			processing_status VARCHAR(50) DEFAULT 'pending',
+			s3_key VARCHAR(500),
+			s3_url VARCHAR(1000),
+			is_deleted BOOLEAN DEFAULT false,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
