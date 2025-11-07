@@ -112,13 +112,13 @@
     - _Requirements: 5.6_
 
 - [ ] 7. Crear tests para el sistema de configuración
-  - [-] 7.1 Tests unitarios para loader
+  - [x] 7.1 Tests unitarios para loader
     - Test precedencia: ENV > YAML específico > YAML base > defaults
     - Test carga con archivo YAML faltante (cloud mode)
     - Test que AutomaticEnv mapea correctamente las variables
     - _Requirements: 9.1, 9.2, 9.5_
   
-  - [ ] 7.2 Tests unitarios para validator
+  - [-] 7.2 Tests unitarios para validator
     - Test validación de campos requeridos faltantes
     - Test validación de rangos (puertos, conexiones)
     - Test mensajes de error claros y útiles
