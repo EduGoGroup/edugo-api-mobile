@@ -218,7 +218,7 @@
     - Verificar que `.env.example` está bien documentado
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
   
-  - [ ] 11.3 Crear PR y solicitar revisión
+  - [x] 11.3 Crear PR y solicitar revisión
     - Crear Pull Request con descripción detallada de cambios
     - Incluir antes/después de la refactorización
     - Documentar breaking changes si los hay
