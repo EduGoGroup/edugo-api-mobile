@@ -38,8 +38,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main ./cmd/m
 # -------------------------
 FROM alpine:latest
 
-# Instalar utilidades necesarias (certificados y netcat para wait-for)
-RUN apk add --no-cache ca-certificates netcat-openbsd
+# Instalar utilidades necesarias (certificados, netcat para wait-for, y bash para entrypoint)
+RUN apk add --no-cache ca-certificates netcat-openbsd bash
 
 # Crear directorios esperados
 WORKDIR /root/

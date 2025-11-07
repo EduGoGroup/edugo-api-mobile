@@ -14,23 +14,124 @@ Esta API maneja:
 
 ## Tecnologías
 
-- **Lenguaje**: Go 1.21+
+- **Lenguaje**: Go 1.25.3
 - **Framework Web**: Gin
 - **Documentación API**: Swagger/OpenAPI (Swaggo)
 - **Base de Datos**: PostgreSQL + MongoDB (mock)
 - **Autenticación**: JWT (mock)
 
-## Instalación
+## Requisitos Previos
+
+- Go 1.25.3
+- PostgreSQL 12+
+- MongoDB 5.0+
+- RabbitMQ 3.12+
+- Docker (opcional, para desarrollo local)
+
+## Variables de Entorno
+
+La aplicación requiere las siguientes variables de entorno para funcionar:
 
 ```bash
-# Instalar dependencias
+# Copiar archivo de ejemplo
+cp .env.example .env
+
+# Editar .env con tus valores reales
+```
+
+### Variables Requeridas
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `your-secure-password` |
+| `MONGODB_URI` | URI de conexión MongoDB | `mongodb://user:pass@host:27017/edugo?authSource=admin` |
+| `RABBITMQ_URL` | URL de RabbitMQ | `amqp://user:pass@host:5672/` |
+| `JWT_SECRET` | Secret key para JWT | `$(openssl rand -base64 32)` |
+| `APP_ENV` | Ambiente (local/dev/qa/prod) | `local` |
+
+### Variables Opcionales
+
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `AWS_ACCESS_KEY_ID` | Access key de AWS S3 | - |
+| `AWS_SECRET_ACCESS_KEY` | Secret key de AWS S3 | - |
+| `POSTGRES_HOST` | Host de PostgreSQL | `localhost` |
+| `POSTGRES_PORT` | Puerto de PostgreSQL | `5432` |
+
+Ver el archivo [`.env.example`](.env.example) para la lista completa de variables y ejemplos.
+
+## Instalación
+
+### Desarrollo Local con Docker Compose
+
+```bash
+# 1. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con valores reales
+
+# 2. Iniciar servicios
+docker-compose up -d
+
+# La API estará disponible en http://localhost:9090
+```
+
+### Desarrollo Local sin Docker
+
+```bash
+# 1. Instalar dependencias
 go mod download
 
-# Generar documentación Swagger
+# 2. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con valores reales
+
+# 3. Asegurar que PostgreSQL, MongoDB y RabbitMQ están corriendo
+
+# 4. Generar documentación Swagger
 swag init -g cmd/main.go -o docs
 
-# Ejecutar servidor
+# 5. Ejecutar servidor
 go run cmd/main.go
+```
+
+### Producción con Docker
+
+```bash
+# Opción 1: Usar imagen publicada
+docker pull ghcr.io/edugogroup/edugo-api-mobile:latest
+
+docker run -d \
+  --name edugo-api-mobile \
+  -p 8080:8080 \
+  -e POSTGRES_PASSWORD=your-password \
+  -e MONGODB_URI=mongodb://... \
+  -e RABBITMQ_URL=amqp://... \
+  -e JWT_SECRET=your-secret \
+  -e APP_ENV=prod \
+  ghcr.io/edugogroup/edugo-api-mobile:latest
+
+# Opción 2: Build local
+docker build -t edugo-api-mobile .
+docker run -d -p 8080:8080 --env-file .env edugo-api-mobile
+```
+
+### Usando edugo-dev-environment
+
+Si usas el [repositorio unificado de desarrollo](https://github.com/EduGoGroup/edugo-dev-environment):
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/EduGoGroup/edugo-dev-environment.git
+cd edugo-dev-environment
+
+# 2. Configurar .env (usa su propio .env)
+cp .env.example .env
+# Editar .env según instrucciones del repositorio
+
+# 3. Iniciar todos los servicios
+docker-compose up -d
+
+# La API Mobile estará en http://localhost:8081
 ```
 
 ## Uso
