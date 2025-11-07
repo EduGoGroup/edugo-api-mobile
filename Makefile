@@ -158,6 +158,17 @@ tools: ## Instalar herramientas
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "$(GREEN)✓ Herramientas instaladas$(RESET)"
 
+configctl: ## Build configctl CLI
+	@echo "$(YELLOW)🔧 Building configctl...$(RESET)"
+	@go build -o bin/configctl ./tools/configctl/
+	@echo "$(GREEN)✓ configctl: bin/configctl$(RESET)"
+
+config-validate: configctl ## Validar archivos de configuración
+	@./bin/configctl validate
+
+config-docs: configctl ## Generar documentación de configuración
+	@./bin/configctl generate-docs
+
 # ============================================
 # Swagger
 # ============================================

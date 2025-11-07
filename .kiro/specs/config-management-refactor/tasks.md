@@ -76,7 +76,7 @@
     - _Requirements: 3.2_
 
 - [ ] 6. Crear herramienta ConfigCTL
-  - [ ] 6.1 Crear estructura base del CLI
+  - [x] 6.1 Crear estructura base del CLI
     - Crear directorio `tools/configctl/`
     - Implementar `main.go` con cobra para comandos
     - Agregar comandos: add, validate, generate-docs
@@ -112,7 +112,7 @@
     - _Requirements: 5.6_
 
 - [ ] 7. Crear tests para el sistema de configuración
-  - [ ] 7.1 Tests unitarios para loader
+  - [-] 7.1 Tests unitarios para loader
     - Test precedencia: ENV > YAML específico > YAML base > defaults
     - Test carga con archivo YAML faltante (cloud mode)
     - Test que AutomaticEnv mapea correctamente las variables

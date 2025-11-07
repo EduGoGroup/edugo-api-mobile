@@ -13,21 +13,30 @@ import (
 func Load() (*Config, error) {
 	v := viper.New()
 
-	// 1. Configurar defaults
+	// 1. Configurar ENV vars PRIMERO para que tengan máxima precedencia
+	// AutomaticEnv + SetEnvKeyReplacer permite que Viper busque ENV vars automáticamente
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	
+	// Bind explicit ENV vars para que Unmarshal() las tome
+	// Esto es necesario porque Unmarshal() no usa AutomaticEnv()
+	bindEnvVars(v)
+
+	// 2. Configurar defaults
 	setDefaults(v)
 
-	// 2. Determinar ambiente
+	// 3. Determinar ambiente
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "local"
 	}
 
-	// 3. Configurar paths y tipo de archivo
+	// 4. Configurar paths y tipo de archivo
 	v.SetConfigType("yaml")
 	v.AddConfigPath("./config")
 	v.AddConfigPath("../config") // Por si se ejecuta desde otro directorio
 
-	// 4. Leer archivo base (opcional en cloud mode)
+	// 5. Leer archivo base (opcional en cloud mode)
 	v.SetConfigName("config")
 	if err := v.ReadInConfig(); err != nil {
 		// En cloud mode, el archivo puede no existir (se usa solo env vars)
@@ -37,7 +46,7 @@ func Load() (*Config, error) {
 		// Archivo no encontrado es OK, continuamos con defaults + env vars
 	}
 
-	// 5. Merge archivo específico del ambiente
+	// 6. Merge archivo específico del ambiente
 	v.SetConfigName(fmt.Sprintf("config-%s", env))
 	if err := v.MergeInConfig(); err != nil {
 		// Ignorar si no existe (es opcional)
@@ -45,13 +54,6 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("error merging %s config: %w", env, err)
 		}
 	}
-
-	// 6. Configurar ENV vars (precedencia automática)
-	// AutomaticEnv hace que Viper busque automáticamente variables de entorno
-	// que coincidan con las claves de configuración
-	v.AutomaticEnv()
-	// SetEnvKeyReplacer convierte "database.postgres.password" → "DATABASE_POSTGRES_PASSWORD"
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// 7. Unmarshal a struct
 	var cfg Config
@@ -87,4 +89,46 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")
+}
+
+// bindEnvVars vincula explícitamente las variables de entorno
+// Esto es necesario para que Unmarshal() tome los valores de ENV vars
+func bindEnvVars(v *viper.Viper) {
+	// Server
+	v.BindEnv("server.port")
+	v.BindEnv("server.host")
+	v.BindEnv("server.read_timeout")
+	v.BindEnv("server.write_timeout")
+
+	// Database - Postgres
+	v.BindEnv("database.postgres.host")
+	v.BindEnv("database.postgres.port")
+	v.BindEnv("database.postgres.database")
+	v.BindEnv("database.postgres.user")
+	v.BindEnv("database.postgres.password")
+	v.BindEnv("database.postgres.max_connections")
+	v.BindEnv("database.postgres.ssl_mode")
+
+	// Database - MongoDB
+	v.BindEnv("database.mongodb.uri")
+	v.BindEnv("database.mongodb.database")
+	v.BindEnv("database.mongodb.timeout")
+
+	// Messaging - RabbitMQ
+	v.BindEnv("messaging.rabbitmq.url")
+	v.BindEnv("messaging.rabbitmq.queues.material_uploaded")
+	v.BindEnv("messaging.rabbitmq.queues.assessment_attempt")
+	v.BindEnv("messaging.rabbitmq.exchanges.materials")
+	v.BindEnv("messaging.rabbitmq.prefetch_count")
+
+	// Storage - S3
+	v.BindEnv("storage.s3.region")
+	v.BindEnv("storage.s3.bucket_name")
+	v.BindEnv("storage.s3.access_key_id")
+	v.BindEnv("storage.s3.secret_access_key")
+	v.BindEnv("storage.s3.endpoint")
+
+	// Logging
+	v.BindEnv("logging.level")
+	v.BindEnv("logging.format")
 }
