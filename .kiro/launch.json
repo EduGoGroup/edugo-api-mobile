@@ -7,9 +7,13 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/main.go",
-            "envFile": "${workspaceFolder}/.env",
             "env": {
-                "APP_ENV": "local"
+                "APP_ENV": "local",
+                "DATABASE_POSTGRES_PASSWORD": "edugo123",
+                "DATABASE_MONGODB_URI": "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin",
+                "MESSAGING_RABBITMQ_URL": "amqp://edugo:edugo123@localhost:5672/",
+                "STORAGE_S3_ACCESS_KEY_ID": "test-access-key-id",
+                "STORAGE_S3_SECRET_ACCESS_KEY": "test-secret-access-key"
             }
         },
         {
@@ -18,7 +22,14 @@
             "request": "launch",
             "mode": "auto",
             "program": "${file}",
-            "envFile": "${workspaceFolder}/.env"
+            "env": {
+                "APP_ENV": "local",
+                "DATABASE_POSTGRES_PASSWORD": "edugo123",
+                "DATABASE_MONGODB_URI": "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin",
+                "MESSAGING_RABBITMQ_URL": "amqp://edugo:edugo123@localhost:5672/",
+                "STORAGE_S3_ACCESS_KEY_ID": "test-access-key-id",
+                "STORAGE_S3_SECRET_ACCESS_KEY": "test-secret-access-key"
+            }
         },
         {
             "name": "Debug Tests",
@@ -26,7 +37,14 @@
             "request": "launch",
             "mode": "test",
             "program": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env"
+            "env": {
+                "APP_ENV": "local",
+                "DATABASE_POSTGRES_PASSWORD": "edugo123",
+                "DATABASE_MONGODB_URI": "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin",
+                "MESSAGING_RABBITMQ_URL": "amqp://edugo:edugo123@localhost:5672/",
+                "STORAGE_S3_ACCESS_KEY_ID": "test-access-key-id",
+                "STORAGE_S3_SECRET_ACCESS_KEY": "test-secret-access-key"
+            }
         }
     ]
 }
