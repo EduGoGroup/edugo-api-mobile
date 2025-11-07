@@ -27,11 +27,11 @@ BLUE=\033[1;34m
 RED=\033[1;31m
 RESET=\033[0m
 
-# Environment variables con defaults
-export APP_ENV ?= local
-export POSTGRES_PASSWORD ?= edugo_pass
-export MONGODB_URI ?= mongodb://edugo_admin:edugo_pass@localhost:27017/edugo?authSource=admin
-export RABBITMQ_URL ?= amqp://edugo_user:edugo_pass@localhost:5672/
+# Load .env file if it exists
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
 
 .DEFAULT_GOAL := help
 

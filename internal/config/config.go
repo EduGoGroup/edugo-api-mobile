@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"time"
-
-	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
 // Config contiene toda la configuración de la aplicación
@@ -36,14 +34,14 @@ type PostgresConfig struct {
 	Port           int    `mapstructure:"port"`
 	Database       string `mapstructure:"database"`
 	User           string `mapstructure:"user"`
-	Password       string `mapstructure:"password"` // Desde ENV
+	Password       string `mapstructure:"password"` // ENV: DATABASE_POSTGRES_PASSWORD (required)
 	MaxConnections int    `mapstructure:"max_connections"`
 	SSLMode        string `mapstructure:"ssl_mode"`
 }
 
 // MongoDBConfig configuración de MongoDB
 type MongoDBConfig struct {
-	URI      string        `mapstructure:"uri"` // Desde ENV
+	URI      string        `mapstructure:"uri"` // ENV: DATABASE_MONGODB_URI (required, format: mongodb://user:pass@host:port/db?authSource=admin)
 	Database string        `mapstructure:"database"`
 	Timeout  time.Duration `mapstructure:"timeout"`
 }
@@ -55,7 +53,7 @@ type MessagingConfig struct {
 
 // RabbitMQConfig configuración de RabbitMQ
 type RabbitMQConfig struct {
-	URL           string         `mapstructure:"url"` // Desde ENV
+	URL           string         `mapstructure:"url"` // ENV: MESSAGING_RABBITMQ_URL (required, format: amqp://user:pass@host:port/)
 	Queues        QueuesConfig   `mapstructure:"queues"`
 	Exchanges     ExchangeConfig `mapstructure:"exchanges"`
 	PrefetchCount int            `mapstructure:"prefetch_count"`
@@ -81,9 +79,9 @@ type StorageConfig struct {
 type S3Config struct {
 	Region          string `mapstructure:"region"`
 	BucketName      string `mapstructure:"bucket_name"`
-	AccessKeyID     string `mapstructure:"access_key_id"`     // Desde ENV
-	SecretAccessKey string `mapstructure:"secret_access_key"` // Desde ENV
-	Endpoint        string `mapstructure:"endpoint"`          // Opcional, para Localstack
+	AccessKeyID     string `mapstructure:"access_key_id"`     // ENV: STORAGE_S3_ACCESS_KEY_ID (required)
+	SecretAccessKey string `mapstructure:"secret_access_key"` // ENV: STORAGE_S3_SECRET_ACCESS_KEY (required)
+	Endpoint        string `mapstructure:"endpoint"`          // Optional, for Localstack in development
 }
 
 // LoggingConfig configuración de logging
@@ -96,27 +94,4 @@ type LoggingConfig struct {
 func (c *PostgresConfig) GetConnectionString() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)
-}
-
-// Validate valida que la configuración tenga los campos obligatorios
-func (c *Config) Validate() error {
-	if c.Database.Postgres.Password == "" {
-		return errors.NewValidationError("POSTGRES_PASSWORD is required")
-	}
-	if c.Database.MongoDB.URI == "" {
-		return errors.NewValidationError("MONGODB_URI is required")
-	}
-	if c.Messaging.RabbitMQ.URL == "" {
-		return errors.NewValidationError("RABBITMQ_URL is required")
-	}
-	if c.Storage.S3.AccessKeyID == "" {
-		return errors.NewValidationError("AWS_ACCESS_KEY_ID is required")
-	}
-	if c.Storage.S3.SecretAccessKey == "" {
-		return errors.NewValidationError("AWS_SECRET_ACCESS_KEY is required")
-	}
-	if c.Storage.S3.BucketName == "" {
-		return errors.NewValidationError("S3_BUCKET_NAME is required")
-	}
-	return nil
 }
