@@ -380,6 +380,7 @@ func initTestSchema(db *sql.DB) error {
 			processing_status VARCHAR(50) DEFAULT 'pending',
 			s3_key VARCHAR(500),
 			s3_url VARCHAR(1000),
+			is_deleted BOOLEAN DEFAULT false,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);

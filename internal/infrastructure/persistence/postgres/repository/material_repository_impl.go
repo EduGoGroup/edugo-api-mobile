@@ -142,8 +142,46 @@ func (r *postgresMaterialRepository) List(ctx context.Context, filters repositor
 
 	var materials []*entity.Material
 	for rows.Next() {
-		// Similar scan logic...
-		// Por brevedad, se puede implementar completamente después
+		var (
+			idStr            string
+			title            string
+			description      string
+			authorIDStr      string
+			subjectID        sql.NullString
+			s3Key            sql.NullString
+			s3URL            sql.NullString
+			statusStr        string
+			processingStatus string
+			createdAt        sql.NullTime
+			updatedAt        sql.NullTime
+		)
+
+		err := rows.Scan(
+			&idStr, &title, &description, &authorIDStr, &subjectID, &s3Key, &s3URL,
+			&statusStr, &processingStatus, &createdAt, &updatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		materialID, _ := valueobject.MaterialIDFromString(idStr)
+		authorID, _ := valueobject.UserIDFromString(authorIDStr)
+
+		material := entity.ReconstructMaterial(
+			materialID,
+			title,
+			description,
+			authorID,
+			subjectID.String,
+			s3Key.String,
+			s3URL.String,
+			enum.MaterialStatus(statusStr),
+			enum.ProcessingStatus(processingStatus),
+			createdAt.Time,
+			updatedAt.Time,
+		)
+
+		materials = append(materials, material)
 	}
 
 	return materials, rows.Err()

@@ -191,6 +191,13 @@ func TestMaterialFlow_ListMaterials(t *testing.T) {
 	
 	t.Logf("✅ Test materials created: %s, %s", material1ID, material2ID)
 	
+	// Verificar en BD cuántos materiales hay
+	var dbCount int
+	if err := app.DB.QueryRow("SELECT COUNT(*) FROM materials WHERE is_deleted = false").Scan(&dbCount); err != nil {
+		t.Fatalf("Failed to count materials in DB: %v", err)
+	}
+	t.Logf("📊 Materials in DB (is_deleted=false): %d", dbCount)
+	
 	// Crear router Gin
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -214,7 +221,11 @@ func TestMaterialFlow_ListMaterials(t *testing.T) {
 	require.NoError(t, err)
 	
 	// Verificar que hay al menos 2 materiales
-	assert.GreaterOrEqual(t, len(response), 2, "Should return at least 2 materials")
+	t.Logf("📊 Materials returned: %d", len(response))
+	
+	if !assert.GreaterOrEqual(t, len(response), 2, "Should return at least 2 materials") {
+		t.Fatalf("Expected at least 2 materials, got %d", len(response))
+	}
 	
 	// Verificar estructura del primer material
 	assert.Contains(t, response[0], "id")
