@@ -299,6 +299,46 @@ func SeedTestMaterialWithTitle(t *testing.T, db *sql.DB, authorID, title string)
 	return materialID
 }
 
+// SeedTestAssessment crea un assessment de prueba en MongoDB
+func SeedTestAssessment(t *testing.T, mongodb *mongo.Database, materialID string) (assessmentID string) {
+	t.Helper()
+	
+	// Assessment ID es el mismo que el material ID
+	assessmentID = materialID
+	
+	// Crear assessment con 2 preguntas de prueba
+	assessment := map[string]interface{}{
+		"material_id": materialID,
+		"questions": []map[string]interface{}{
+			{
+				"id":       "q1",
+				"text":     "¿Qué es Go?",
+				"options":  []string{"A) Un lenguaje de programación", "B) Una base de datos", "C) Un framework", "D) Un editor"},
+				"answer":   "A",
+				"points":   1,
+			},
+			{
+				"id":       "q2",
+				"text":     "¿Go es compilado o interpretado?",
+				"options":  []string{"A) Interpretado", "B) Compilado", "C) Ambos", "D) Ninguno"},
+				"answer":   "B",
+				"points":   1,
+			},
+		},
+		"created_at": "2024-01-01T00:00:00Z",
+	}
+	
+	// Insertar en la colección material_assessments
+	collection := mongodb.Collection("material_assessments")
+	_, err := collection.InsertOne(context.Background(), assessment)
+	if err != nil {
+		t.Fatalf("Failed to seed test assessment: %v", err)
+	}
+	
+	t.Logf("📝 Test assessment created for material: %s", materialID)
+	return assessmentID
+}
+
 // createTestRabbitMQPublisher crea un publisher de RabbitMQ para tests
 func createTestRabbitMQPublisher(url string, log logger.Logger) (rabbitmq.Publisher, error) {
 	// Crear publisher real con RabbitMQ testcontainer

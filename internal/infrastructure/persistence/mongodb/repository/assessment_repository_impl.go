@@ -55,7 +55,42 @@ func (r *mongoAssessmentRepository) FindAssessmentByMaterialID(ctx context.Conte
 		CreatedAt:  doc["created_at"].(string),
 	}
 
+	// Parsear questions si existen
+	if questionsData, ok := doc["questions"].(bson.A); ok {
+		questions := make([]repository.AssessmentQuestion, 0, len(questionsData))
+		for _, qData := range questionsData {
+			qMap := qData.(bson.M)
+			
+			// Parsear options si existen
+			var options []string
+			if opts, ok := qMap["options"].(bson.A); ok {
+				for _, opt := range opts {
+					options = append(options, opt.(string))
+				}
+			}
+			
+			question := repository.AssessmentQuestion{
+				ID:            getString(qMap, "id"),
+				QuestionText:  getString(qMap, "text"),
+				Options:       options,
+				CorrectAnswer: qMap["answer"],
+			}
+			questions = append(questions, question)
+		}
+		assessment.Questions = questions
+	}
+
 	return assessment, nil
+}
+
+// getString es un helper para extraer strings de bson.M de forma segura
+func getString(m bson.M, key string) string {
+	if val, ok := m[key]; ok {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return ""
 }
 
 func (r *mongoAssessmentRepository) SaveAttempt(ctx context.Context, attempt *repository.AssessmentAttempt) error {
