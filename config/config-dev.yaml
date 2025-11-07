@@ -4,13 +4,14 @@
 database:
   postgres:
     host: "dev-postgres.edugo.internal"
+    # password: Set via DATABASE_POSTGRES_PASSWORD environment variable
   
   mongodb:
-    # URI completa desde ENV: MONGODB_URI
+    # uri: Set via DATABASE_MONGODB_URI environment variable
 
 messaging:
   rabbitmq:
-    # URL completa desde ENV: RABBITMQ_URL
+    # url: Set via MESSAGING_RABBITMQ_URL environment variable
 
 logging:
   level: "debug"

@@ -13,15 +13,18 @@ database:
     port: 5432
     database: "edugo"
     user: "edugo"
+    # password: Set via DATABASE_POSTGRES_PASSWORD environment variable
     max_connections: 25
     ssl_mode: "disable"
 
   mongodb:
+    # uri: Set via DATABASE_MONGODB_URI environment variable (includes credentials)
     database: "edugo"
     timeout: 10s
 
 messaging:
   rabbitmq:
+    # url: Set via MESSAGING_RABBITMQ_URL environment variable (includes credentials)
     queues:
       material_uploaded: "edugo.material.uploaded"
       assessment_attempt: "edugo.assessment.attempt"
@@ -33,8 +36,9 @@ storage:
   s3:
     region: "us-east-1"
     bucket_name: "edugo-materials"
-    # access_key_id y secret_access_key se cargan desde ENV
-    # endpoint: "" # Opcional, para usar Localstack en desarrollo
+    # access_key_id: Set via STORAGE_S3_ACCESS_KEY_ID environment variable
+    # secret_access_key: Set via STORAGE_S3_SECRET_ACCESS_KEY environment variable
+    endpoint: "" # Optional, for Localstack in development
 
 logging:
   level: "info"

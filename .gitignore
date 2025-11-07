@@ -92,3 +92,4 @@ Desktop.ini
 __debug_bin
 debug.test
 .envrc
+__debug_bin*

@@ -28,26 +28,53 @@ Esta API maneja:
 - RabbitMQ 3.12+
 - Docker (opcional, para desarrollo local)
 
-## Variables de Entorno
+## Configuración
 
-La aplicación requiere las siguientes variables de entorno para funcionar:
+### Setup Rápido
 
-```bash
-# Copiar archivo de ejemplo
-cp .env.example .env
+1. **Copiar el archivo de ejemplo:**
+   ```bash
+   cp .env.example .env
+   ```
 
-# Editar .env con tus valores reales
-```
+2. **Editar `.env` con tus valores:**
+   ```bash
+   # Database
+   DATABASE_POSTGRES_PASSWORD=your-password
+   DATABASE_MONGODB_URI=mongodb://user:pass@localhost:27017/edugo?authSource=admin
+   
+   # Messaging
+   MESSAGING_RABBITMQ_URL=amqp://user:pass@localhost:5672/
+   
+   # Storage
+   STORAGE_S3_ACCESS_KEY_ID=your-aws-key
+   STORAGE_S3_SECRET_ACCESS_KEY=your-aws-secret
+   
+   # Application
+   APP_ENV=local
+   ```
+
+3. **Ejecutar la aplicación:**
+   ```bash
+   make run
+   # o
+   go run cmd/main.go
+   # o
+   docker-compose up
+   ```
 
 ### Variables Requeridas
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `your-secure-password` |
-| `MONGODB_URI` | URI de conexión MongoDB | `mongodb://user:pass@host:27017/edugo?authSource=admin` |
-| `RABBITMQ_URL` | URL de RabbitMQ | `amqp://user:pass@host:5672/` |
-| `JWT_SECRET` | Secret key para JWT | `$(openssl rand -base64 32)` |
+| `DATABASE_POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `your-secure-password` |
+| `DATABASE_MONGODB_URI` | URI de conexión MongoDB | `mongodb://user:pass@host:27017/edugo?authSource=admin` |
+| `MESSAGING_RABBITMQ_URL` | URL de RabbitMQ | `amqp://user:pass@host:5672/` |
+| `STORAGE_S3_ACCESS_KEY_ID` | AWS S3 Access Key | `AKIAIOSFODNN7EXAMPLE` |
+| `STORAGE_S3_SECRET_ACCESS_KEY` | AWS S3 Secret Key | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
 | `APP_ENV` | Ambiente (local/dev/qa/prod) | `local` |
+
+**📖 Para documentación completa de configuración, ver [CONFIG.md](CONFIG.md)**
 
 ### Variables Opcionales
 
