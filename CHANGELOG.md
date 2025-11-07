@@ -5,6 +5,19 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2025-11-07
+
+### Tipo de Release: patch
+
+- Dev (#25)
+- feat(services): completar queries complejas y análisis arquitectónico - FASE 2.3 (#17)
+- test: agregar tests unitarios y refactorizar main.go (#14)
+- fix: verificar commits en sync-main-to-dev
+- docs: documentar GitHub App y actualizar a v2.1.4
+- feat: implementar GitHub App Token para sincronización automática
+
+---
+
 ## [0.1.2] - 2025-11-03
 
 ### Tipo de Release: patch
