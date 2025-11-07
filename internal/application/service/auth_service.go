@@ -21,7 +21,7 @@ type AuthService interface {
 }
 
 type authService struct {
-	userRepo         repository.UserRepository
+	userReader       repository.UserReader // ISP: Solo necesita lectura
 	refreshTokenRepo repository.RefreshTokenRepository
 	loginAttemptRepo repository.LoginAttemptRepository
 	jwtManager       *auth.JWTManager
@@ -29,14 +29,14 @@ type authService struct {
 }
 
 func NewAuthService(
-	userRepo repository.UserRepository,
+	userReader repository.UserReader, // ISP: Solo necesita lectura de usuarios
 	refreshTokenRepo repository.RefreshTokenRepository,
 	loginAttemptRepo repository.LoginAttemptRepository,
 	jwtManager *auth.JWTManager,
 	logger logger.Logger,
 ) AuthService {
 	return &authService{
-		userRepo:         userRepo,
+		userReader:       userReader,
 		refreshTokenRepo: refreshTokenRepo,
 		loginAttemptRepo: loginAttemptRepo,
 		jwtManager:       jwtManager,
@@ -66,7 +66,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		return nil, err
 	}
 
-	user, err := s.userRepo.FindByEmail(ctx, email)
+	user, err := s.userReader.FindByEmail(ctx, email)
 	if err != nil {
 		s.logger.Error("failed to find user", "error", err)
 		return nil, errors.NewDatabaseError("find user", err)
@@ -179,7 +179,7 @@ func (s *authService) RefreshAccessToken(ctx context.Context, refreshTokenStr st
 		return nil, errors.NewValidationError("invalid user ID")
 	}
 
-	user, err := s.userRepo.FindByID(ctx, userID)
+	user, err := s.userReader.FindByID(ctx, userID)
 	if err != nil {
 		s.logger.Error("error finding user", "error", err, "user_id", tokenData.UserID.String())
 		return nil, errors.NewDatabaseError("find user", err)

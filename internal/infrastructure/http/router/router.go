@@ -40,14 +40,14 @@ func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *
 
 // setupAuthPublicRoutes configura las rutas públicas de autenticación.
 func setupAuthPublicRoutes(rg *gin.RouterGroup, c *container.Container) {
-	rg.POST("/auth/login", c.AuthHandler.Login)
-	rg.POST("/auth/refresh", c.AuthHandler.Refresh)
+	rg.POST("/auth/login", c.Handlers.AuthHandler.Login)
+	rg.POST("/auth/refresh", c.Handlers.AuthHandler.Refresh)
 }
 
 // setupProtectedRoutes configura todas las rutas que requieren autenticación JWT.
 func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 	protected := rg.Group("")
-	protected.Use(ginmiddleware.JWTAuthMiddleware(c.JWTManager))
+	protected.Use(ginmiddleware.JWTAuthMiddleware(c.Infrastructure.JWTManager))
 	{
 		// Rutas de autenticación protegidas
 		setupAuthProtectedRoutes(protected, c)
@@ -68,8 +68,8 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 
 // setupAuthProtectedRoutes configura las rutas de autenticación que requieren JWT.
 func setupAuthProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
-	rg.POST("/auth/logout", c.AuthHandler.Logout)
-	rg.POST("/auth/revoke-all", c.AuthHandler.RevokeAll)
+	rg.POST("/auth/logout", c.Handlers.AuthHandler.Logout)
+	rg.POST("/auth/revoke-all", c.Handlers.AuthHandler.RevokeAll)
 }
 
 // setupMaterialRoutes configura todas las rutas relacionadas con materiales educativos.
@@ -77,30 +77,30 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 	materials := rg.Group("/materials")
 	{
 		// CRUD básico de materiales
-		materials.GET("", c.MaterialHandler.ListMaterials)
-		materials.POST("", c.MaterialHandler.CreateMaterial)
-		materials.GET("/:id", c.MaterialHandler.GetMaterial)
-		materials.POST("/:id/upload-complete", c.MaterialHandler.NotifyUploadComplete)
+		materials.GET("", c.Handlers.MaterialHandler.ListMaterials)
+		materials.POST("", c.Handlers.MaterialHandler.CreateMaterial)
+		materials.GET("/:id", c.Handlers.MaterialHandler.GetMaterial)
+		materials.POST("/:id/upload-complete", c.Handlers.MaterialHandler.NotifyUploadComplete)
 
 		// Historial de versiones de materiales
-		materials.GET("/:id/versions", c.MaterialHandler.GetMaterialWithVersions)
+		materials.GET("/:id/versions", c.Handlers.MaterialHandler.GetMaterialWithVersions)
 
 		// URLs presignadas para S3
-		materials.POST("/:id/upload-url", c.MaterialHandler.GenerateUploadURL)
-		materials.GET("/:id/download-url", c.MaterialHandler.GenerateDownloadURL)
+		materials.POST("/:id/upload-url", c.Handlers.MaterialHandler.GenerateUploadURL)
+		materials.GET("/:id/download-url", c.Handlers.MaterialHandler.GenerateDownloadURL)
 
 		// Resúmenes de materiales
-		materials.GET("/:id/summary", c.SummaryHandler.GetSummary)
+		materials.GET("/:id/summary", c.Handlers.SummaryHandler.GetSummary)
 
 		// Evaluaciones (assessments)
-		materials.GET("/:id/assessment", c.AssessmentHandler.GetAssessment)
-		materials.POST("/:id/assessment/attempts", c.AssessmentHandler.RecordAttempt)
+		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetAssessment)
+		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.RecordAttempt)
 
 		// Progreso del estudiante
-		materials.PATCH("/:id/progress", c.ProgressHandler.UpdateProgress)
+		materials.PATCH("/:id/progress", c.Handlers.ProgressHandler.UpdateProgress)
 
 		// Estadísticas de materiales
-		materials.GET("/:id/stats", c.StatsHandler.GetMaterialStats)
+		materials.GET("/:id/stats", c.Handlers.StatsHandler.GetMaterialStats)
 	}
 }
 
@@ -109,7 +109,7 @@ func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
 	assessments := rg.Group("/assessments")
 	{
 		// Submit de evaluación con cálculo automático de score y feedback detallado
-		assessments.POST("/:id/submit", c.AssessmentHandler.SubmitAssessment)
+		assessments.POST("/:id/submit", c.Handlers.AssessmentHandler.SubmitAssessment)
 	}
 }
 
@@ -119,7 +119,7 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 	{
 		// Endpoint UPSERT idempotente de progreso (Fase 5)
 		// PUT (no POST) porque la operación es idempotente
-		progress.PUT("", c.ProgressHandler.UpsertProgress)
+		progress.PUT("", c.Handlers.ProgressHandler.UpsertProgress)
 	}
 }
 
@@ -129,6 +129,6 @@ func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	{
 		// Estadísticas globales del sistema (Fase 6)
 		// TODO: Agregar middleware de autorización para solo admins
-		stats.GET("/global", c.StatsHandler.GetGlobalStats)
+		stats.GET("/global", c.Handlers.StatsHandler.GetGlobalStats)
 	}
 }

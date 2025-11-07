@@ -82,17 +82,27 @@ test-coverage: ## Tests con cobertura (HTML report)
 test-unit: ## Solo tests unitarios
 	@$(GOTEST) -v -short ./...
 
-test-integration: ## Tests de integración (con testcontainers)
+test-integration: ## Tests de integración (con testcontainers) - HABILITADOS con RUN_INTEGRATION_TESTS=true
 	@echo "$(YELLOW)🐳 Ejecutando tests de integración con testcontainers...$(RESET)"
-	@$(GOTEST) -v -tags=integration ./test/integration/... -timeout 5m
+	@RUN_INTEGRATION_TESTS=true $(GOTEST) -v -tags=integration ./test/integration/... -timeout 5m
 	@echo "$(GREEN)✓ Tests de integración completados$(RESET)"
+
+test-integration-skip: ## Tests de integración DESHABILITADOS (skip automático)
+	@echo "$(BLUE)⏭️  Tests de integración deshabilitados$(RESET)"
+	@RUN_INTEGRATION_TESTS=false $(GOTEST) -v -tags=integration ./test/integration/... -timeout 5m
+	@echo "$(BLUE)ℹ️  Tests skipped (esperado)$(RESET)"
 
 test-integration-coverage: ## Tests de integración con coverage
 	@echo "$(YELLOW)📊 Tests de integración con coverage...$(RESET)"
 	@mkdir -p $(COVERAGE_DIR)
-	@$(GOTEST) -tags=integration -coverprofile=$(COVERAGE_DIR)/integration-coverage.out -covermode=atomic ./test/integration/... -timeout 5m
+	@RUN_INTEGRATION_TESTS=true $(GOTEST) -tags=integration -coverprofile=$(COVERAGE_DIR)/integration-coverage.out -covermode=atomic ./test/integration/... -timeout 5m
 	@$(GOCMD) tool cover -html=$(COVERAGE_DIR)/integration-coverage.out -o $(COVERAGE_DIR)/integration-coverage.html
 	@echo "$(GREEN)✓ Reporte: $(COVERAGE_DIR)/integration-coverage.html$(RESET)"
+
+docker-check: ## Verificar que Docker esté corriendo
+	@echo "$(YELLOW)🐳 Verificando Docker...$(RESET)"
+	@docker ps > /dev/null 2>&1 || (echo "$(RED)❌ Docker no está corriendo. Inicia Docker Desktop.$(RESET)" && exit 1)
+	@echo "$(GREEN)✓ Docker está corriendo$(RESET)"
 
 benchmark: ## Ejecutar benchmarks
 	@echo "$(YELLOW)⚡ Ejecutando benchmarks...$(RESET)"

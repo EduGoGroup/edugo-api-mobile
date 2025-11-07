@@ -7,17 +7,33 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 )
 
-// ProgressRepository define operaciones para Progress
-type ProgressRepository interface {
-	Save(ctx context.Context, progress *entity.Progress) error
+// ProgressReader define operaciones de lectura para Progress
+// Principio ISP: Separar lectura de escritura y estadísticas
+type ProgressReader interface {
 	FindByMaterialAndUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*entity.Progress, error)
+}
+
+// ProgressWriter define operaciones de escritura para Progress
+type ProgressWriter interface {
+	Save(ctx context.Context, progress *entity.Progress) error
 	Update(ctx context.Context, progress *entity.Progress) error
 	// Upsert realiza INSERT o UPDATE idempotente usando ON CONFLICT de PostgreSQL
 	Upsert(ctx context.Context, progress *entity.Progress) (*entity.Progress, error)
+}
 
+// ProgressStats define operaciones de estadísticas para Progress
+type ProgressStats interface {
 	// CountActiveUsers cuenta usuarios únicos con actividad en últimos 30 días (para estadísticas)
 	CountActiveUsers(ctx context.Context) (int64, error)
 
 	// CalculateAverageProgress calcula el promedio de progreso de todos los usuarios
 	CalculateAverageProgress(ctx context.Context) (float64, error)
+}
+
+// ProgressRepository agrega todas las capacidades de Progress
+// Las implementaciones deben cumplir con todas las interfaces segregadas
+type ProgressRepository interface {
+	ProgressReader
+	ProgressWriter
+	ProgressStats
 }

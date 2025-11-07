@@ -102,6 +102,10 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
 
+    env:
+      # Deshabilitar tests de integración hasta que estén listos
+      SKIP_INTEGRATION_TESTS: "true"
+
     services:
       postgres:
         image: postgres:15

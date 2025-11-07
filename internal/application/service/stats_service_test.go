@@ -30,10 +30,10 @@ func TestGetGlobalStats_Success(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -76,10 +76,10 @@ func TestGetGlobalStats_MaterialRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -111,10 +111,10 @@ func TestGetGlobalStats_AssessmentRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -145,10 +145,10 @@ func TestGetGlobalStats_ProgressRepoError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -179,10 +179,10 @@ func TestGetGlobalStats_AllZeros(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act
@@ -221,10 +221,10 @@ func TestGetGlobalStats_DTOStructure(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	service := &statsService{
-		logger:         mockLogger,
-		materialRepo:   mockMaterialRepo,
-		assessmentRepo: mockAssessmentRepo,
-		progressRepo:   mockProgressRepo,
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
 	}
 
 	// Act

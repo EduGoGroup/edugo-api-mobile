@@ -22,16 +22,14 @@ type TestContainers struct {
 func SetupContainers(t *testing.T) (*TestContainers, func()) {
 	ctx := context.Background()
 
-	// PostgreSQL con scripts de inicialización
+	// PostgreSQL (schema se crea manualmente después)
 	t.Log("🐘 Iniciando PostgreSQL testcontainer...")
 	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
 		postgres.WithDatabase("edugo"),
 		postgres.WithUsername("edugo_user"),
 		postgres.WithPassword("edugo_pass"),
-		postgres.WithInitScripts(
-			"../../../scripts/postgresql/01_schema.sql",
-			"../../../scripts/postgresql/02_indexes.sql",
-		),
+		// NO usar WithInitScripts porque la ruta es relativa y falla en tests
+		// El schema se ejecutará manualmente en SetupTestApp
 	)
 	if err != nil {
 		t.Fatalf("Failed to start Postgres: %v", err)
@@ -90,10 +88,7 @@ func SetupPostgres(t *testing.T) (*postgres.PostgresContainer, func()) {
 		postgres.WithDatabase("edugo"),
 		postgres.WithUsername("edugo_user"),
 		postgres.WithPassword("edugo_pass"),
-		postgres.WithInitScripts(
-			"../../../scripts/postgresql/01_schema.sql",
-			"../../../scripts/postgresql/02_indexes.sql",
-		),
+		// Schema se ejecuta manualmente después de conectar
 	)
 	if err != nil {
 		t.Fatalf("Failed to start Postgres: %v", err)

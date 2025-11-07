@@ -57,30 +57,45 @@ type AssessmentResult struct {
 	SubmittedAt    string
 }
 
-// AssessmentRepository define las operaciones para assessments (MongoDB)
-type AssessmentRepository interface {
-	// SaveAssessment guarda o actualiza un assessment
-	SaveAssessment(ctx context.Context, assessment *MaterialAssessment) error
-
+// AssessmentReader define operaciones de lectura para assessments (MongoDB)
+// Principio ISP: Separar lectura de escritura y estadísticas
+type AssessmentReader interface {
 	// FindAssessmentByMaterialID busca el assessment de un material
 	FindAssessmentByMaterialID(ctx context.Context, materialID valueobject.MaterialID) (*MaterialAssessment, error)
-
-	// SaveAttempt guarda un intento de assessment
-	SaveAttempt(ctx context.Context, attempt *AssessmentAttempt) error
 
 	// FindAttemptsByUser busca los intentos de un usuario para un material
 	FindAttemptsByUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) ([]*AssessmentAttempt, error)
 
 	// GetBestAttempt obtiene el mejor intento de un usuario
 	GetBestAttempt(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*AssessmentAttempt, error)
+}
+
+// AssessmentWriter define operaciones de escritura para assessments
+type AssessmentWriter interface {
+	// SaveAssessment guarda o actualiza un assessment
+	SaveAssessment(ctx context.Context, assessment *MaterialAssessment) error
+
+	// SaveAttempt guarda un intento de assessment
+	SaveAttempt(ctx context.Context, attempt *AssessmentAttempt) error
 
 	// SaveResult guarda el resultado de una evaluación completada en assessment_results
 	// Retorna error si la evaluación ya fue completada por el usuario (índice UNIQUE)
 	SaveResult(ctx context.Context, result *AssessmentResult) error
+}
 
+// AssessmentStats define operaciones de estadísticas para assessments
+type AssessmentStats interface {
 	// CountCompletedAssessments cuenta el total de evaluaciones completadas (para estadísticas)
 	CountCompletedAssessments(ctx context.Context) (int64, error)
 
 	// CalculateAverageScore calcula el promedio de puntajes de todas las evaluaciones completadas
 	CalculateAverageScore(ctx context.Context) (float64, error)
+}
+
+// AssessmentRepository agrega todas las capacidades de assessments (MongoDB)
+// Las implementaciones deben cumplir con todas las interfaces segregadas
+type AssessmentRepository interface {
+	AssessmentReader
+	AssessmentWriter
+	AssessmentStats
 }
