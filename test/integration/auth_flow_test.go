@@ -49,7 +49,7 @@ func TestAuthFlow_LoginSuccess(t *testing.T) {
 	// Preparar request de login
 	loginReq := map[string]string{
 		"email":    email,
-		"password": "password123", // Password del seed
+		"password": "Test1234!", // Password del SeedTestUser helper
 	}
 	reqBody, err := json.Marshal(loginReq)
 	require.NoError(t, err)
