@@ -9,6 +9,22 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Tipo de Release: patch
 
+- fix(docker): permitir scripts/ en contexto de Docker build
+- fix(docker): copiar scripts desde contexto de build en lugar de stage builder
+- chore: release v0.1.3
+- Dev (#25)
+- feat(services): completar queries complejas y análisis arquitectónico - FASE 2.3 (#17)
+- test: agregar tests unitarios y refactorizar main.go (#14)
+- fix: verificar commits en sync-main-to-dev
+- docs: documentar GitHub App y actualizar a v2.1.4
+- feat: implementar GitHub App Token para sincronización automática
+
+---
+
+## [0.1.3] - 2025-11-07
+
+### Tipo de Release: patch
+
 - Dev (#25)
 - feat(services): completar queries complejas y análisis arquitectónico - FASE 2.3 (#17)
 - test: agregar tests unitarios y refactorizar main.go (#14)
