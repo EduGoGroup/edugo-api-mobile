@@ -47,10 +47,10 @@ WORKDIR /root/
 # Copiar binario desde la etapa builder
 COPY --from=builder /app/main /root/main
 
-# Copiar scripts de espera y entrypoint desde builder
-# (asegúrate de que scripts/wait-for.sh y scripts/docker-entrypoint.sh existan en el repo)
-COPY --from=builder /app/scripts/wait-for.sh /scripts/wait-for.sh
-COPY --from=builder /app/scripts/docker-entrypoint.sh /scripts/docker-entrypoint.sh
+# Copiar scripts directamente del contexto de build (no desde builder)
+# Esto evita problemas de caché cuando los scripts se agregan después del COPY . .
+COPY scripts/wait-for.sh /scripts/wait-for.sh
+COPY scripts/docker-entrypoint.sh /scripts/docker-entrypoint.sh
 
 # Permisos de ejecución
 RUN chmod +x /scripts/wait-for.sh /scripts/docker-entrypoint.sh /root/main
