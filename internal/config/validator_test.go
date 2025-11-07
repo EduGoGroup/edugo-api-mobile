@@ -304,7 +304,7 @@ func TestValidate_MultipleErrors(t *testing.T) {
 	}
 
 	errMsg := err.Error()
-	
+
 	// Should contain multiple error messages
 	expectedErrors := []string{
 		"DATABASE_POSTGRES_PASSWORD",
@@ -356,12 +356,12 @@ func TestValidate_ErrorMessageFormat(t *testing.T) {
 	}
 
 	errMsg := err.Error()
-	
+
 	// Should have helpful message format
 	if !strings.Contains(errMsg, "Configuration validation failed") {
 		t.Error("Error should start with 'Configuration validation failed'")
 	}
-	
+
 	if !strings.Contains(errMsg, ".env") {
 		t.Error("Error should mention .env file")
 	}

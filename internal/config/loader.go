@@ -17,7 +17,7 @@ func Load() (*Config, error) {
 	// AutomaticEnv + SetEnvKeyReplacer permite que Viper busque ENV vars automáticamente
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	
+
 	// Bind explicit ENV vars para que Unmarshal() las tome
 	// Esto es necesario porque Unmarshal() no usa AutomaticEnv()
 	bindEnvVars(v)

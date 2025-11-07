@@ -94,7 +94,7 @@
     - Actualizar `validator.go` si la variable es requerida
     - _Requirements: 5.3, 5.4_
   
-  - [ ] 6.4 Implementar comando `validate`
+  - [x] 6.4 Implementar comando `validate`
     - Validar que todos los archivos YAML sean válidos
     - Validar que `.env.example` tenga todas las variables secretas
     - Validar que structs en `config.go` tengan mapstructure tags correctos
@@ -131,19 +131,19 @@
     - _Requirements: 9.4_
 
 - [ ] 8. Crear documentación
-  - [ ] 8.1 Crear CONFIG.md
+  - [x] 8.1 Crear CONFIG.md
     - Documentar todas las variables de configuración
     - Incluir ejemplos para cada ambiente
     - Documentar cómo agregar nuevas variables con ConfigCTL
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
   
-  - [ ] 8.2 Actualizar README.md
+  - [x] 8.2 Actualizar README.md
     - Agregar sección de configuración
     - Documentar setup inicial: `cp .env.example .env`
     - Documentar cómo ejecutar en diferentes entornos
     - _Requirements: 3.5, 7.5_
   
-  - [ ] 8.3 Crear guía de migración para cloud
+  - [x] 8.3 Crear guía de migración para cloud
     - Documentar integración con AWS Secrets Manager
     - Documentar integración con Kubernetes Secrets
     - Proporcionar ejemplos de configuración
@@ -167,7 +167,7 @@
     - Verificar que la aplicación inicia correctamente
     - _Requirements: 3.3_
   
-  - [ ] 9.4 Validar ejecución con Docker Compose
+  - [x] 9.4 Validar ejecución con Docker Compose
     - Ejecutar `docker-compose up`
     - Verificar que carga `.env` correctamente
     - Verificar que todos los servicios inician y se conectan
@@ -206,13 +206,13 @@
     - _Requirements: 9.5_
 
 - [ ] 11. Revisión final y merge
-  - [ ] 11.1 Ejecutar auditoría de código
+  - [x] 11.1 Ejecutar auditoría de código
     - Ejecutar `make audit` (fmt, vet, tests)
     - Ejecutar `make lint` si está configurado
     - Corregir cualquier issue encontrado
     - _Requirements: 9.1, 9.5_
   
-  - [ ] 11.2 Revisar documentación
+  - [x] 11.2 Revisar documentación
     - Verificar que CONFIG.md está completo
     - Verificar que README.md está actualizado
     - Verificar que `.env.example` está bien documentado
