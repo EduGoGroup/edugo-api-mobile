@@ -59,9 +59,9 @@ temp/
 # Dependency directories
 vendor/
 
-# Makefile y scripts (opcional, dependiendo de si los necesitas)
+# Makefile (opcional, dependiendo de si lo necesitas)
 Makefile
-scripts/
+# scripts/ - COMENTADO: scripts/docker-entrypoint.sh y wait-for.sh son necesarios para el contenedor
 
 # Docker files (no necesarios en la imagen)
 Dockerfile
