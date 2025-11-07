@@ -118,7 +118,7 @@
     - Test que AutomaticEnv mapea correctamente las variables
     - _Requirements: 9.1, 9.2, 9.5_
   
-  - [-] 7.2 Tests unitarios para validator
+  - [x] 7.2 Tests unitarios para validator
     - Test validación de campos requeridos faltantes
     - Test validación de rangos (puertos, conexiones)
     - Test mensajes de error claros y útiles
@@ -150,7 +150,7 @@
     - _Requirements: 8.4_
 
 - [ ] 9. Validación y testing end-to-end
-  - [ ] 9.1 Crear archivo .env local de prueba
+  - [x] 9.1 Crear archivo .env local de prueba
     - Copiar `.env.example` a `.env`
     - Llenar con valores de prueba válidos
     - _Requirements: 3.1, 3.5_
@@ -161,7 +161,7 @@
     - Verificar logs de startup muestran configuración cargada
     - _Requirements: 3.2, 6.5_
   
-  - [ ] 9.3 Validar ejecución con Make
+  - [x] 9.3 Validar ejecución con Make
     - Ejecutar `make run`
     - Verificar que carga `.env` automáticamente
     - Verificar que la aplicación inicia correctamente
@@ -173,7 +173,7 @@
     - Verificar que todos los servicios inician y se conectan
     - _Requirements: 3.4_
   
-  - [ ] 9.5 Ejecutar todos los tests
+  - [x] 9.5 Ejecutar todos los tests
     - Ejecutar `make test` y verificar que todos pasen
     - Ejecutar `make test-integration` si aplica
     - Verificar cobertura de tests
