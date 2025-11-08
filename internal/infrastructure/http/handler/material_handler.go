@@ -33,13 +33,15 @@ func NewMaterialHandler(materialService service.MaterialService, s3Storage s3.S3
 
 // CreateMaterial godoc
 // @Summary Create a new material
-// @Description Creates a new educational material
+// @Description Creates a new educational material with title, description, and optional subject. Requires authentication.
 // @Tags materials
 // @Accept json
 // @Produce json
-// @Param request body dto.CreateMaterialRequest true "Material data"
-// @Success 201 {object} dto.MaterialResponse
-// @Failure 400 {object} ErrorResponse
+// @Param request body dto.CreateMaterialRequest true "Material data (title, description, subject_id)"
+// @Success 201 {object} dto.MaterialResponse "Material created successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request body or validation error"
+// @Failure 401 {object} ErrorResponse "User not authenticated"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials [post]
 // @Security BearerAuth
 func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
@@ -73,11 +75,14 @@ func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
 
 // GetMaterial godoc
 // @Summary Get material by ID
+// @Description Retrieves a specific educational material by its unique identifier
 // @Tags materials
 // @Produce json
-// @Param id path string true "Material ID"
-// @Success 200 {object} dto.MaterialResponse
-// @Failure 404 {object} ErrorResponse
+// @Param id path string true "Material ID (UUID format)"
+// @Success 200 {object} dto.MaterialResponse "Material found successfully"
+// @Failure 400 {object} ErrorResponse "Invalid material ID format"
+// @Failure 404 {object} ErrorResponse "Material not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id} [get]
 // @Security BearerAuth
 func (h *MaterialHandler) GetMaterial(c *gin.Context) {
@@ -151,14 +156,16 @@ func (h *MaterialHandler) GetMaterialWithVersions(c *gin.Context) {
 
 // NotifyUploadComplete godoc
 // @Summary Notify upload complete
-// @Description Notify that PDF upload to S3 is complete
+// @Description Notifies the system that a PDF file has been successfully uploaded to S3
 // @Tags materials
 // @Accept json
 // @Produce json
-// @Param id path string true "Material ID"
-// @Param request body dto.UploadCompleteRequest true "S3 info"
-// @Success 204 "No Content"
-// @Failure 400 {object} ErrorResponse
+// @Param id path string true "Material ID (UUID format)"
+// @Param request body dto.UploadCompleteRequest true "S3 key and URL information"
+// @Success 204 "Upload notification processed successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
+// @Failure 404 {object} ErrorResponse "Material not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/upload-complete [post]
 // @Security BearerAuth
 func (h *MaterialHandler) NotifyUploadComplete(c *gin.Context) {
@@ -185,10 +192,12 @@ func (h *MaterialHandler) NotifyUploadComplete(c *gin.Context) {
 }
 
 // ListMaterials godoc
-// @Summary List materials
+// @Summary List all materials
+// @Description Retrieves a list of all educational materials available in the system
 // @Tags materials
 // @Produce json
-// @Success 200 {array} dto.MaterialResponse
+// @Success 200 {array} dto.MaterialResponse "List of materials retrieved successfully"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials [get]
 // @Security BearerAuth
 func (h *MaterialHandler) ListMaterials(c *gin.Context) {
@@ -351,6 +360,6 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 }
 
 type ErrorResponse struct {
-	Error string `json:"error"`
-	Code  string `json:"code"`
+	Error string `json:"error" example:"invalid request body"`
+	Code  string `json:"code" example:"INVALID_REQUEST"`
 }

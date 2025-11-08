@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
@@ -31,13 +33,47 @@ import (
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @host localhost:8080
 // @BasePath /v1
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description JWT token con formato: Bearer {token}
+
+// regenerateSwagger ejecuta swag init para actualizar la documentación Swagger.
+// Captura stdout/stderr para logging y maneja errores con degradación graciosa.
+// Retorna error si la regeneración falla, pero no debe detener el inicio de la aplicación.
+func regenerateSwagger(appLogger logger.Logger) error {
+	appLogger.Info("iniciando regeneración de documentación Swagger")
+
+	// Ejecutar comando swag init
+	cmd := exec.Command("swag", "init", "-g", "cmd/main.go")
+
+	// Capturar stdout y stderr
+	output, err := cmd.CombinedOutput()
+	outputStr := strings.TrimSpace(string(output))
+
+	if err != nil {
+		// Verificar si swag no está instalado
+		if strings.Contains(err.Error(), "executable file not found") || strings.Contains(err.Error(), "not found") {
+			appLogger.Info("swag CLI no encontrado, omitiendo regeneración. Instalar con: go install github.com/swaggo/swag/cmd/swag@latest")
+			return fmt.Errorf("swag CLI no encontrado: %w", err)
+		}
+
+		// Otro tipo de error
+		appLogger.Warn("no se pudo regenerar Swagger, usando documentación existente",
+			zap.Error(err),
+			zap.String("output", outputStr),
+		)
+		return fmt.Errorf("error ejecutando swag init: %w", err)
+	}
+
+	// Regeneración exitosa
+	appLogger.Info("documentación Swagger regenerada exitosamente",
+		zap.String("output", outputStr),
+	)
+	return nil
+}
 
 func main() {
 	ctx := context.Background()
@@ -59,6 +95,14 @@ func main() {
 		zap.String("environment", env),
 		zap.String("version", "1.0.0"),
 	)
+
+	// Regenerar documentación Swagger antes de iniciar el servidor
+	if err := regenerateSwagger(appLogger); err != nil {
+		// Log warning pero continuar con el inicio de la aplicación
+		appLogger.Warn("continuando inicio de aplicación con documentación Swagger existente",
+			zap.Error(err),
+		)
+	}
 
 	// Inicializar base de datos PostgreSQL
 	db, err := database.InitPostgreSQL(ctx, cfg, appLogger)
