@@ -23,3 +23,9 @@ messaging:
 logging:
   level: "warn"
   format: "json"
+
+bootstrap:
+  optional_resources:
+    # En producción, todos los recursos deben estar disponibles
+    rabbitmq: false  # Requerido en producción
+    s3: false        # Requerido en producción

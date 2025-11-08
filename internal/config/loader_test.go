@@ -14,6 +14,8 @@ func TestLoad_WithEnvVars(t *testing.T) {
 	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test-key-id")
 	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test-secret-key")
 	os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
+	// JWT secret necesario para validación
+	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
 		os.Unsetenv("APP_ENV")
@@ -23,6 +25,7 @@ func TestLoad_WithEnvVars(t *testing.T) {
 		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
 		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
 		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute
@@ -64,6 +67,8 @@ func TestLoad_EnvVarsOverrideYAML(t *testing.T) {
 	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "env-key")
 	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "env-secret")
 	os.Setenv("STORAGE_S3_BUCKET_NAME", "env-bucket")
+	// JWT secret necesario para validación
+	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
 		os.Unsetenv("APP_ENV")
@@ -74,6 +79,7 @@ func TestLoad_EnvVarsOverrideYAML(t *testing.T) {
 		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
 		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
 		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute
@@ -125,6 +131,8 @@ func TestLoad_Defaults(t *testing.T) {
 	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test")
 	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test")
 	os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
+	// JWT secret necesario para validación
+	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
 		os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
@@ -133,6 +141,7 @@ func TestLoad_Defaults(t *testing.T) {
 		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
 		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
 		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute
