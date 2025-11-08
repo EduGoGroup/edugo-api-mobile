@@ -24,10 +24,14 @@ func NewStatsHandler(statsService service.StatsService, logger logger.Logger) *S
 
 // GetMaterialStats godoc
 // @Summary Get material statistics
-// @Tags materials
+// @Description Retrieves statistics for a specific material including views, completion rate, and average score
+// @Tags stats
 // @Produce json
-// @Param id path string true "Material ID"
-// @Success 200 {object} service.MaterialStats
+// @Param id path string true "Material ID (UUID format)"
+// @Success 200 {object} service.MaterialStats "Material statistics retrieved successfully"
+// @Failure 400 {object} ErrorResponse "Invalid material ID format"
+// @Failure 404 {object} ErrorResponse "Material not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/stats [get]
 // @Security BearerAuth
 func (h *StatsHandler) GetMaterialStats(c *gin.Context) {

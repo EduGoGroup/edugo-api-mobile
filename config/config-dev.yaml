@@ -16,3 +16,9 @@ messaging:
 logging:
   level: "debug"
   format: "json"
+
+bootstrap:
+  optional_resources:
+    # En dev, RabbitMQ y S3 pueden ser opcionales para testing
+    rabbitmq: true
+    s3: true

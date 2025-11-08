@@ -1,12 +1,7 @@
 package container
 
 import (
-	"database/sql"
-
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
-	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
 )
 
 // Container es el contenedor raíz de dependencias de API Mobile
@@ -41,24 +36,19 @@ type Container struct {
 //  4. Handlers       → Presentación HTTP (depende de Services e Infrastructure)
 //
 // Parámetros:
-//   - db: Conexión a PostgreSQL
-//   - mongoDB: Conexión a MongoDB
-//   - publisher: Cliente de RabbitMQ
-//   - s3Client: Cliente de AWS S3
-//   - jwtSecret: Secret para JWT tokens
-//   - logger: Logger compartido
+//   - resources: Recursos de infraestructura inicializados por el bootstrap system
 //
 // Retorna el contenedor raíz con todos los sub-containers inicializados
-func NewContainer(
-	db *sql.DB,
-	mongoDB *mongo.Database,
-	publisher rabbitmq.Publisher,
-	s3Client *s3.S3Client,
-	jwtSecret string,
-	logger logger.Logger,
-) *Container {
+func NewContainer(resources *bootstrap.Resources) *Container {
 	// Paso 1: Inicializar infraestructura (capa más baja - recursos externos)
-	infra := NewInfrastructureContainer(db, mongoDB, publisher, s3Client, jwtSecret, logger)
+	infra := NewInfrastructureContainer(
+		resources.PostgreSQL,
+		resources.MongoDB,
+		resources.RabbitMQPublisher,
+		resources.S3Client,
+		resources.JWTSecret,
+		resources.Logger,
+	)
 
 	// Paso 2: Inicializar repositorios (dependen de infraestructura)
 	repos := NewRepositoryContainer(infra)

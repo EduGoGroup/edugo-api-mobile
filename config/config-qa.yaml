@@ -17,3 +17,9 @@ messaging:
 logging:
   level: "info"
   format: "json"
+
+bootstrap:
+  optional_resources:
+    # En QA, recursos deben estar disponibles para testing completo
+    rabbitmq: false  # Requerido en QA
+    s3: false        # Requerido en QA

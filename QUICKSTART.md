@@ -85,6 +85,33 @@ make test-integration
 RUN_INTEGRATION_TESTS=true go test -tags=integration ./test/integration/... -v
 ```
 
+### Testing con Bootstrap
+
+El sistema de bootstrap facilita el testing con inyección de mocks:
+
+```go
+func TestMyFeature(t *testing.T) {
+    cfg := testConfig()
+    
+    // Inyectar mocks
+    b := bootstrap.New(cfg,
+        bootstrap.WithLogger(mockLogger),
+        bootstrap.WithPostgreSQL(mockDB),
+        bootstrap.WithMongoDB(mockMongoDB),
+        bootstrap.WithRabbitMQ(mockPublisher),
+        bootstrap.WithS3Client(mockS3),
+    )
+    
+    resources, cleanup, err := b.InitializeInfrastructure(context.Background())
+    require.NoError(t, err)
+    defer cleanup()
+    
+    // Usar resources en tus tests
+}
+```
+
+**📖 Guía completa**: [internal/bootstrap/INTEGRATION_TESTS.md](internal/bootstrap/INTEGRATION_TESTS.md)
+
 ---
 
 ## 🔧 Validar Configuración
@@ -96,6 +123,44 @@ make config-validate
 # Ver qué variables se están cargando (sin valores sensibles)
 go run cmd/main.go --help
 ```
+
+---
+
+## 🧩 Desarrollo sin Infraestructura Completa
+
+### Recursos Opcionales
+
+Si no tienes RabbitMQ o S3 disponibles, puedes marcarlos como opcionales:
+
+**Opción 1: Configuración YAML**
+
+Edita `config/config-local.yaml`:
+```yaml
+infrastructure:
+  optional_resources:
+    - rabbitmq
+    - s3
+```
+
+**Opción 2: Variables de Entorno**
+
+Agrega a tu `.env`:
+```bash
+INFRASTRUCTURE_OPTIONAL_RESOURCES=rabbitmq,s3
+```
+
+La aplicación iniciará con implementaciones noop para estos recursos. Las funcionalidades que dependen de ellos registrarán advertencias pero no fallarán.
+
+### ¿Qué Recursos Puedo Hacer Opcionales?
+
+- ✅ **RabbitMQ**: Eventos no se publicarán (solo logs)
+- ✅ **S3**: URLs de archivos no estarán disponibles
+- ❌ **PostgreSQL**: Siempre requerido (datos principales)
+- ❌ **MongoDB**: Siempre requerido (evaluaciones y resúmenes)
+
+**📖 Más información**: 
+- [config/OPTIONAL_RESOURCES.md](config/OPTIONAL_RESOURCES.md) - Configuración de recursos opcionales
+- [docs/BOOTSTRAP_USAGE.md](docs/BOOTSTRAP_USAGE.md) - Guía completa del sistema de bootstrap
 
 ---
 

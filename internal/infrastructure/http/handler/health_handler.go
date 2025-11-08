@@ -36,10 +36,11 @@ type HealthResponse struct {
 
 // Check godoc
 // @Summary Health check
-// @Description Verifica que la API y sus dependencias estén funcionando correctamente
-// @Tags Health
+// @Description Verifica que la API y sus dependencias (PostgreSQL, MongoDB) estén funcionando correctamente
+// @Tags health
 // @Produce json
-// @Success 200 {object} HealthResponse
+// @Success 200 {object} HealthResponse "System is healthy or degraded with status details"
+// @Failure 500 {object} ErrorResponse "System is unhealthy"
 // @Router /health [get]
 func (h *HealthHandler) Check(c *gin.Context) {
 	// Verificar PostgreSQL

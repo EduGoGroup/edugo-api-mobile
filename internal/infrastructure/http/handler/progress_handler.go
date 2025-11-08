@@ -25,12 +25,16 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 
 // UpdateProgress godoc
 // @Summary Update reading progress (legacy endpoint)
-// @Tags materials
+// @Description Updates user's reading progress for a material (percentage and last page read). Legacy endpoint - consider using PUT /progress instead.
+// @Tags progress
 // @Accept json
 // @Produce json
-// @Param id path string true "Material ID"
-// @Param request body map[string]int true "Progress data"
-// @Success 204 "No Content"
+// @Param id path string true "Material ID (UUID format)"
+// @Param request body map[string]int true "Progress data (percentage, last_page)"
+// @Success 204 "Progress updated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
+// @Failure 401 {object} ErrorResponse "User not authenticated"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/progress [patch]
 // @Security BearerAuth
 func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
@@ -160,17 +164,17 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 
 // UpsertProgressRequest representa la solicitud de actualización de progreso
 type UpsertProgressRequest struct {
-	UserID             string `json:"user_id" binding:"required"`
-	MaterialID         string `json:"material_id" binding:"required"`
-	ProgressPercentage int    `json:"progress_percentage" binding:"required,min=0,max=100"`
-	LastPage           int    `json:"last_page"`
+	UserID             string `json:"user_id" binding:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	MaterialID         string `json:"material_id" binding:"required" example:"660e8400-e29b-41d4-a716-446655440001"`
+	ProgressPercentage int    `json:"progress_percentage" binding:"required,min=0,max=100" example:"75"`
+	LastPage           int    `json:"last_page" example:"45"`
 }
 
 // ProgressResponse representa la respuesta de actualización de progreso
 type ProgressResponse struct {
-	UserID             string `json:"user_id"`
-	MaterialID         string `json:"material_id"`
-	ProgressPercentage int    `json:"progress_percentage"`
-	LastPage           int    `json:"last_page"`
-	Message            string `json:"message"`
+	UserID             string `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	MaterialID         string `json:"material_id" example:"660e8400-e29b-41d4-a716-446655440001"`
+	ProgressPercentage int    `json:"progress_percentage" example:"75"`
+	LastPage           int    `json:"last_page" example:"45"`
+	Message            string `json:"message" example:"progress updated successfully"`
 }

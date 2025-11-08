@@ -6,8 +6,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // SetupRouter configura todas las rutas de la aplicación con sus respectivos handlers y middleware.
@@ -22,8 +20,8 @@ func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *
 	// Health check (público, sin versión)
 	r.GET("/health", healthHandler.Check)
 
-	// Swagger UI (público)
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger UI (público) con detección dinámica de host
+	SetupSwaggerUI(r)
 
 	// Grupo de rutas API v1
 	v1 := r.Group("/v1")

@@ -19,3 +19,10 @@ messaging:
 logging:
   level: "debug"
   format: "text" # Más legible en consola
+
+bootstrap:
+  optional_resources:
+    # En desarrollo local, RabbitMQ y S3 son opcionales
+    # La aplicación funcionará sin ellos usando implementaciones noop
+    rabbitmq: true
+    s3: true

@@ -55,6 +55,46 @@ Ejemplos:
 - `server.port` → `EDUGO_MOBILE_SERVER_PORT`
 - `database.postgres.host` → `EDUGO_MOBILE_DATABASE_POSTGRES_HOST`
 - `logging.level` → `EDUGO_MOBILE_LOGGING_LEVEL`
+- `bootstrap.optional_resources.rabbitmq` → `EDUGO_MOBILE_BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ`
+- `bootstrap.optional_resources.s3` → `EDUGO_MOBILE_BOOTSTRAP_OPTIONAL_RESOURCES_S3`
+
+## Recursos Opcionales
+
+La aplicación soporta recursos de infraestructura opcionales que pueden fallar sin detener el arranque.
+Por defecto, RabbitMQ y S3 son opcionales para facilitar el desarrollo local.
+
+### Configurar Recursos Opcionales
+
+**Via archivo YAML:**
+
+```yaml
+bootstrap:
+  optional_resources:
+    rabbitmq: true  # true = opcional, false = requerido
+    s3: true        # true = opcional, false = requerido
+```
+
+**Via variables de ambiente:**
+
+```bash
+# Hacer RabbitMQ requerido (falla si no está disponible)
+EDUGO_MOBILE_BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ=false go run cmd/main.go
+
+# Hacer S3 requerido (falla si no está disponible)
+EDUGO_MOBILE_BOOTSTRAP_OPTIONAL_RESOURCES_S3=false go run cmd/main.go
+```
+
+### Comportamiento
+
+- **Recurso Opcional (true)**: Si falla al inicializar, la aplicación registra una advertencia y continúa con una implementación noop
+- **Recurso Requerido (false)**: Si falla al inicializar, la aplicación detiene el arranque con un error
+
+### Recursos Soportados
+
+- `rabbitmq` - Sistema de mensajería RabbitMQ (opcional por defecto)
+- `s3` - Almacenamiento AWS S3 (opcional por defecto)
+- `postgresql` - Base de datos PostgreSQL (siempre requerido)
+- `mongodb` - Base de datos MongoDB (siempre requerido)
 
 ## Secretos
 

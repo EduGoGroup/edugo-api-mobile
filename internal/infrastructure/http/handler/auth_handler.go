@@ -26,13 +26,15 @@ func NewAuthHandler(authService service.AuthService, logger logger.Logger) *Auth
 
 // Login godoc
 // @Summary User login
-// @Description Authenticate user and return JWT token
+// @Description Authenticate user with email and password, returns JWT access token and refresh token
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body dto.LoginRequest true "Login credentials"
-// @Success 200 {object} dto.LoginResponse
-// @Failure 401 {object} ErrorResponse
+// @Param request body dto.LoginRequest true "Login credentials (email and password)"
+// @Success 200 {object} dto.LoginResponse "Successfully authenticated, returns tokens and user info"
+// @Failure 400 {object} ErrorResponse "Invalid request body"
+// @Failure 401 {object} ErrorResponse "Invalid credentials"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
@@ -66,9 +68,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body dto.RefreshRequest true "Refresh token"
-// @Success 200 {object} dto.RefreshResponse
-// @Failure 401 {object} ErrorResponse
+// @Param request body dto.RefreshRequest true "Refresh token to exchange for new access token"
+// @Success 200 {object} dto.RefreshResponse "New access token generated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request body"
+// @Failure 401 {object} ErrorResponse "Invalid or expired refresh token"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req dto.RefreshRequest
@@ -98,13 +102,15 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Logout godoc
 // @Summary User logout
-// @Description Revoca el refresh token del usuario (cierra sesión)
+// @Description Revoca el refresh token del usuario (cierra sesión). Requiere autenticación con Bearer token.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param request body dto.RefreshRequest true "Refresh token a revocar"
 // @Success 204 "No content - Logout exitoso"
-// @Failure 401 {object} ErrorResponse
+// @Failure 400 {object} ErrorResponse "Invalid request body"
+// @Failure 401 {object} ErrorResponse "User not authenticated or invalid token"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /auth/logout [post]
 // @Security BearerAuth
 func (h *AuthHandler) Logout(c *gin.Context) {
@@ -140,11 +146,12 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 // RevokeAll godoc
 // @Summary Revoke all sessions
-// @Description Revoca todos los refresh tokens del usuario (cierra todas las sesiones)
+// @Description Revoca todos los refresh tokens del usuario (cierra todas las sesiones activas). Requiere autenticación con Bearer token.
 // @Tags auth
 // @Produce json
-// @Success 204 "No content - Todas las sesiones revocadas"
-// @Failure 401 {object} ErrorResponse
+// @Success 204 "No content - Todas las sesiones revocadas exitosamente"
+// @Failure 401 {object} ErrorResponse "User not authenticated"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /auth/revoke-all [post]
 // @Security BearerAuth
 func (h *AuthHandler) RevokeAll(c *gin.Context) {

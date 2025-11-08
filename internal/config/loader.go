@@ -8,6 +8,24 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Environment contiene el ambiente detectado por la carga de configuración.
+// Se exporta para que otras partes de la aplicación puedan consultarlo después
+// de llamar a Load(). Esto evita llamadas dispersas a os.Getenv("APP_ENV")
+// y centraliza la lógica de detección del ambiente.
+var Environment string
+
+// DetectEnvironment encapsula la lógica de detección del ambiente de ejecución.
+// Prioriza la variable de entorno APP_ENV y retorna "local" si no está definida.
+// Esta función se usa desde Load() para fijar la variable package-level `Environment`
+// y para inyectar el valor en Viper bajo la clave "environment".
+func DetectEnvironment() string {
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "local"
+	}
+	return env
+}
+
 // Load carga la configuración usando Viper
 // Precedencia automática: ENV vars > archivo específico > archivo base > defaults
 func Load() (*Config, error) {
@@ -26,15 +44,29 @@ func Load() (*Config, error) {
 	setDefaults(v)
 
 	// 3. Determinar ambiente
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "local"
-	}
+	// Usamos DetectEnvironment() para centralizar la lógica y almacenamos el
+	// resultado en la variable package-level `Environment` para que el resto
+	// de la aplicación (por ejemplo cmd/main.go) pueda obtener el ambiente desde
+	// el objeto de configuración (o desde esta variable) sin llamar a os.Getenv
+	// repetidamente.
+	//
+	// Además registramos el valor en Viper bajo la clave `environment` para que,
+	// si más adelante se requiere, pueda ser unmarshaled a una propiedad del
+	// struct Config (si se agrega `Environment string 'mapstructure:"environment"'`
+	// en `internal/config/config.go`).
+	env := DetectEnvironment()
+	v.Set("environment", env)
+	Environment = env
 
 	// 4. Configurar paths y tipo de archivo
 	v.SetConfigType("yaml")
+	// Buscar en múltiples ubicaciones para soportar diferentes formas de ejecución:
+	// - ./config: cuando se ejecuta desde la raíz del proyecto
+	// - ../config: cuando se ejecuta desde cmd/
+	// - .: directorio actual como fallback
 	v.AddConfigPath("./config")
-	v.AddConfigPath("../config") // Por si se ejecuta desde otro directorio
+	v.AddConfigPath("../config")
+	v.AddConfigPath(".")
 
 	// 5. Leer archivo base (opcional en cloud mode)
 	v.SetConfigName("config")
@@ -89,6 +121,10 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")
+
+	// Bootstrap - Optional resources (default: true for RabbitMQ and S3)
+	v.SetDefault("bootstrap.optional_resources.rabbitmq", true)
+	v.SetDefault("bootstrap.optional_resources.s3", true)
 }
 
 // bindEnvVars vincula explícitamente las variables de entorno
@@ -131,4 +167,12 @@ func bindEnvVars(v *viper.Viper) {
 	// Logging
 	v.BindEnv("logging.level")
 	v.BindEnv("logging.format")
+
+	// Auth - JWT secret
+	// Mapeado explícitamente a JWT_SECRET (sin prefijo AUTH_)
+	v.BindEnv("auth.jwt.secret", "JWT_SECRET")
+
+	// Bootstrap - Optional resources
+	v.BindEnv("bootstrap.optional_resources.rabbitmq")
+	v.BindEnv("bootstrap.optional_resources.s3")
 }

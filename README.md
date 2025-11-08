@@ -63,6 +63,72 @@ Esta API maneja:
    docker-compose up
    ```
 
+### Sistema de Bootstrap de Infraestructura
+
+La aplicación utiliza un sistema de bootstrap modular que gestiona la inicialización de todos los recursos de infraestructura (bases de datos, mensajería, almacenamiento, logging). Este sistema proporciona:
+
+- ✅ **Recursos opcionales**: La aplicación puede funcionar sin RabbitMQ o S3
+- ✅ **Inyección de mocks**: Facilita testing con dependencias simuladas
+- ✅ **Gestión de ciclo de vida**: Cleanup automático de recursos
+- ✅ **Degradación graciosa**: Continúa funcionando con funcionalidad reducida
+
+#### Ejecutar con Recursos Opcionales
+
+Para desarrollo local sin RabbitMQ o S3, marca estos recursos como opcionales en `config/config-local.yaml`:
+
+```yaml
+infrastructure:
+  optional_resources:
+    - rabbitmq
+    - s3
+```
+
+O configura mediante variables de entorno:
+
+```bash
+# En tu .env
+INFRASTRUCTURE_OPTIONAL_RESOURCES=rabbitmq,s3
+```
+
+La aplicación iniciará con implementaciones noop para estos recursos, permitiendo desarrollo sin infraestructura completa.
+
+**📖 Documentación del Sistema de Bootstrap:**
+- **[docs/BOOTSTRAP_README.md](docs/BOOTSTRAP_README.md)** - 📘 Resumen ejecutivo del sistema de bootstrap
+- **[docs/BOOTSTRAP_INDEX.md](docs/BOOTSTRAP_INDEX.md)** - 📑 Índice completo de documentación del bootstrap
+- **[docs/BOOTSTRAP_USAGE.md](docs/BOOTSTRAP_USAGE.md)** - Guía completa de uso del sistema de bootstrap
+- **[docs/BOOTSTRAP_MIGRATION_GUIDE.md](docs/BOOTSTRAP_MIGRATION_GUIDE.md)** - Guía de migración desde código legacy
+- **[config/OPTIONAL_RESOURCES.md](config/OPTIONAL_RESOURCES.md)** - Configuración de recursos opcionales
+- **[internal/bootstrap/INTEGRATION_TESTS.md](internal/bootstrap/INTEGRATION_TESTS.md)** - Guía de testing con bootstrap
+
+#### Inyección de Mocks para Testing
+
+Para tests de integración, puedes inyectar mocks de cualquier recurso:
+
+```go
+import "github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
+
+func TestMyFeature(t *testing.T) {
+    cfg := testConfig()
+    
+    // Inyectar mocks
+    b := bootstrap.New(cfg,
+        bootstrap.WithLogger(mockLogger),
+        bootstrap.WithPostgreSQL(mockDB),
+        bootstrap.WithMongoDB(mockMongoDB),
+        bootstrap.WithRabbitMQ(mockPublisher),
+        bootstrap.WithS3Client(mockS3),
+    )
+    
+    resources, cleanup, err := b.InitializeInfrastructure(context.Background())
+    require.NoError(t, err)
+    defer cleanup()
+    
+    // Usar resources en tus tests
+    container := container.NewContainer(resources)
+    // ...
+}
+```
+
 ### Variables Requeridas
 
 | Variable | Descripción | Ejemplo |
@@ -108,18 +174,20 @@ docker-compose up -d
 # 1. Instalar dependencias
 go mod download
 
-# 2. Configurar variables de entorno
+# 2. Instalar swag CLI para documentación Swagger
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# 3. Configurar variables de entorno
 cp .env.example .env
 # Editar .env con valores reales
 
-# 3. Asegurar que PostgreSQL, MongoDB y RabbitMQ están corriendo
+# 4. Asegurar que PostgreSQL, MongoDB y RabbitMQ están corriendo
 
-# 4. Generar documentación Swagger
-swag init -g cmd/main.go -o docs
-
-# 5. Ejecutar servidor
+# 5. Ejecutar servidor (Swagger se regenera automáticamente)
 go run cmd/main.go
 ```
+
+**Nota**: Ya no es necesario ejecutar `swag init` manualmente. La aplicación regenera automáticamente la documentación Swagger al iniciar.
 
 ### Producción con Docker
 
@@ -177,6 +245,13 @@ Accede a la documentación interactiva en:
 ```
 http://localhost:8080/swagger/index.html
 ```
+
+**Características de Swagger:**
+- ✅ **Regeneración automática**: La documentación se actualiza automáticamente al iniciar la aplicación
+- ✅ **Detección dinámica de puerto**: Swagger UI detecta automáticamente el puerto en el que corre la aplicación
+- ✅ **Pruebas directas**: Puedes probar todos los endpoints directamente desde la interfaz
+
+**Nota**: La primera vez que ejecutes la aplicación, asegúrate de tener instalado `swag` CLI (ver sección de Instalación)
 
 ### Health Check
 
@@ -331,13 +406,96 @@ api-mobile/
 └── README.md
 ```
 
-## Generar Swagger Docs
+## Documentación Swagger
 
-Después de modificar anotaciones Swagger:
+### Regeneración Automática
+
+La documentación Swagger se regenera automáticamente cada vez que inicias la aplicación. Esto garantiza que la documentación siempre esté actualizada con los últimos cambios en el código.
+
+**Requisitos**:
+- Tener instalado `swag` CLI: `go install github.com/swaggo/swag/cmd/swag@latest`
+- Asegurarse de que `swag` esté en tu PATH
+
+### Regeneración Manual (Opcional)
+
+Si necesitas regenerar la documentación manualmente:
 
 ```bash
 swag init -g cmd/main.go -o docs
 ```
+
+### Acceso a Swagger UI
+
+La interfaz de Swagger UI está disponible en:
+```
+http://localhost:{PORT}/swagger/index.html
+```
+
+Donde `{PORT}` es el puerto configurado en tu archivo de configuración (por defecto 8080).
+
+**Características**:
+- Detección automática del puerto y host
+- Prueba de endpoints directamente desde la interfaz
+- Documentación completa de todos los endpoints, parámetros y respuestas
+- Soporte para autenticación Bearer token
+
+### Troubleshooting
+
+#### Error: "swag: command not found"
+
+**Problema**: La aplicación no puede encontrar el comando `swag`.
+
+**Solución**:
+```bash
+# Instalar swag CLI
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Verificar que está en el PATH
+which swag
+
+# Si no está en el PATH, agregar $GOPATH/bin a tu PATH
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+#### Swagger UI no carga o muestra errores
+
+**Problema**: La interfaz de Swagger no se carga correctamente.
+
+**Soluciones**:
+1. Verificar que la aplicación esté corriendo: `curl http://localhost:8080/health`
+2. Verificar que los archivos de documentación existan: `ls -la docs/`
+3. Revisar los logs de la aplicación para errores de regeneración
+4. Regenerar manualmente: `swag init -g cmd/main.go -o docs`
+
+#### Los endpoints no funcionan desde Swagger UI
+
+**Problema**: Al hacer clic en "Try it out", las peticiones fallan.
+
+**Soluciones**:
+1. Verificar que el puerto en la URL coincida con el puerto de la aplicación
+2. Para endpoints protegidos, hacer clic en "Authorize" e ingresar el token Bearer
+3. Verificar que CORS esté configurado correctamente
+4. Revisar la consola del navegador para errores de red
+
+#### La documentación no refleja cambios recientes
+
+**Problema**: Los cambios en las anotaciones Swagger no aparecen en la UI.
+
+**Soluciones**:
+1. Reiniciar la aplicación (la regeneración es automática)
+2. Limpiar caché del navegador y recargar Swagger UI
+3. Verificar que las anotaciones Swagger estén correctamente formateadas
+4. Regenerar manualmente: `swag init -g cmd/main.go -o docs`
+
+#### Advertencia: "no se pudo regenerar Swagger"
+
+**Problema**: La aplicación muestra una advertencia al iniciar.
+
+**Causa**: `swag` no está instalado o no está en el PATH.
+
+**Impacto**: La aplicación continúa funcionando con la documentación existente.
+
+**Solución**: Instalar `swag` CLI como se indica arriba.
 
 ## Puerto
 
@@ -347,6 +505,159 @@ Para cambiar, editar en `cmd/main.go`:
 ```go
 port := ":8080"
 ```
+
+## Referencia Rápida del Bootstrap
+
+### Patrones Comunes
+
+**Inicialización Básica:**
+```go
+b := bootstrap.New(cfg)
+resources, cleanup, err := b.InitializeInfrastructure(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+defer cleanup()
+```
+
+**Desarrollo sin RabbitMQ/S3:**
+```go
+b := bootstrap.New(cfg,
+    bootstrap.WithOptionalResource("rabbitmq"),
+    bootstrap.WithOptionalResource("s3"),
+)
+```
+
+**Testing con Mocks:**
+```go
+b := bootstrap.New(cfg,
+    bootstrap.WithLogger(mockLogger),
+    bootstrap.WithPostgreSQL(mockDB),
+    bootstrap.WithMongoDB(mockMongoDB),
+    bootstrap.WithRabbitMQ(mockPublisher),
+    bootstrap.WithS3Client(mockS3),
+)
+```
+
+**Acceso a Recursos:**
+```go
+resources.Logger.Info("message")
+resources.PostgreSQL.QueryContext(ctx, "SELECT ...")
+resources.MongoDB.Collection("name")
+resources.RabbitMQPublisher.Publish(ctx, exchange, key, data)
+resources.S3Client.GeneratePresignedUploadURL(ctx, key, contentType, expires)
+```
+
+## Guía de Migración al Sistema de Bootstrap
+
+Si estás actualizando código existente que inicializaba recursos de infraestructura directamente, sigue esta guía:
+
+### Antes (Código Legacy)
+
+```go
+// cmd/main.go - Código antiguo
+func main() {
+    cfg, _ := config.Load()
+    
+    // Inicialización manual de cada recurso
+    log := logger.NewZapLogger(cfg.Logger.Level, cfg.Logger.Format)
+    
+    pgDB, err := database.InitPostgreSQL(ctx, cfg, log)
+    if err != nil {
+        log.Fatal("Failed to connect to PostgreSQL", zap.Error(err))
+    }
+    defer pgDB.Close()
+    
+    mongoDB, err := database.InitMongoDB(ctx, cfg, log)
+    if err != nil {
+        log.Fatal("Failed to connect to MongoDB", zap.Error(err))
+    }
+    
+    publisher, err := rabbitmq.NewRabbitMQPublisher(cfg.Messaging.RabbitMQ.URL, "events", log)
+    if err != nil {
+        log.Warn("Failed to connect to RabbitMQ", zap.Error(err))
+        // Continuar sin publisher...
+    }
+    defer publisher.Close()
+    
+    s3Client, err := s3.NewS3Client(ctx, cfg.Storage.S3, log)
+    if err != nil {
+        log.Warn("Failed to initialize S3", zap.Error(err))
+        // Continuar sin S3...
+    }
+    
+    // Crear container
+    c := container.NewContainer(log, pgDB, mongoDB, publisher, s3Client, cfg.Auth.JWTSecret)
+    
+    // Setup router y servidor
+    r := router.SetupRouter(c)
+    r.Run(fmt.Sprintf(":%d", cfg.Server.Port))
+}
+```
+
+### Después (Con Bootstrap)
+
+```go
+// cmd/main.go - Código nuevo
+func main() {
+    ctx := context.Background()
+    cfg, _ := config.Load()
+    
+    // Bootstrap inicializa todos los recursos
+    b := bootstrap.New(cfg)
+    resources, cleanup, err := b.InitializeInfrastructure(ctx)
+    if err != nil {
+        log.Fatal("Failed to initialize infrastructure", zap.Error(err))
+    }
+    defer cleanup()
+    
+    // Crear container con recursos
+    c := container.NewContainer(resources)
+    
+    // Setup router y servidor
+    r := router.SetupRouter(c)
+    r.Run(fmt.Sprintf(":%d", cfg.Server.Port))
+}
+```
+
+### Cambios en el Container
+
+**Antes:**
+```go
+func NewContainer(
+    logger logger.Logger,
+    pgDB *sql.DB,
+    mongoDB *mongo.Database,
+    publisher rabbitmq.Publisher,
+    s3Client s3.S3Storage,
+    jwtSecret string,
+) *Container
+```
+
+**Después:**
+```go
+func NewContainer(resources *bootstrap.Resources) *Container
+```
+
+### Beneficios de la Migración
+
+1. **Menos código**: `main.go` reducido de ~180 líneas a <50 líneas
+2. **Mejor testabilidad**: Inyección fácil de mocks
+3. **Recursos opcionales**: Desarrollo sin infraestructura completa
+4. **Cleanup automático**: No más defer statements manuales
+5. **Consistencia**: Todos los recursos siguen el mismo patrón
+
+### Compatibilidad
+
+- ✅ **Sin breaking changes**: Las funciones existentes en `internal/infrastructure` se mantienen
+- ✅ **Backward compatible**: Puedes migrar gradualmente
+- ✅ **Tests existentes**: Continúan funcionando sin cambios
+
+### Recursos Adicionales
+
+- **[internal/bootstrap/INTEGRATION_TESTS.md](internal/bootstrap/INTEGRATION_TESTS.md)** - Ejemplos de testing con bootstrap
+- **[config/OPTIONAL_RESOURCES.md](config/OPTIONAL_RESOURCES.md)** - Configuración de recursos opcionales
+- **[.kiro/specs/infrastructure-bootstrap-refactor/](/.kiro/specs/infrastructure-bootstrap-refactor/)** - Especificación completa del diseño
 
 ## Licencia
 
