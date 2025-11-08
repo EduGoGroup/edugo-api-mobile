@@ -147,3 +147,6 @@ func (c *S3Client) GeneratePresignedDownloadURL(ctx context.Context, key string,
 
 	return presignedReq.URL, nil
 }
+
+// Compile-time verification that S3Client implements S3Storage interface
+var _ S3Storage = (*S3Client)(nil)

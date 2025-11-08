@@ -1,13 +1,27 @@
 package router
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
+	"github.com/EduGoGroup/edugo-api-mobile/docs"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// ConfigureSwaggerHost configura dinámicamente el host de Swagger basado en el puerto del servidor.
+// Esto actualiza el SwaggerInfo.Host en tiempo de ejecución para que las peticiones de Swagger UI
+// apunten al puerto correcto.
+// Si el host es 0.0.0.0, usa localhost para que sea accesible desde el navegador.
+func ConfigureSwaggerHost(host string, port int) {
+	// 0.0.0.0 no es válido para clientes del navegador, usar localhost
+	if host == "0.0.0.0" || host == "" {
+		host = "localhost"
+	}
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", host, port)
+}
 
 // SetupSwaggerUI configura Swagger UI con detección dinámica de host.
 // Inyecta JavaScript que detecta window.location.host y lo usa para construir

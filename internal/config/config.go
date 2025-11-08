@@ -6,12 +6,18 @@ import (
 )
 
 // Config contiene toda la configuración de la aplicación
+// Campo adicional `Environment` almacena el ambiente detectado (p. ej. local, dev, qa, prod).
+// Se llena desde `loader.Load()` usando la variable de entorno APP_ENV y permite
+// que el resto de la aplicación consulte el ambiente desde el objeto `Config`.
 type Config struct {
-	Server    ServerConfig    `mapstructure:"server"`
-	Database  DatabaseConfig  `mapstructure:"database"`
-	Messaging MessagingConfig `mapstructure:"messaging"`
-	Storage   StorageConfig   `mapstructure:"storage"`
-	Logging   LoggingConfig   `mapstructure:"logging"`
+	Server      ServerConfig    `mapstructure:"server"`
+	Database    DatabaseConfig  `mapstructure:"database"`
+	Messaging   MessagingConfig `mapstructure:"messaging"`
+	Storage     StorageConfig   `mapstructure:"storage"`
+	Logging     LoggingConfig   `mapstructure:"logging"`
+	Environment string          `mapstructure:"environment"`
+	Auth        AuthConfig      `mapstructure:"auth"`
+	Bootstrap   BootstrapConfig `mapstructure:"bootstrap"`
 }
 
 // ServerConfig configuración del servidor HTTP
@@ -88,6 +94,29 @@ type S3Config struct {
 type LoggingConfig struct {
 	Level  string `mapstructure:"level"`  // debug, info, warn, error
 	Format string `mapstructure:"format"` // json, text
+}
+
+// AuthConfig configuración de autenticación
+type AuthConfig struct {
+	JWT JWTConfig `mapstructure:"jwt"`
+}
+
+// JWTConfig configuración de JWT
+type JWTConfig struct {
+	Secret string `mapstructure:"secret"` // ENV: AUTH_JWT_SECRET (mapeado desde auth.jwt.secret)
+}
+
+// BootstrapConfig configuración del sistema de bootstrap
+type BootstrapConfig struct {
+	OptionalResources OptionalResourcesConfig `mapstructure:"optional_resources"`
+}
+
+// OptionalResourcesConfig configuración de recursos opcionales
+// Permite marcar recursos de infraestructura como opcionales
+// Si un recurso opcional falla, la aplicación continúa con una implementación noop
+type OptionalResourcesConfig struct {
+	RabbitMQ bool `mapstructure:"rabbitmq"` // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ
+	S3       bool `mapstructure:"s3"`       // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_S3
 }
 
 // GetPostgresConnectionString construye la cadena de conexión PostgreSQL

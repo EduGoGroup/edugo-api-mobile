@@ -3,7 +3,7 @@
 
 server:
   port: 8080
-  host: "0.0.0.0"
+  host: "localhost"
   read_timeout: 30s
   write_timeout: 30s
 
@@ -43,3 +43,12 @@ storage:
 logging:
   level: "info"
   format: "json"
+
+bootstrap:
+  optional_resources:
+    # RabbitMQ is optional by default to facilitate local development
+    # Set to false to make it required (will fail if unavailable)
+    rabbitmq: true
+    # S3 is optional by default to facilitate local development
+    # Set to false to make it required (will fail if unavailable)
+    s3: true

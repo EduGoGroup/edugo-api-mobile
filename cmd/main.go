@@ -4,23 +4,63 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/database"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/router"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
-	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	_ "github.com/EduGoGroup/edugo-api-mobile/docs" // Swagger docs generados por swag init
 )
+
+func main() {
+	ctx := context.Background()
+
+	// Cargar configuración
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("❌ Error cargando configuración: %v", err)
+	}
+
+	// Inicializar infraestructura usando bootstrap system
+	b := bootstrap.New(cfg)
+	resources, cleanup, err := b.InitializeInfrastructure(ctx)
+	if err != nil {
+		log.Fatalf("❌ Error inicializando infraestructura: %v", err)
+	}
+	defer cleanup()
+
+	// Regenerar documentación Swagger
+	if err := regenerateSwagger(resources.Logger); err != nil {
+		resources.Logger.Warn("continuando inicio de aplicación con documentación Swagger existente",
+			zap.Error(err),
+		)
+	}
+
+	// Crear container de dependencias (DI)
+	c := container.NewContainer(resources)
+	resources.Logger.Info("container de dependencias inicializado correctamente")
+
+	// Configurar modo de Gin según ambiente
+	configureGinMode(cfg.Environment)
+
+	// Crear handler de health check
+	healthHandler := handler.NewHealthHandler(resources.PostgreSQL, resources.MongoDB)
+
+	// Configurar host de Swagger dinámicamente basado en la configuración
+	router.ConfigureSwaggerHost(cfg.Server.Host, cfg.Server.Port)
+
+	// Configurar router con todas las rutas
+	r := router.SetupRouter(c, healthHandler)
+
+	// Iniciar servidor HTTP
+	startServer(r, cfg, resources.Logger)
+}
 
 // @title EduGo API Mobile
 // @version 1.0
@@ -43,8 +83,8 @@ import (
 // regenerateSwagger ejecuta swag init para actualizar la documentación Swagger.
 // Captura stdout/stderr para logging y maneja errores con degradación graciosa.
 // Retorna error si la regeneración falla, pero no debe detener el inicio de la aplicación.
-func regenerateSwagger(appLogger logger.Logger) error {
-	appLogger.Info("iniciando regeneración de documentación Swagger")
+func regenerateSwagger(log interface{ Info(string, ...interface{}) }) error {
+	log.Info("iniciando regeneración de documentación Swagger")
 
 	// Ejecutar comando swag init
 	cmd := exec.Command("swag", "init", "-g", "cmd/main.go")
@@ -56,130 +96,17 @@ func regenerateSwagger(appLogger logger.Logger) error {
 	if err != nil {
 		// Verificar si swag no está instalado
 		if strings.Contains(err.Error(), "executable file not found") || strings.Contains(err.Error(), "not found") {
-			appLogger.Info("swag CLI no encontrado, omitiendo regeneración. Instalar con: go install github.com/swaggo/swag/cmd/swag@latest")
+			log.Info("swag CLI no encontrado, omitiendo regeneración. Instalar con: go install github.com/swaggo/swag/cmd/swag@latest")
 			return fmt.Errorf("swag CLI no encontrado: %w", err)
 		}
 
 		// Otro tipo de error
-		appLogger.Warn("no se pudo regenerar Swagger, usando documentación existente",
-			zap.Error(err),
-			zap.String("output", outputStr),
-		)
-		return fmt.Errorf("error ejecutando swag init: %w", err)
+		return fmt.Errorf("error ejecutando swag init: %w (output: %s)", err, outputStr)
 	}
 
 	// Regeneración exitosa
-	appLogger.Info("documentación Swagger regenerada exitosamente",
-		zap.String("output", outputStr),
-	)
+	log.Info("documentación Swagger regenerada exitosamente")
 	return nil
-}
-
-func main() {
-	ctx := context.Background()
-
-	// Cargar configuración
-	cfg, err := config.Load()
-	if err != nil {
-		log.Fatalf("❌ Error cargando configuración: %v", err)
-	}
-
-	// Detectar y mostrar ambiente activo
-	env := getEnvironment()
-	log.Printf("🌍 Ambiente: %s", env)
-	log.Printf("📊 Log Level: %s, Format: %s", cfg.Logging.Level, cfg.Logging.Format)
-
-	// Inicializar logger estructurado
-	appLogger := logger.NewZapLogger(cfg.Logging.Level, cfg.Logging.Format)
-	appLogger.Info("iniciando EduGo API Mobile",
-		zap.String("environment", env),
-		zap.String("version", "1.0.0"),
-	)
-
-	// Regenerar documentación Swagger antes de iniciar el servidor
-	if err := regenerateSwagger(appLogger); err != nil {
-		// Log warning pero continuar con el inicio de la aplicación
-		appLogger.Warn("continuando inicio de aplicación con documentación Swagger existente",
-			zap.Error(err),
-		)
-	}
-
-	// Inicializar base de datos PostgreSQL
-	db, err := database.InitPostgreSQL(ctx, cfg, appLogger)
-	if err != nil {
-		appLogger.Fatal("error inicializando PostgreSQL", zap.Error(err))
-	}
-	defer db.Close()
-
-	// Inicializar base de datos MongoDB
-	mongoDB, err := database.InitMongoDB(ctx, cfg, appLogger)
-	if err != nil {
-		appLogger.Fatal("error inicializando MongoDB", zap.Error(err))
-	}
-
-	// Inicializar RabbitMQ Publisher
-	publisher, err := rabbitmq.NewRabbitMQPublisher(
-		cfg.Messaging.RabbitMQ.URL,
-		cfg.Messaging.RabbitMQ.Exchanges.Materials,
-		appLogger.With(zap.String("component", "rabbitmq-publisher")),
-	)
-	if err != nil {
-		appLogger.Fatal("error inicializando RabbitMQ Publisher", zap.Error(err))
-	}
-	defer publisher.Close()
-	appLogger.Info("RabbitMQ Publisher inicializado correctamente",
-		zap.String("exchange", cfg.Messaging.RabbitMQ.Exchanges.Materials),
-	)
-
-	// Inicializar cliente S3
-	s3Config := s3.S3Config{
-		Region:          cfg.Storage.S3.Region,
-		BucketName:      cfg.Storage.S3.BucketName,
-		AccessKeyID:     cfg.Storage.S3.AccessKeyID,
-		SecretAccessKey: cfg.Storage.S3.SecretAccessKey,
-		Endpoint:        cfg.Storage.S3.Endpoint,
-	}
-	s3Client, err := s3.NewS3Client(ctx, s3Config, appLogger.With(zap.String("component", "s3-client")))
-	if err != nil {
-		appLogger.Fatal("error inicializando cliente S3", zap.Error(err))
-	}
-	appLogger.Info("cliente S3 inicializado correctamente",
-		zap.String("region", cfg.Storage.S3.Region),
-		zap.String("bucket", cfg.Storage.S3.BucketName),
-	)
-
-	// Obtener JWT secret desde variable de entorno
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		appLogger.Fatal("JWT_SECRET es requerido en las variables de entorno")
-	}
-
-	// Crear container de dependencias (DI)
-	c := container.NewContainer(db, mongoDB, publisher, s3Client, jwtSecret, appLogger)
-	defer c.Close()
-	appLogger.Info("container de dependencias inicializado correctamente")
-
-	// Configurar modo de Gin según ambiente
-	configureGinMode(env)
-
-	// Crear handler de health check
-	healthHandler := handler.NewHealthHandler(db, mongoDB)
-
-	// Configurar router con todas las rutas
-	r := router.SetupRouter(c, healthHandler)
-
-	// Iniciar servidor HTTP
-	startServer(r, cfg, appLogger)
-}
-
-// getEnvironment obtiene el ambiente de ejecución desde variables de entorno.
-// Por defecto retorna "local" si no está configurado.
-func getEnvironment() string {
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "local"
-	}
-	return env
 }
 
 // configureGinMode configura el modo de ejecución de Gin según el ambiente.
@@ -190,7 +117,10 @@ func configureGinMode(env string) {
 }
 
 // startServer inicia el servidor HTTP en la dirección y puerto configurados.
-func startServer(r *gin.Engine, cfg *config.Config, appLogger logger.Logger) {
+func startServer(r *gin.Engine, cfg *config.Config, appLogger interface {
+	Info(string, ...interface{})
+	Fatal(string, ...interface{})
+}) {
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 
 	appLogger.Info("servidor HTTP iniciado",

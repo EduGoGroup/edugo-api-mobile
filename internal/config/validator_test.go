@@ -31,6 +31,11 @@ func TestValidate_AllFieldsValid(t *testing.T) {
 				BucketName:      "test-bucket",
 			},
 		},
+		Auth: AuthConfig{
+			JWT: JWTConfig{
+				Secret: "test-jwt-secret",
+			},
+		},
 	}
 
 	err := Validate(cfg)

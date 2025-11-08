@@ -27,6 +27,10 @@ func Validate(cfg *Config) error {
 	if cfg.Storage.S3.SecretAccessKey == "" {
 		validationErrors = append(validationErrors, "STORAGE_S3_SECRET_ACCESS_KEY is required")
 	}
+	// Secret para firmar JWT (vía auth.jwt.secret -> ENV JWT_SECRET)
+	if cfg.Auth.JWT.Secret == "" {
+		validationErrors = append(validationErrors, "JWT_SECRET is required")
+	}
 
 	// Validar valores públicos
 	if cfg.Server.Port <= 0 || cfg.Server.Port > 65535 {
