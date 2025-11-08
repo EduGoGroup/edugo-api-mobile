@@ -136,7 +136,7 @@
   - Add migration guide for developers
   - _Requirements: 3.4, 4.4_
 
-- [-] 12. Commit changes to dev branch
+- [x] 12. Commit changes to dev branch
   - Create new branch `feature/infrastructure-bootstrap-refactor` from current branch
   - Stage all uncommitted changes (config improvements)
   - Commit config improvements with descriptive message

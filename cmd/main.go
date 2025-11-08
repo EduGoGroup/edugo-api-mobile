@@ -52,6 +52,9 @@ func main() {
 	// Crear handler de health check
 	healthHandler := handler.NewHealthHandler(resources.PostgreSQL, resources.MongoDB)
 
+	// Configurar host de Swagger dinámicamente basado en la configuración
+	router.ConfigureSwaggerHost(cfg.Server.Host, cfg.Server.Port)
+
 	// Configurar router con todas las rutas
 	r := router.SetupRouter(c, healthHandler)
 

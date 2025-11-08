@@ -60,7 +60,13 @@ func Load() (*Config, error) {
 
 	// 4. Configurar paths y tipo de archivo
 	v.SetConfigType("yaml")
+	// Buscar en múltiples ubicaciones para soportar diferentes formas de ejecución:
+	// - ./config: cuando se ejecuta desde la raíz del proyecto
+	// - ../config: cuando se ejecuta desde cmd/
+	// - .: directorio actual como fallback
 	v.AddConfigPath("./config")
+	v.AddConfigPath("../config")
+	v.AddConfigPath(".")
 
 	// 5. Leer archivo base (opcional en cloud mode)
 	v.SetConfigName("config")
@@ -163,8 +169,8 @@ func bindEnvVars(v *viper.Viper) {
 	v.BindEnv("logging.format")
 
 	// Auth - JWT secret
-	// Mapeado por Viper con SetEnvKeyReplacer(".", "_") => AUTH_JWT_SECRET
-	v.BindEnv("auth.jwt.secret")
+	// Mapeado explícitamente a JWT_SECRET (sin prefijo AUTH_)
+	v.BindEnv("auth.jwt.secret", "JWT_SECRET")
 
 	// Bootstrap - Optional resources
 	v.BindEnv("bootstrap.optional_resources.rabbitmq")
