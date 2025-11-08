@@ -153,3 +153,23 @@ func TestPresignedURLExpiration(t *testing.T) {
 	// La URL debe contener parámetros de expiración
 	assert.Contains(t, url, "X-Amz-Expires")
 }
+
+// TestS3ClientImplementsInterface verifica que S3Client implementa S3Storage interface
+func TestS3ClientImplementsInterface(t *testing.T) {
+	ctx := context.Background()
+	log := logger.NewZapLogger("info", "json")
+
+	config := S3Config{
+		Region:          "us-east-1",
+		BucketName:      "test-bucket",
+		AccessKeyID:     "test-key",
+		SecretAccessKey: "test-secret",
+	}
+
+	client, err := NewS3Client(ctx, config, log)
+	require.NoError(t, err)
+
+	// Verificar que el cliente implementa la interfaz S3Storage
+	var _ S3Storage = client
+	assert.NotNil(t, client)
+}
