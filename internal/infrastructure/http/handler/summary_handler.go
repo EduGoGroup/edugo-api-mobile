@@ -25,10 +25,14 @@ func NewSummaryHandler(summaryService service.SummaryService, logger logger.Logg
 
 // GetSummary godoc
 // @Summary Get material summary
+// @Description Retrieves an AI-generated summary of the material content
 // @Tags materials
 // @Produce json
-// @Param id path string true "Material ID"
-// @Success 200 {object} repository.MaterialSummary
+// @Param id path string true "Material ID (UUID format)"
+// @Success 200 {object} repository.MaterialSummary "Summary retrieved successfully"
+// @Failure 400 {object} ErrorResponse "Invalid material ID format"
+// @Failure 404 {object} ErrorResponse "Summary not found for this material"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/summary [get]
 // @Security BearerAuth
 func (h *SummaryHandler) GetSummary(c *gin.Context) {

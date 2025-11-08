@@ -26,10 +26,14 @@ func NewAssessmentHandler(assessmentService service.AssessmentService, logger lo
 
 // GetAssessment godoc
 // @Summary Get material assessment/quiz
-// @Tags materials
+// @Description Retrieves the assessment (quiz/test) associated with a specific material
+// @Tags assessments
 // @Produce json
-// @Param id path string true "Material ID"
-// @Success 200 {object} repository.MaterialAssessment
+// @Param id path string true "Material ID (UUID format)"
+// @Success 200 {object} repository.MaterialAssessment "Assessment retrieved successfully"
+// @Failure 400 {object} ErrorResponse "Invalid material ID format"
+// @Failure 404 {object} ErrorResponse "Assessment not found for this material"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/assessment [get]
 // @Security BearerAuth
 func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
@@ -50,12 +54,17 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 
 // RecordAttempt godoc
 // @Summary Record assessment attempt
-// @Tags materials
+// @Description Records a user's attempt at completing an assessment with their answers
+// @Tags assessments
 // @Accept json
 // @Produce json
-// @Param id path string true "Material ID"
-// @Param request body map[string]interface{} true "Answers"
-// @Success 200 {object} repository.AssessmentAttempt
+// @Param id path string true "Material ID (UUID format)"
+// @Param request body map[string]interface{} true "User answers (question_id -> answer mapping)"
+// @Success 200 {object} repository.AssessmentAttempt "Attempt recorded successfully with score"
+// @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
+// @Failure 401 {object} ErrorResponse "User not authenticated"
+// @Failure 404 {object} ErrorResponse "Assessment not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /materials/{id}/assessment/attempts [post]
 // @Security BearerAuth
 func (h *AssessmentHandler) RecordAttempt(c *gin.Context) {
@@ -176,5 +185,5 @@ func (h *AssessmentHandler) SubmitAssessment(c *gin.Context) {
 
 // SubmitAssessmentRequest representa el body del request para submit
 type SubmitAssessmentRequest struct {
-	Responses map[string]interface{} `json:"responses" binding:"required"` // question_id -> answer
+	Responses map[string]interface{} `json:"responses" binding:"required" swaggertype:"object" example:"{\"q1\":\"answer_a\",\"q2\":\"True\",\"q3\":\"Paris\"}"` // question_id -> answer
 }

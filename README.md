@@ -108,18 +108,20 @@ docker-compose up -d
 # 1. Instalar dependencias
 go mod download
 
-# 2. Configurar variables de entorno
+# 2. Instalar swag CLI para documentación Swagger
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# 3. Configurar variables de entorno
 cp .env.example .env
 # Editar .env con valores reales
 
-# 3. Asegurar que PostgreSQL, MongoDB y RabbitMQ están corriendo
+# 4. Asegurar que PostgreSQL, MongoDB y RabbitMQ están corriendo
 
-# 4. Generar documentación Swagger
-swag init -g cmd/main.go -o docs
-
-# 5. Ejecutar servidor
+# 5. Ejecutar servidor (Swagger se regenera automáticamente)
 go run cmd/main.go
 ```
+
+**Nota**: Ya no es necesario ejecutar `swag init` manualmente. La aplicación regenera automáticamente la documentación Swagger al iniciar.
 
 ### Producción con Docker
 
@@ -177,6 +179,13 @@ Accede a la documentación interactiva en:
 ```
 http://localhost:8080/swagger/index.html
 ```
+
+**Características de Swagger:**
+- ✅ **Regeneración automática**: La documentación se actualiza automáticamente al iniciar la aplicación
+- ✅ **Detección dinámica de puerto**: Swagger UI detecta automáticamente el puerto en el que corre la aplicación
+- ✅ **Pruebas directas**: Puedes probar todos los endpoints directamente desde la interfaz
+
+**Nota**: La primera vez que ejecutes la aplicación, asegúrate de tener instalado `swag` CLI (ver sección de Instalación)
 
 ### Health Check
 
@@ -331,13 +340,96 @@ api-mobile/
 └── README.md
 ```
 
-## Generar Swagger Docs
+## Documentación Swagger
 
-Después de modificar anotaciones Swagger:
+### Regeneración Automática
+
+La documentación Swagger se regenera automáticamente cada vez que inicias la aplicación. Esto garantiza que la documentación siempre esté actualizada con los últimos cambios en el código.
+
+**Requisitos**:
+- Tener instalado `swag` CLI: `go install github.com/swaggo/swag/cmd/swag@latest`
+- Asegurarse de que `swag` esté en tu PATH
+
+### Regeneración Manual (Opcional)
+
+Si necesitas regenerar la documentación manualmente:
 
 ```bash
 swag init -g cmd/main.go -o docs
 ```
+
+### Acceso a Swagger UI
+
+La interfaz de Swagger UI está disponible en:
+```
+http://localhost:{PORT}/swagger/index.html
+```
+
+Donde `{PORT}` es el puerto configurado en tu archivo de configuración (por defecto 8080).
+
+**Características**:
+- Detección automática del puerto y host
+- Prueba de endpoints directamente desde la interfaz
+- Documentación completa de todos los endpoints, parámetros y respuestas
+- Soporte para autenticación Bearer token
+
+### Troubleshooting
+
+#### Error: "swag: command not found"
+
+**Problema**: La aplicación no puede encontrar el comando `swag`.
+
+**Solución**:
+```bash
+# Instalar swag CLI
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Verificar que está en el PATH
+which swag
+
+# Si no está en el PATH, agregar $GOPATH/bin a tu PATH
+export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+#### Swagger UI no carga o muestra errores
+
+**Problema**: La interfaz de Swagger no se carga correctamente.
+
+**Soluciones**:
+1. Verificar que la aplicación esté corriendo: `curl http://localhost:8080/health`
+2. Verificar que los archivos de documentación existan: `ls -la docs/`
+3. Revisar los logs de la aplicación para errores de regeneración
+4. Regenerar manualmente: `swag init -g cmd/main.go -o docs`
+
+#### Los endpoints no funcionan desde Swagger UI
+
+**Problema**: Al hacer clic en "Try it out", las peticiones fallan.
+
+**Soluciones**:
+1. Verificar que el puerto en la URL coincida con el puerto de la aplicación
+2. Para endpoints protegidos, hacer clic en "Authorize" e ingresar el token Bearer
+3. Verificar que CORS esté configurado correctamente
+4. Revisar la consola del navegador para errores de red
+
+#### La documentación no refleja cambios recientes
+
+**Problema**: Los cambios en las anotaciones Swagger no aparecen en la UI.
+
+**Soluciones**:
+1. Reiniciar la aplicación (la regeneración es automática)
+2. Limpiar caché del navegador y recargar Swagger UI
+3. Verificar que las anotaciones Swagger estén correctamente formateadas
+4. Regenerar manualmente: `swag init -g cmd/main.go -o docs`
+
+#### Advertencia: "no se pudo regenerar Swagger"
+
+**Problema**: La aplicación muestra una advertencia al iniciar.
+
+**Causa**: `swag` no está instalado o no está en el PATH.
+
+**Impacto**: La aplicación continúa funcionando con la documentación existente.
+
+**Solución**: Instalar `swag` CLI como se indica arriba.
 
 ## Puerto
 
