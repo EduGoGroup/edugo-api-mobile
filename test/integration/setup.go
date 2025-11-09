@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/streadway/amqp"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/rabbitmq"
@@ -99,7 +99,7 @@ func setupRabbitMQTopology(ctx context.Context, container *rabbitmq.RabbitMQCont
 	}
 
 	// Conectar a RabbitMQ
-	conn, err := amqp.Dial(connStr)
+	conn, err := amqp091.Dial(connStr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
