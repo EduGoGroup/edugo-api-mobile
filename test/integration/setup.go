@@ -4,8 +4,10 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/streadway/amqp"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/rabbitmq"
@@ -61,6 +63,14 @@ func SetupContainers(t *testing.T) (*TestContainers, func()) {
 	}
 	t.Log("✅ RabbitMQ ready")
 
+	// Configurar topología de RabbitMQ (exchanges, colas, bindings)
+	if err := setupRabbitMQTopology(ctx, rabbitContainer); err != nil {
+		t.Logf("⚠️  Warning: RabbitMQ topology setup failed (non-critical): %v", err)
+		// No fallar el test, algunos tests pueden funcionar sin RabbitMQ
+	} else {
+		t.Log("✅ RabbitMQ topology configured")
+	}
+
 	containers := &TestContainers{
 		Postgres: pgContainer,
 		MongoDB:  mongoContainer,
@@ -77,6 +87,88 @@ func SetupContainers(t *testing.T) (*TestContainers, func()) {
 	}
 
 	return containers, cleanup
+}
+
+// setupRabbitMQTopology configura la topología de RabbitMQ para tests
+// Crea exchanges, colas y bindings necesarios para el proyecto
+func setupRabbitMQTopology(ctx context.Context, container *rabbitmq.RabbitMQContainer) error {
+	// Obtener connection string de RabbitMQ
+	connStr, err := container.AmqpURL(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get RabbitMQ connection string: %w", err)
+	}
+
+	// Conectar a RabbitMQ
+	conn, err := amqp.Dial(connStr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
+	defer conn.Close()
+
+	// Crear canal
+	ch, err := conn.Channel()
+	if err != nil {
+		return fmt.Errorf("failed to create channel: %w", err)
+	}
+	defer ch.Close()
+
+	// 1. Crear exchange principal
+	exchangeName := "edugo.events"
+	err = ch.ExchangeDeclare(
+		exchangeName, // name
+		"topic",      // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare exchange %s: %w", exchangeName, err)
+	}
+
+	// 2. Definir colas necesarias
+	queues := []struct {
+		name       string
+		routingKey string
+	}{
+		{"material.created", "material.created"},
+		{"material.updated", "material.updated"},
+		{"material.deleted", "material.deleted"},
+		{"assessment.completed", "assessment.completed"},
+		{"progress.updated", "progress.updated"},
+		{"user.registered", "user.registered"},
+	}
+
+	// 3. Crear colas y bindings
+	for _, q := range queues {
+		// Declarar cola
+		_, err = ch.QueueDeclare(
+			q.name, // name
+			true,   // durable
+			false,  // delete when unused
+			false,  // exclusive
+			false,  // no-wait
+			nil,    // arguments
+		)
+		if err != nil {
+			return fmt.Errorf("failed to declare queue %s: %w", q.name, err)
+		}
+
+		// Crear binding entre exchange y cola
+		err = ch.QueueBind(
+			q.name,       // queue name
+			q.routingKey, // routing key
+			exchangeName, // exchange
+			false,        // no-wait
+			nil,          // arguments
+		)
+		if err != nil {
+			return fmt.Errorf("failed to bind queue %s: %w", q.name, err)
+		}
+	}
+
+	return nil
 }
 
 // SetupPostgres inicia solo PostgreSQL
