@@ -1,5 +1,11 @@
 # EduGo API Mobile
 
+![CI](https://github.com/EduGoGroup/edugo-api-mobile/workflows/CI%20Pipeline/badge.svg)
+![Tests](https://github.com/EduGoGroup/edugo-api-mobile/workflows/Tests%20with%20Coverage/badge.svg)
+[![codecov](https://codecov.io/gh/EduGoGroup/edugo-api-mobile/branch/main/graph/badge.svg)](https://codecov.io/gh/EduGoGroup/edugo-api-mobile)
+![Go Version](https://img.shields.io/github/go-mod/go-version/EduGoGroup/edugo-api-mobile)
+![Release](https://img.shields.io/github/v/release/EduGoGroup/edugo-api-mobile)
+
 API REST para operaciones frecuentes de docentes y estudiantes en la plataforma EduGo.
 
 ## Descripción
@@ -27,6 +33,42 @@ Esta API maneja:
 - MongoDB 5.0+
 - RabbitMQ 3.12+
 - Docker (opcional, para desarrollo local)
+
+
+## 🧪 Testing
+
+### Comandos de Testing
+
+```bash
+# Tests unitarios (rápido, sin Docker)
+make test-unit
+
+# Tests con cobertura
+make coverage-report
+
+# Verificar umbral de cobertura (60%)
+make coverage-check
+
+# Tests de integración (requiere Docker)
+make test-integration
+
+# Todos los tests
+make test-all
+```
+
+### Métricas de Calidad
+
+- **Cobertura de Código**: 35.3% (meta: 60%)
+- **Tests Unitarios**: 139+ tests
+- **Value Objects**: 100% de cobertura ⭐
+- **Entities**: 53.1% de cobertura
+
+### Documentación
+
+- [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) - Guía principal
+- [TESTING_UNIT_GUIDE.md](docs/TESTING_UNIT_GUIDE.md) - Tests unitarios
+- [TESTING_INTEGRATION_GUIDE.md](docs/TESTING_INTEGRATION_GUIDE.md) - Tests de integración
+
 
 ## Configuración
 
