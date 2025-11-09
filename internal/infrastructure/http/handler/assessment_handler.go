@@ -30,11 +30,11 @@ func NewAssessmentHandler(assessmentService service.AssessmentService, logger lo
 // @Tags assessments
 // @Produce json
 // @Param id path string true "Material ID (UUID format)"
-// @Success 200 {object} repository.MaterialAssessment "Assessment retrieved successfully"
+// @Success 200 {object} map[string]interface{} "Assessment retrieved successfully"
 // @Failure 400 {object} ErrorResponse "Invalid material ID format"
 // @Failure 404 {object} ErrorResponse "Assessment not found for this material"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/assessment [get]
+// @Router /v1/materials/{id}/assessment [get]
 // @Security BearerAuth
 func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 	id := c.Param("id")
@@ -60,12 +60,12 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Material ID (UUID format)"
 // @Param request body map[string]interface{} true "User answers (question_id -> answer mapping)"
-// @Success 200 {object} repository.AssessmentAttempt "Attempt recorded successfully with score"
+// @Success 200 {object} map[string]interface{} "Attempt recorded successfully with score"
 // @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
 // @Failure 401 {object} ErrorResponse "User not authenticated"
 // @Failure 404 {object} ErrorResponse "Assessment not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/assessment/attempts [post]
+// @Router /v1/materials/{id}/assessment/attempts [post]
 // @Security BearerAuth
 func (h *AssessmentHandler) RecordAttempt(c *gin.Context) {
 	id := c.Param("id")
@@ -99,12 +99,12 @@ func (h *AssessmentHandler) RecordAttempt(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Assessment ID (Material ID)"
 // @Param request body SubmitAssessmentRequest true "User responses"
-// @Success 200 {object} repository.AssessmentResult "Resultado con score y feedback detallado"
+// @Success 200 {object} map[string]interface{} "Resultado con score y feedback detallado"
 // @Failure 400 {object} ErrorResponse "Invalid request or assessment_id"
 // @Failure 404 {object} ErrorResponse "Assessment not found"
 // @Failure 409 {object} ErrorResponse "Assessment already completed by user"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /assessments/{id}/submit [post]
+// @Router /v1/assessments/{id}/submit [post]
 // @Security BearerAuth
 func (h *AssessmentHandler) SubmitAssessment(c *gin.Context) {
 	assessmentID := c.Param("id")

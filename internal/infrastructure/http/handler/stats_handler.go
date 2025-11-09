@@ -28,11 +28,11 @@ func NewStatsHandler(statsService service.StatsService, logger logger.Logger) *S
 // @Tags stats
 // @Produce json
 // @Param id path string true "Material ID (UUID format)"
-// @Success 200 {object} service.MaterialStats "Material statistics retrieved successfully"
+// @Success 200 {object} map[string]interface{} "Material statistics retrieved successfully"
 // @Failure 400 {object} ErrorResponse "Invalid material ID format"
 // @Failure 404 {object} ErrorResponse "Material not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/stats [get]
+// @Router /v1/materials/{id}/stats [get]
 // @Security BearerAuth
 func (h *StatsHandler) GetMaterialStats(c *gin.Context) {
 	id := c.Param("id")
@@ -55,10 +55,10 @@ func (h *StatsHandler) GetMaterialStats(c *gin.Context) {
 // @Description Obtiene estadísticas globales del sistema (solo admins)
 // @Tags stats
 // @Produce json
-// @Success 200 {object} dto.GlobalStatsDTO
+// @Success 200 {object} map[string]interface{}
 // @Failure 403 {object} ErrorResponse "Forbidden - solo admins"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /api/v1/stats/global [get]
+// @Router /v1/stats/global [get]
 // @Security BearerAuth
 func (h *StatsHandler) GetGlobalStats(c *gin.Context) {
 	// Obtener estadísticas globales del servicio

@@ -42,7 +42,7 @@ func NewMaterialHandler(materialService service.MaterialService, s3Storage s3.S3
 // @Failure 400 {object} ErrorResponse "Invalid request body or validation error"
 // @Failure 401 {object} ErrorResponse "User not authenticated"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials [post]
+// @Router /v1/materials [post]
 // @Security BearerAuth
 func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
 	var req dto.CreateMaterialRequest
@@ -83,7 +83,7 @@ func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid material ID format"
 // @Failure 404 {object} ErrorResponse "Material not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id} [get]
+// @Router /v1/materials/{id} [get]
 // @Security BearerAuth
 func (h *MaterialHandler) GetMaterial(c *gin.Context) {
 	id := c.Param("id")
@@ -111,7 +111,7 @@ func (h *MaterialHandler) GetMaterial(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid UUID format"
 // @Failure 404 {object} ErrorResponse "Material not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/versions [get]
+// @Router /v1/materials/{id}/versions [get]
 // @Security BearerAuth
 func (h *MaterialHandler) GetMaterialWithVersions(c *gin.Context) {
 	// Obtener materialID del path parameter
@@ -166,7 +166,7 @@ func (h *MaterialHandler) GetMaterialWithVersions(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
 // @Failure 404 {object} ErrorResponse "Material not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/upload-complete [post]
+// @Router /v1/materials/{id}/upload-complete [post]
 // @Security BearerAuth
 func (h *MaterialHandler) NotifyUploadComplete(c *gin.Context) {
 	id := c.Param("id")
@@ -198,7 +198,7 @@ func (h *MaterialHandler) NotifyUploadComplete(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} dto.MaterialResponse "List of materials retrieved successfully"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials [get]
+// @Router /v1/materials [get]
 // @Security BearerAuth
 func (h *MaterialHandler) ListMaterials(c *gin.Context) {
 	// Por ahora sin filtros (se pueden agregar después)
@@ -226,7 +226,7 @@ func (h *MaterialHandler) ListMaterials(c *gin.Context) {
 // @Success 200 {object} dto.GenerateUploadURLResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
-// @Router /materials/{id}/upload-url [post]
+// @Router /v1/materials/{id}/upload-url [post]
 // @Security BearerAuth
 func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
 	materialID := c.Param("id")
@@ -304,7 +304,7 @@ func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
 // @Param id path string true "Material ID"
 // @Success 200 {object} dto.GenerateDownloadURLResponse
 // @Failure 404 {object} ErrorResponse
-// @Router /materials/{id}/download-url [get]
+// @Router /v1/materials/{id}/download-url [get]
 // @Security BearerAuth
 func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 	materialID := c.Param("id")
