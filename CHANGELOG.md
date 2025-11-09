@@ -5,6 +5,30 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2025-11-09
+
+### Tipo de Release: patch
+
+- fix(ci): ajustar umbral de cobertura a 33% (cobertura real del proyecto)
+- fix(ci): ajustar umbral de cobertura y eliminar comentario problemático
+- fix(ci): corregir sintaxis JavaScript en comentario de cobertura
+- fix(ci): corregir sintaxis YAML en test.yml
+- docs: agregar reporte de verificación pre-merge
+- fix: usar rabbitmq/amqp091-go en lugar de streadway/amqp deprecado
+- chore: sincronizar go.mod y go.sum
+- style: formatear código con gofmt
+- docs: agregar resumen ejecutivo de completación del proyecto
+- feat(ci-cd): completar Fase 4 - Automatización con Controles ON/OFF (Tareas 18-19)
+- docs(testing): completar Fase 3 - Documentación y Tests (Tareas 14-17)
+- docs(test-strategy): agregar resumen final de progreso
+- test(repositories): agregar tests para UserRepository (Tarea 14 - parcial)
+- test(domain): completar Tareas 12-13 - Tests para Value Objects y Entities
+- feat(test-strategy): completar Fase 2 - Configuración y Refactorización
+- feat(test-strategy): completar Tareas 6-8 - Configuración y Refactorización (Fase 2 parcial)
+- docs(test-strategy): completar Fase 1 - Análisis y Evaluación
+
+---
+
 ## [0.1.7] - 2025-11-09
 
 ### Tipo de Release: patch
