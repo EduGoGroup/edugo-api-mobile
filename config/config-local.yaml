@@ -7,19 +7,29 @@ server:
 database:
   postgres:
     host: "localhost"
+    password: "edugo123"
     # password: Set via DATABASE_POSTGRES_PASSWORD environment variable
 
   mongodb:
+    uri: "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin"
     # uri: Set via DATABASE_MONGODB_URI environment variable
 
 messaging:
   rabbitmq:
+    url: "amqp://edugo:edugo123@localhost:5672/"
     # url: Set via MESSAGING_RABBITMQ_URL environment variable
 
 logging:
   level: "debug"
   format: "text" # Más legible en consola
 
+storage:
+  s3:
+    access_key_id: "AKIAIOSFODNN7EXAMPLE"
+    secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    bucket_name: "edugo-materials"
+
+jwt_secret: "dev-secret-key-change-in-production"
 bootstrap:
   optional_resources:
     # En desarrollo local, RabbitMQ y S3 son opcionales

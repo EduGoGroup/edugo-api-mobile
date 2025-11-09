@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
@@ -131,15 +132,18 @@ func SetupTestApp(t *testing.T) *TestApp {
 	// JWT Secret para tests
 	jwtSecret := "test-jwt-secret-key-very-secure-for-testing-only"
 
+	// Crear Resources para Container DI
+	resources := &bootstrap.Resources{
+		Logger:            testLogger,
+		PostgreSQL:        db,
+		MongoDB:           mongodb,
+		RabbitMQPublisher: publisher,
+		S3Client:          s3Client,
+		JWTSecret:         jwtSecret,
+	}
+
 	// Crear Container DI
-	c := container.NewContainer(
-		db,
-		mongodb,
-		publisher,
-		s3Client,
-		jwtSecret,
-		testLogger,
-	)
+	c := container.NewContainer(resources)
 
 	t.Log("✅ Container DI initialized")
 
