@@ -96,18 +96,19 @@ jobs:
             const match = coverage.match(/(\d+\.\d+)%/);
             const percentage = match ? match[1] : 'N/A';
             const threshold = ${{ env.COVERAGE_THRESHOLD }};
-            
+
             let body = '## 📊 Reporte de Cobertura\n\n';
             body += 'Cobertura total: ' + percentage + '%\n';
             body += 'Umbral minimo: ' + threshold + '%\n\n';
-            
+
             if (percentage >= threshold) {
               body += '✅ Cobertura aprobada\n\n';
             } else {
               body += '⚠️ Cobertura por debajo del umbral\n\n';
             }
-            
-            body += '[Ver reporte completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})';
+
+            const repoUrl = 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            body += '[Ver reporte completo](' + repoUrl + ')';
 
             github.rest.issues.createComment({
               owner: context.repo.owner,
