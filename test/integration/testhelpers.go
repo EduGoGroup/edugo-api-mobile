@@ -267,11 +267,15 @@ func CleanMongoCollections(t *testing.T, mongodb *mongo.Database) {
 }
 
 // SeedTestUser crea un usuario de prueba en PostgreSQL
+// SeedTestUser crea un usuario de prueba con credenciales conocidas
+// Contraseña sin encriptar: Test1234!
+// Email: test@edugo.com
+// Role: student
 func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 	t.Helper()
 
 	email = "test@edugo.com"
-	password := "Test1234!"
+	password := "Test1234!" // Contraseña sin encriptar para uso en tests de login
 
 	// Generar hash de contraseña
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -290,15 +294,18 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 		t.Fatalf("Failed to seed test user: %v", err)
 	}
 
-	t.Logf("👤 Test user created: %s (email: %s)", userID, email)
+	t.Logf("👤 Test user created: %s (email: %s, password: %s)", userID, email, password)
 	return userID, email
 }
 
 // SeedTestUserWithEmail crea un usuario de prueba con un email específico
+// SeedTestUserWithEmail crea un usuario de prueba con email personalizado
+// Contraseña sin encriptar: Test1234!
+// Role: student (por defecto)
 func SeedTestUserWithEmail(t *testing.T, db *sql.DB, email string) (userID string, emailOut string) {
 	t.Helper()
 
-	password := "Test1234!"
+	password := "Test1234!" // Contraseña sin encriptar para uso en tests de login
 
 	// Generar hash de contraseña
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -317,7 +324,7 @@ func SeedTestUserWithEmail(t *testing.T, db *sql.DB, email string) (userID strin
 		t.Fatalf("Failed to seed test user: %v", err)
 	}
 
-	t.Logf("👤 Test user created: %s (email: %s)", userID, email)
+	t.Logf("👤 Test user created: %s (email: %s, password: %s)", userID, email, password)
 	return userID, email
 }
 
@@ -527,4 +534,145 @@ func (m *mockPublisher) Publish(ctx context.Context, exchange, routingKey string
 
 func (m *mockPublisher) Close() error {
 	return nil
+}
+
+// TestUser representa un usuario de prueba con sus credenciales sin encriptar
+type TestUser struct {
+	ID       string
+	Email    string
+	Password string // Contraseña sin encriptar para uso en tests
+	Role     string
+}
+
+// SeedTestUsers crea múltiples usuarios de prueba con un rol específico
+// Contraseña sin encriptar para todos: Test1234!
+// Emails: test1@edugo.com, test2@edugo.com, etc.
+func SeedTestUsers(t *testing.T, db *sql.DB, count int, role string) []TestUser {
+	t.Helper()
+
+	users := make([]TestUser, count)
+	password := "Test1234!"
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+
+	for i := 0; i < count; i++ {
+		email := fmt.Sprintf("test%d@edugo.com", i+1)
+		firstName := fmt.Sprintf("Test%d", i+1)
+
+		var userID string
+		query := `
+			INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
+			VALUES ($1, $2, $3, 'User', $4, true, NOW(), NOW())
+			RETURNING id
+		`
+		err := db.QueryRow(query, email, string(hashedPassword), firstName, role).Scan(&userID)
+		if err != nil {
+			t.Fatalf("Failed to seed test user %d: %v", i+1, err)
+		}
+
+		users[i] = TestUser{
+			ID:       userID,
+			Email:    email,
+			Password: password,
+			Role:     role,
+		}
+	}
+
+	t.Logf("👥 Created %d test users with role: %s (password: %s)", count, role, password)
+	return users
+}
+
+// TestScenario representa un escenario completo de prueba con múltiples entidades
+type TestScenario struct {
+	Teacher     TestUser
+	Students    []TestUser
+	Materials   []string // IDs de materiales
+	Assessments []string // IDs de assessments (mismo que material ID)
+}
+
+// SeedCompleteTestScenario crea un escenario completo de prueba
+// Incluye: 1 teacher, N students, materiales y assessments
+// Contraseña para todos los usuarios: Test1234!
+func SeedCompleteTestScenario(t *testing.T, db *sql.DB, mongodb *mongo.Database, numStudents int) *TestScenario {
+	t.Helper()
+
+	// 1. Crear teacher
+	teacherID, teacherEmail := SeedTestUserWithEmail(t, db, "teacher@edugo.com")
+	// Actualizar rol a teacher
+	_, err := db.Exec("UPDATE users SET role = 'teacher' WHERE id = $1", teacherID)
+	if err != nil {
+		t.Fatalf("Failed to update teacher role: %v", err)
+	}
+
+	teacher := TestUser{
+		ID:       teacherID,
+		Email:    teacherEmail,
+		Password: "Test1234!",
+		Role:     "teacher",
+	}
+
+	// 2. Crear students
+	students := SeedTestUsers(t, db, numStudents, "student")
+
+	// 3. Crear materiales (2 por defecto)
+	material1 := SeedTestMaterialWithTitle(t, db, teacher.ID, "Introducción a Go")
+	material2 := SeedTestMaterialWithTitle(t, db, teacher.ID, "Testing en Go")
+	materials := []string{material1, material2}
+
+	// 4. Crear assessments para cada material
+	assessment1 := SeedTestAssessment(t, mongodb, material1)
+	assessment2 := SeedTestAssessment(t, mongodb, material2)
+	assessments := []string{assessment1, assessment2}
+
+	scenario := &TestScenario{
+		Teacher:     teacher,
+		Students:    students,
+		Materials:   materials,
+		Assessments: assessments,
+	}
+
+	t.Logf("🎬 Complete test scenario created:")
+	t.Logf("   Teacher: %s (%s)", teacher.Email, teacher.ID)
+	t.Logf("   Students: %d", len(students))
+	t.Logf("   Materials: %d", len(materials))
+	t.Logf("   Assessments: %d", len(assessments))
+	t.Logf("   Password for all users: Test1234!")
+
+	return scenario
+}
+
+// SeedTestUserWithRole crea un usuario de prueba con un rol específico
+// Contraseña sin encriptar: Test1234!
+func SeedTestUserWithRole(t *testing.T, db *sql.DB, email, role string) (userID string, emailOut string) {
+	t.Helper()
+
+	password := "Test1234!"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatalf("Failed to hash password: %v", err)
+	}
+
+	firstName := "Test"
+	lastName := "User"
+	if role == "teacher" {
+		firstName = "Teacher"
+	} else if role == "admin" {
+		firstName = "Admin"
+	}
+
+	query := `
+		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+		RETURNING id
+	`
+	err = db.QueryRow(query, email, string(hashedPassword), firstName, lastName, role).Scan(&userID)
+	if err != nil {
+		t.Fatalf("Failed to seed test user with role %s: %v", role, err)
+	}
+
+	t.Logf("👤 Test %s created: %s (email: %s, password: %s)", role, userID, email, password)
+	return userID, email
 }
