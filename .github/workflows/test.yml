@@ -96,39 +96,25 @@ jobs:
             const match = coverage.match(/(\d+\.\d+)%/);
             const percentage = match ? match[1] : 'N/A';
             const threshold = ${{ env.COVERAGE_THRESHOLD }};
-
-            const statusIcon = percentage >= threshold ? '✅' : '⚠️';
-            const statusText = percentage >= threshold ? 'Cobertura aprobada' : 'Cobertura por debajo del umbral';
-
-            const body = `## 📊 Reporte de Cobertura
-
-**Cobertura total (filtrada):** ${percentage}%
-**Umbral mínimo:** ${threshold}%
-
-${statusIcon} **${statusText}**
-
-<details>
-<summary>📋 Ver comandos disponibles</summary>
-
-\`\`\`bash
-# Ver reporte localmente
-make coverage-report
-open coverage/coverage.html
-
-# Verificar umbral
-make coverage-check
-
-# Saltar verificación (temporal)
-gh pr edit --add-label "skip-coverage"
-\`\`\`
-</details>
-
-[Ver reporte completo en Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            let body = '## 📊 Reporte de Cobertura\n\n';
+            body += 'Cobertura total: ' + percentage + '%\n';
+            body += 'Umbral minimo: ' + threshold + '%\n\n';
+            
+            if (percentage >= threshold) {
+              body += '✅ Cobertura aprobada\n\n';
+            } else {
+              body += '⚠️ Cobertura por debajo del umbral\n\n';
+            }
+            
+            body += '[Ver reporte completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})';
 
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
+              body: body
+            });
               body: body
             });
 
