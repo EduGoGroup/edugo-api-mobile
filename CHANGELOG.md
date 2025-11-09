@@ -5,6 +5,15 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2025-11-09
+
+### Tipo de Release: patch
+
+- fix(swagger): corregir ruta de endpoint /health en documentación Swagger
+- feat(workflows): implementar estrategia fast-forward para sincronización main ↔ dev
+
+---
+
 ## [0.1.6] - 2025-11-08
 
 ### Tipo de Release: patch
