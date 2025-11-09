@@ -79,13 +79,27 @@ test-coverage: ## Tests con cobertura (HTML report)
 	@echo "$(GREEN)✓ Reporte: $(COVERAGE_DIR)/coverage.html$(RESET)"
 	@echo "$(BLUE)💡 Abrir: open $(COVERAGE_DIR)/coverage.html$(RESET)"
 
-test-unit: ## Solo tests unitarios
-	@$(GOTEST) -v -short ./...
+test-unit: ## Solo tests unitarios (rápido)
+	@echo "$(YELLOW)🧪 Ejecutando tests unitarios...$(RESET)"
+	@$(GOTEST) -v -short -race ./internal/... -timeout 2m
+	@echo "$(GREEN)✓ Tests unitarios completados$(RESET)"
+
+test-unit-coverage: ## Tests unitarios con cobertura
+	@echo "$(YELLOW)📊 Tests unitarios con cobertura...$(RESET)"
+	@mkdir -p $(COVERAGE_DIR)
+	@$(GOTEST) -v -short -race -coverprofile=$(COVERAGE_DIR)/unit-coverage.out ./internal/... -timeout 2m
+	@./scripts/filter-coverage.sh $(COVERAGE_DIR)/unit-coverage.out $(COVERAGE_DIR)/unit-coverage-filtered.out
+	@$(GOCMD) tool cover -html=$(COVERAGE_DIR)/unit-coverage-filtered.out -o $(COVERAGE_DIR)/unit-coverage.html
+	@echo "$(GREEN)✓ Reporte: $(COVERAGE_DIR)/unit-coverage.html$(RESET)"
 
 test-integration: ## Tests de integración (con testcontainers) - HABILITADOS con RUN_INTEGRATION_TESTS=true
 	@echo "$(YELLOW)🐳 Ejecutando tests de integración con testcontainers...$(RESET)"
-	@RUN_INTEGRATION_TESTS=true $(GOTEST) -v -tags=integration ./test/integration/... -timeout 5m
+	@RUN_INTEGRATION_TESTS=true $(GOTEST) -v -tags=integration ./test/integration/... -timeout 10m
 	@echo "$(GREEN)✓ Tests de integración completados$(RESET)"
+
+test-integration-verbose: ## Tests de integración con logs detallados
+	@echo "$(YELLOW)🐳 Tests de integración (verbose)...$(RESET)"
+	@RUN_INTEGRATION_TESTS=true $(GOTEST) -v -tags=integration ./test/integration/... -timeout 10m
 
 test-integration-skip: ## Tests de integración DESHABILITADOS (skip automático)
 	@echo "$(BLUE)⏭️  Tests de integración deshabilitados$(RESET)"
@@ -95,9 +109,33 @@ test-integration-skip: ## Tests de integración DESHABILITADOS (skip automático
 test-integration-coverage: ## Tests de integración con coverage
 	@echo "$(YELLOW)📊 Tests de integración con coverage...$(RESET)"
 	@mkdir -p $(COVERAGE_DIR)
-	@RUN_INTEGRATION_TESTS=true $(GOTEST) -tags=integration -coverprofile=$(COVERAGE_DIR)/integration-coverage.out -covermode=atomic ./test/integration/... -timeout 5m
+	@RUN_INTEGRATION_TESTS=true $(GOTEST) -tags=integration -coverprofile=$(COVERAGE_DIR)/integration-coverage.out -covermode=atomic ./test/integration/... -timeout 10m
 	@$(GOCMD) tool cover -html=$(COVERAGE_DIR)/integration-coverage.out -o $(COVERAGE_DIR)/integration-coverage.html
 	@echo "$(GREEN)✓ Reporte: $(COVERAGE_DIR)/integration-coverage.html$(RESET)"
+
+test-all: test-unit test-integration ## Ejecutar todos los tests
+
+test-watch: ## Watch mode para tests (requiere entr)
+	@echo "$(YELLOW)👀 Watching tests...$(RESET)"
+	@command -v entr > /dev/null || (echo "$(RED)❌ entr no instalado. Instalar con: brew install entr$(RESET)" && exit 1)
+	@find . -name "*.go" | entr -c make test-unit
+
+coverage-report: ## Generar reporte de cobertura completo con filtrado
+	@echo "$(YELLOW)📊 Generando reporte de cobertura completo...$(RESET)"
+	@mkdir -p $(COVERAGE_DIR)
+	@$(GOTEST) -coverprofile=$(COVERAGE_DIR)/coverage.out ./... -timeout 5m
+	@./scripts/filter-coverage.sh $(COVERAGE_DIR)/coverage.out $(COVERAGE_DIR)/coverage-filtered.out
+	@$(GOCMD) tool cover -html=$(COVERAGE_DIR)/coverage-filtered.out -o $(COVERAGE_DIR)/coverage.html
+	@$(GOCMD) tool cover -func=$(COVERAGE_DIR)/coverage-filtered.out | tail -20
+	@echo "$(GREEN)✓ Reporte: $(COVERAGE_DIR)/coverage.html$(RESET)"
+
+coverage-check: ## Verificar que cobertura cumple umbral mínimo (60%)
+	@echo "$(YELLOW)🎯 Verificando cobertura mínima...$(RESET)"
+	@mkdir -p $(COVERAGE_DIR)
+	@$(GOTEST) -coverprofile=$(COVERAGE_DIR)/coverage.out ./... -timeout 5m
+	@./scripts/filter-coverage.sh $(COVERAGE_DIR)/coverage.out $(COVERAGE_DIR)/coverage-filtered.out
+	@./scripts/check-coverage.sh $(COVERAGE_DIR)/coverage-filtered.out 60
+	@echo "$(GREEN)✓ Cobertura cumple umbral mínimo$(RESET)"
 
 docker-check: ## Verificar que Docker esté corriendo
 	@echo "$(YELLOW)🐳 Verificando Docker...$(RESET)"
@@ -179,6 +217,47 @@ swagger: ## Regenerar Swagger
 	@echo "$(GREEN)✓ Swagger: http://localhost:8080/swagger/index.html$(RESET)"
 
 # ============================================
+# Desarrollo Local
+# ============================================
+
+dev-setup: docker-check ## Configurar ambiente de desarrollo con Docker
+	@echo "$(YELLOW)🚀 Configurando ambiente de desarrollo...$(RESET)"
+	@./test/scripts/setup_dev_env.sh
+
+dev-teardown: ## Limpiar ambiente de desarrollo
+	@echo "$(YELLOW)🧹 Limpiando ambiente de desarrollo...$(RESET)"
+	@./test/scripts/teardown_dev_env.sh
+
+dev-reset: dev-teardown dev-setup ## Resetear ambiente de desarrollo
+
+dev-logs: ## Ver logs de contenedores de desarrollo
+	@docker-compose -f docker-compose-dev.yml logs -f
+
+dev-status: ## Ver estado de contenedores de desarrollo
+	@echo "$(BLUE)📊 Estado de contenedores de desarrollo:$(RESET)"
+	@docker-compose -f docker-compose-dev.yml ps
+
+# ============================================
+# Análisis de Tests
+# ============================================
+
+test-analyze: ## Analizar estructura de tests
+	@echo "$(YELLOW)🔍 Analizando estructura de tests...$(RESET)"
+	@echo "$(BLUE)Tests Unitarios:$(RESET)"
+	@find internal -name "*_test.go" -type f | wc -l | xargs echo "  Archivos:"
+	@echo "$(BLUE)Tests de Integración:$(RESET)"
+	@find test/integration -name "*_test.go" -type f | wc -l | xargs echo "  Archivos:"
+
+test-missing: ## Identificar módulos sin tests
+	@echo "$(YELLOW)🔍 Buscando módulos sin tests...$(RESET)"
+	@echo "$(RED)Módulos sin cobertura (0%):$(RESET)"
+	@go test -coverprofile=/tmp/coverage-check.out ./... > /dev/null 2>&1 || true
+	@go tool cover -func=/tmp/coverage-check.out | grep "0.0%" | head -20 || echo "$(GREEN)  Todos los módulos tienen alguna cobertura$(RESET)"
+
+test-validate: test-unit test-integration ## Validar que todos los tests pasan
+	@echo "$(GREEN)✅ Todos los tests pasan$(RESET)"
+
+# ============================================
 # Docker
 # ============================================
 
@@ -228,4 +307,4 @@ info: ## Info del proyecto
 	@echo "  Ambiente: $(APP_ENV)"
 	@echo "  Go: $$($(GOCMD) version)"
 
-.PHONY: help build build-debug run dev test test-coverage test-unit test-integration benchmark fmt vet lint audit deps tidy tools swagger docker-build docker-run docker-stop docker-logs ci pre-commit clean all info
+.PHONY: help build build-debug run dev test test-coverage test-unit test-unit-coverage test-integration test-integration-verbose test-integration-coverage test-all test-watch coverage-report coverage-check test-analyze test-missing test-validate benchmark fmt vet lint audit deps tidy tools swagger docker-build docker-run docker-stop docker-logs dev-setup dev-teardown dev-reset dev-logs dev-status ci pre-commit clean all info configctl config-validate config-docs

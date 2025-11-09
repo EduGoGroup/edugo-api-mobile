@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: edugo-postgres-dev
+    environment:
+      POSTGRES_DB: edugo
+      POSTGRES_USER: edugo_user
+      POSTGRES_PASSWORD: edugo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./scripts/postgresql:/docker-entrypoint-initdb.d
+      - postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edugo_user -d edugo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    container_name: edugo-mongo-dev
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: edugo_admin
+      MONGO_INITDB_ROOT_PASSWORD: edugo_pass
+      MONGO_INITDB_DATABASE: edugo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-dev-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/edugo --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: edugo-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: edugo_user
+      RABBITMQ_DEFAULT_PASS: edugo_pass
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-dev-data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-dev-data:
+    driver: local
+  mongo-dev-data:
+    driver: local
+  rabbitmq-dev-data:
+    driver: local

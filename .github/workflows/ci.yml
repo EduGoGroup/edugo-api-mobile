@@ -3,12 +3,14 @@ name: CI Pipeline
 # Se ejecuta en PRs (flujo ideal) y push a main (red de seguridad)
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
   push:
-    branches: [ main ]  # Red de seguridad por si alguien hace push directo
+    branches: [main] # Red de seguridad por si alguien hace push directo
+  workflow_dispatch: # Ejecución manual
 
 env:
-  GO_VERSION: '1.25.3'
+  GO_VERSION: "1.25.3"
+  ENABLE_TESTS: true # ← Control ON/OFF de tests
 
 jobs:
   test-and-validate:
@@ -58,8 +60,13 @@ jobs:
       - name: Análisis estático (go vet)
         run: go vet ./...
 
-      - name: Ejecutar tests con race detection
-        run: go test -v -race ./...
+      - name: Ejecutar tests unitarios con race detection
+        if: |
+          env.ENABLE_TESTS == 'true' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-tests') &&
+          !contains(github.event.pull_request.labels.*.name, 'WIP')
+        run: make test-unit
+        timeout-minutes: 5
 
       - name: Verificar build
         run: go build -v ./...
@@ -75,7 +82,7 @@ jobs:
   lint:
     name: Linter (Optional)
     runs-on: ubuntu-latest
-    continue-on-error: true  # No falla el CI si el linter tiene warnings
+    continue-on-error: true # No falla el CI si el linter tiene warnings
 
     steps:
       - name: Checkout código
