@@ -35,7 +35,7 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 // @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
 // @Failure 401 {object} ErrorResponse "User not authenticated"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/progress [patch]
+// @Router /v1/materials/{id}/progress [patch]
 // @Security BearerAuth
 func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
 	id := c.Param("id")
@@ -76,7 +76,7 @@ func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
 // @Failure 401 {object} ErrorResponse "Unauthorized"
 // @Failure 403 {object} ErrorResponse "Forbidden (user can only update own progress)"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /api/v1/progress [put]
+// @Router /v1/progress [put]
 // @Security BearerAuth
 func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 	// Obtener userID del contexto (usuario autenticado)

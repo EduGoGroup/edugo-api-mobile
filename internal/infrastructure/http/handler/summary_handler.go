@@ -29,11 +29,11 @@ func NewSummaryHandler(summaryService service.SummaryService, logger logger.Logg
 // @Tags materials
 // @Produce json
 // @Param id path string true "Material ID (UUID format)"
-// @Success 200 {object} repository.MaterialSummary "Summary retrieved successfully"
+// @Success 200 {object} map[string]interface{} "Summary retrieved successfully"
 // @Failure 400 {object} ErrorResponse "Invalid material ID format"
 // @Failure 404 {object} ErrorResponse "Summary not found for this material"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /materials/{id}/summary [get]
+// @Router /v1/materials/{id}/summary [get]
 // @Security BearerAuth
 func (h *SummaryHandler) GetSummary(c *gin.Context) {
 	id := c.Param("id")

@@ -73,7 +73,7 @@ func main() {
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @BasePath /v1
+// @BasePath /
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
