@@ -35,7 +35,7 @@ func NewAuthHandler(authService service.AuthService, logger logger.Logger) *Auth
 // @Failure 400 {object} ErrorResponse "Invalid request body"
 // @Failure 401 {object} ErrorResponse "Invalid credentials"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /auth/login [post]
+// @Router /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 
@@ -73,7 +73,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid request body"
 // @Failure 401 {object} ErrorResponse "Invalid or expired refresh token"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /auth/refresh [post]
+// @Router /v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req dto.RefreshRequest
 
@@ -111,7 +111,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Invalid request body"
 // @Failure 401 {object} ErrorResponse "User not authenticated or invalid token"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /auth/logout [post]
+// @Router /v1/auth/logout [post]
 // @Security BearerAuth
 func (h *AuthHandler) Logout(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -152,7 +152,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Success 204 "No content - Todas las sesiones revocadas exitosamente"
 // @Failure 401 {object} ErrorResponse "User not authenticated"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /auth/revoke-all [post]
+// @Router /v1/auth/revoke-all [post]
 // @Security BearerAuth
 func (h *AuthHandler) RevokeAll(c *gin.Context) {
 	userID, exists := c.Get("user_id")

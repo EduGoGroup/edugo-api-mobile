@@ -4,41 +4,59 @@
 
 Esta tabla muestra **qué workflows se ejecutan en cada tipo de branch** para evitar ejecuciones innecesarias y notificaciones de falsos positivos:
 
-| Workflow | feature/* | main | PR a main/dev | Tags v* | Manual |
-|----------|-----------|------|---------------|---------|--------|
-| **ci.yml** | ❌ | ✅ | ✅ | ❌ | ❌ |
-| **test.yml** | ❌ | ❌ | ✅ | ❌ | ✅ |
-| **manual-release.yml** | ❌ | ❌ | ❌ | ❌ | ✅ (RECOMENDADO) |
-| **docker-only.yml** | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **release.yml** | ❌ | ❌ | ❌ | ✅ | ❌ |
-| **sync-main-to-dev.yml** | ❌ | ✅ | ❌ | ✅ | ❌ |
+| Workflow | feature/* | dev | main | PR a main/dev | Tags v* | Manual |
+|----------|-----------|-----|------|---------------|---------|--------|
+| **ci.yml** | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **test.yml** | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **manual-release.yml** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (RECOMENDADO) |
+| **docker-only.yml** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **release.yml** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| **sync-main-to-dev-ff.yml** | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ |
 
 ### 📌 Resumen por Escenario
 
 ```bash
-# Push a feature/* → SIN workflows automáticos
-git push origin feature/mi-feature
-# ✅ Sin ejecuciones, sin notificaciones
+# 1. Desarrollo en feature branch
+git checkout dev
+git checkout -b feature/nueva-funcionalidad
+git push origin feature/nueva-funcionalidad
+# ✅ Sin workflows automáticos
 
-# Crear PR desde feature/* → CI completo
-gh pr create --base main --head feature/mi-feature
+# 2. PR de feature → dev
+gh pr create --base dev --head feature/nueva-funcionalidad
 # ✅ ci.yml (tests, linter, security)
 # ✅ test.yml (cobertura)
-# ✅ Copilot code review
+# Merge después de aprobación
 
-# Merge PR a main → Solo CI
-# ✅ ci.yml se ejecuta
-# ⏸️ Espera a crear release manualmente
+# 3. Cuando estés listo para release: PR de dev → main
+gh pr create --base main --head dev --title "Release v0.1.7"
+# ✅ ci.yml valida todo
+# ✅ test.yml (cobertura)
+# Merge con estrategia: MERGE NORMAL (no squash, no rebase)
 
-# Crear release manualmente (RECOMENDADO)
+# 4. Crear release manualmente (RECOMENDADO) ⭐
 # Actions → Manual Release → Run workflow
-#   - Versión: 0.1.0
+#   - Branch: main
+#   - Versión: 0.1.7
 #   - Tipo: minor
-# ✅ manual-release.yml (actualiza version.txt, CHANGELOG, crea tag)
-# ✅ release.yml (build Docker, GitHub Release) - AUTOMÁTICO
-# ✅ sync-main-to-dev.yml (sincroniza con dev) - AUTOMÁTICO
+# ✅ manual-release.yml ejecuta:
+#    - Actualiza version.txt y CHANGELOG.md
+#    - Crea commit "chore: release v0.1.7" en main
+#    - Crea tag v0.1.7
+#    - Construye y publica imagen Docker
+#    - Crea GitHub Release
+# ✅ sync-main-to-dev-ff.yml (AUTOMÁTICO):
+#    - Fast-forward dev a main
+#    - Verifica que main y dev tengan mismo SHA
+#    - dev recibe el commit de release automáticamente
 
-# Build manual de Docker → Usar workflow_dispatch
+# 5. Verificar sincronización (opcional)
+git fetch origin
+git log --oneline origin/main..origin/dev  # ← Debe estar vacío
+git rev-parse origin/main                  # ← Mismo SHA
+git rev-parse origin/dev                   # ← Mismo SHA
+
+# Build manual de Docker para testing
 # Actions → Docker Build and Push → Run workflow
 # ✅ docker-only.yml (solo cuando lo necesites)
 ```
@@ -49,9 +67,65 @@ GitHub Actions **evalúa** todos los workflows en cualquier evento, pero solo **
 
 ---
 
-## 🤖 Configuración: GitHub App para Sincronización Automática
+## 🔀 Estrategia de Ramas: Fast-Forward Only
 
-Los workflows `manual-release.yml` y `sync-main-to-dev.yml` utilizan una **GitHub App** en lugar de `GITHUB_TOKEN` para poder disparar workflows subsecuentes.
+### Principio Fundamental
+
+**"main y dev SIEMPRE apuntan al mismo commit después de sincronización"**
+
+### Garantías
+
+```bash
+# Después de cada release:
+git rev-parse main == git rev-parse dev  # ← MISMO SHA
+git diff main dev                         # ← Sin diferencias
+git log main..dev                         # ← Vacío
+```
+
+### Flujo Visual
+
+```
+Estado Inicial (después de release):
+main: A---B---C (v0.1.6)
+dev:  A---B---C (v0.1.6) ← MISMO commit
+
+Desarrollo en dev:
+main: A---B---C (sin cambios)
+dev:  A---B---C---D---E (nueva feature)
+
+PR de dev → main (merge normal):
+main: A---B---C---D---E ← Fast-forward
+dev:  A---B---C---D---E ← IGUALES
+
+Manual Release (crea commit F):
+main: A---B---C---D---E---F (v0.1.7)
+                          ↑
+                      commit de release
+dev:  A---B---C---D---E (sin F todavía)
+
+Sync Automático (fast-forward):
+main: A---B---C---D---E---F (v0.1.7)
+dev:  A---B---C---D---E---F (v0.1.7) ← MISMO commit
+```
+
+### Ventajas
+
+- ✅ **Transparencia**: Historial idéntico, verificable visualmente
+- ✅ **Confianza**: Mismo SHA = mismo contenido GARANTIZADO
+- ✅ **Simplicidad**: Sin merges bidireccionales, sin commits de sync confusos
+- ✅ **Verificable**: `git log main..dev` siempre vacío después de sync
+
+### Documentación Completa
+
+Ver archivos en la raíz del proyecto:
+- `ESTRATEGIA_RAMAS_PROPUESTA.md` - Estrategia completa y plan de migración
+- `FLUJO_COMPLETO_RELEASE.md` - Flujo detallado paso a paso con ejemplos
+
+---
+
+## 🤖 Configuración: GitHub App para Sincronización Automática (Opcional)
+
+El workflow `sync-main-to-dev-ff.yml` usa `GITHUB_TOKEN` por defecto, que es suficiente para el flujo actual.
 
 ### ¿Por qué GitHub App?
 
