@@ -70,10 +70,10 @@ func TestProgress_UpdateProgress_ValidPercentages(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name            string
-		percentage      int
-		expectedStatus  enum.ProgressStatus
-		shouldBeValid   bool
+		name           string
+		percentage     int
+		expectedStatus enum.ProgressStatus
+		shouldBeValid  bool
 	}{
 		{
 			name:           "0% es válido (not started)",
