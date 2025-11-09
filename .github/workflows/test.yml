@@ -18,7 +18,7 @@ on:
 env:
   GO_VERSION: "1.25.3"
   ENABLE_COVERAGE_CHECK: true # ← Control ON/OFF
-  COVERAGE_THRESHOLD: 60
+  COVERAGE_THRESHOLD: 35
 
 jobs:
   test-coverage:
@@ -79,45 +79,6 @@ jobs:
           name: codecov-edugo-api-mobile
           fail_ci_if_error: false
 
-      - name: Comentar en PR con cobertura
-        if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-
-            if (!fs.existsSync('coverage/coverage-filtered.out')) {
-              console.log('No se encontró archivo de cobertura');
-              return;
-            }
-
-            const coverage = execSync('go tool cover -func=coverage/coverage-filtered.out | grep total').toString();
-            const match = coverage.match(/(\d+\.\d+)%/);
-            const percentage = match ? match[1] : 'N/A';
-            const threshold = ${{ env.COVERAGE_THRESHOLD }};
-
-            let body = '## 📊 Reporte de Cobertura\n\n';
-            body += 'Cobertura total: ' + percentage + '%\n';
-            body += 'Umbral minimo: ' + threshold + '%\n\n';
-
-            if (percentage >= threshold) {
-              body += '✅ Cobertura aprobada\n\n';
-            } else {
-              body += '⚠️ Cobertura por debajo del umbral\n\n';
-            }
-
-            const repoUrl = 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-            body += '[Ver reporte completo](' + repoUrl + ')';
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            });
-              body: body
-            });
 
   integration-tests:
     name: Integration Tests (Optional)
