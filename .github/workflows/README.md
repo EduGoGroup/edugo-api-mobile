@@ -710,3 +710,71 @@ Si vas a replicar estos workflows en otros proyectos:
 **Última actualización:** 2025-11-01
 **Mantenedor:** Equipo EduGo
 **Proyecto:** edugo-api-mobile
+
+## 🧪 Workflows de Testing (Nuevos - 2025-11-09)
+
+### **test-unit-quick.yml** - Tests Unitarios Rápidos
+
+**NO IMPLEMENTADO** (se usa ci.yml mejorado)
+
+Los tests unitarios se ejecutan dentro de `ci.yml` con control ON/OFF mediante:
+- Variable: `ENABLE_TESTS: true`
+- Labels: `skip-tests`, `WIP`
+
+### **test-coverage.yml** - Verificación de Cobertura
+
+**MEJORADO** (test.yml existente)
+
+Ahora incluye:
+- ✅ Filtrado de cobertura con .coverignore
+- ✅ Scripts check-coverage.sh
+- ✅ Control con label `skip-coverage`
+- ✅ Umbral configurable en workflow_dispatch
+- ✅ Comentario mejorado en PR con comandos útiles
+
+### **Control de Testing con Labels**
+
+Agrega labels a tus PRs para controlar la ejecución:
+
+```bash
+# Saltar TODOS los tests
+gh pr edit 123 --add-label "skip-tests"
+
+# Saltar solo verificación de cobertura
+gh pr edit 123 --add-label "skip-coverage"
+
+# Ejecutar tests de integración (deshabilitados por defecto)
+gh pr edit 123 --add-label "run-integration-tests"
+
+# Work in Progress (salta tests automáticamente)
+gh pr create --draft --label "WIP"
+```
+
+### **Archivo de Configuración Central**
+
+Ver: `.github/testing-config.yml`
+
+Controla globalmente:
+- ON/OFF de cada tipo de test
+- Umbrales de cobertura
+- Timeouts
+- Reglas por branch (main vs dev vs feature)
+
+---
+
+## 📊 Badges Agregados al README
+
+Los siguientes badges se agregaron al README:
+
+1. **CI Pipeline**: Estado de integración continua
+2. **Tests with Coverage**: Estado de tests con cobertura
+3. **Codecov**: Porcentaje de cobertura (actualización automática)
+4. **Go Version**: Versión de Go del proyecto
+5. **Release**: Último release publicado
+
+Ver ejemplos en la cabecera del [README.md](../../README.md)
+
+---
+
+**Última actualización:** 2025-11-09  
+**Cambios:** Integración de sistema de testing mejorado

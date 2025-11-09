@@ -1,0 +1,142 @@
+# 🧪 Configuración de Testing para CI/CD
+# Este archivo controla el comportamiento de tests en GitHub Actions
+# Editar aquí para habilitar/deshabilitar tests sin modificar workflows
+
+# ============================================
+# Control Global
+# ============================================
+testing:
+  # Control maestro ON/OFF
+  enabled: true  # ← Cambiar a false para deshabilitar TODOS los tests
+
+  # ============================================
+  # Tests Unitarios
+  # ============================================
+  unit_tests:
+    enabled: true
+    timeout_minutes: 5
+    fail_on_error: true
+    run_in_parallel: true
+    use_race_detector: true
+
+    # Comandos make a ejecutar
+    commands:
+      - "make test-unit"
+
+  # ============================================
+  # Tests de Integración
+  # ============================================
+  integration_tests:
+    # DESHABILITADO por defecto (solo manual o con label)
+    enabled: false
+    timeout_minutes: 15
+    fail_on_error: true
+
+    # Control de ejecución
+    require_docker: true
+    require_label: "run-integration-tests"  # Label necesario en PR
+
+    # Comandos make a ejecutar
+    commands:
+      - "RUN_INTEGRATION_TESTS=true make test-integration"
+
+  # ============================================
+  # Cobertura de Código
+  # ============================================
+  coverage:
+    enabled: true
+
+    # Umbrales de cobertura
+    threshold_global: 60      # Umbral mínimo general
+    threshold_strict: 70      # Umbral estricto (para main)
+
+    # Comportamiento
+    fail_below_threshold: true  # false para solo advertir
+    fail_on_decrease: false     # true para fallar si cobertura baja
+
+    # Reportes
+    generate_html_report: true
+    upload_to_codecov: true
+    comment_on_pr: true
+
+    # Filtrado (usa .coverignore)
+    use_filtered_coverage: true
+
+    # Comandos make a ejecutar
+    commands:
+      - "make coverage-report"
+      - "make coverage-check"
+
+  # ============================================
+  # Configuración por Branch
+  # ============================================
+  branch_rules:
+    # Branch main (producción) - Estricto
+    main:
+      require_unit_tests: true
+      require_integration_tests: false  # Solo manual
+      require_coverage_check: true
+      min_coverage: 60
+      allow_skip_labels: false  # No permitir skip en main
+
+    # Branch dev (desarrollo) - Permisivo
+    dev:
+      require_unit_tests: true
+      require_integration_tests: false
+      require_coverage_check: true
+      min_coverage: 50  # Más permisivo
+      allow_skip_labels: true
+
+    # Feature branches - Muy Permisivo
+    feature:
+      require_unit_tests: false  # No bloquea desarrollo
+      require_integration_tests: false
+      require_coverage_check: false
+      min_coverage: 30
+      allow_skip_labels: true
+
+  # ============================================
+  # Labels Reconocidos
+  # ============================================
+  labels:
+    skip_all: "skip-tests"              # Salta todos los tests
+    skip_coverage: "skip-coverage"      # No valida umbral
+    skip_integration: "skip-integration" # Solo tests unitarios
+    run_full_suite: "run-full-suite"    # Ejecuta TODO
+    run_integration: "run-integration-tests" # Habilita integración
+    wip: "WIP"                          # Work in progress
+
+  # ============================================
+  # Optimización
+  # ============================================
+  optimization:
+    cache_dependencies: true
+    fail_fast: false  # Ejecutar todos aunque uno falle
+    upload_artifacts: true
+    artifact_retention_days: 30
+
+  # ============================================
+  # Notificaciones
+  # ============================================
+  notifications:
+    comment_on_pr: true
+    include_coverage_diff: true
+    include_failed_tests: true
+
+# ============================================
+# Notas de Uso
+# ============================================
+#
+# Para deshabilitar tests temporalmente:
+#   1. Cambiar testing.enabled: false
+#   2. Commit y push
+#
+# Para saltar tests en un PR específico:
+#   gh pr edit <num> --add-label "skip-tests"
+#
+# Para ejecutar integración en un PR:
+#   gh pr edit <num> --add-label "run-integration-tests"
+#
+# Para ajustar umbral de cobertura:
+#   Cambiar coverage.threshold_global: <valor>
+#

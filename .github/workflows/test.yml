@@ -2,12 +2,23 @@ name: Tests with Coverage
 
 # Manual o en PRs
 on:
-  workflow_dispatch:  # Manual desde GitHub UI
+  workflow_dispatch: # Manual desde GitHub UI
+    inputs:
+      coverage_threshold:
+        description: "Umbral de cobertura (%)"
+        type: number
+        default: 60
+      skip_coverage_check:
+        description: "Saltar verificación de umbral"
+        type: boolean
+        default: false
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
 
 env:
-  GO_VERSION: '1.25.3'
+  GO_VERSION: "1.25.3"
+  ENABLE_COVERAGE_CHECK: true # ← Control ON/OFF
+  COVERAGE_THRESHOLD: 60
 
 jobs:
   test-coverage:
@@ -33,26 +44,23 @@ jobs:
       - name: Descargar dependencias
         run: go mod download
 
-      - name: Ejecutar tests con cobertura
+      - name: Ejecutar tests con cobertura (con filtrado)
+        run: make coverage-report
+        timeout-minutes: 8
+
+      - name: Verificar umbral de cobertura
+        if: |
+          (env.ENABLE_COVERAGE_CHECK == 'true') &&
+          (!contains(github.event.pull_request.labels.*.name, 'skip-coverage')) &&
+          (github.event.inputs.skip_coverage_check != 'true')
         run: |
-          mkdir -p coverage
-          go test -v -race -coverprofile=coverage/coverage.out -covermode=atomic ./...
-
-          if [ -f coverage/coverage.out ]; then
-            echo ""
-            echo "📊 Cobertura de código:"
-            go tool cover -func=coverage/coverage.out | tail -1
-
-            echo ""
-            echo "📈 Top 10 paquetes con menor cobertura:"
-            go tool cover -func=coverage/coverage.out | sort -k3 -n | head -10
-          fi
-
-      - name: Generar reporte HTML
-        run: |
-          if [ -f coverage/coverage.out ]; then
-            go tool cover -html=coverage/coverage.out -o coverage/coverage.html
-          fi
+          THRESHOLD=${{ github.event.inputs.coverage_threshold || env.COVERAGE_THRESHOLD }}
+          ./scripts/check-coverage.sh coverage/coverage-filtered.out $THRESHOLD || {
+            echo "::warning::Cobertura por debajo del umbral de ${THRESHOLD}%"
+            echo "💡 Tip: Agrega label 'skip-coverage' al PR si es temporal"
+            exit 1
+          }
+        continue-on-error: false
 
       - name: Subir reporte de cobertura
         uses: actions/upload-artifact@v4
@@ -77,18 +85,45 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { execSync } = require('child_process');
 
-            if (!fs.existsSync('coverage/coverage.out')) {
+            if (!fs.existsSync('coverage/coverage-filtered.out')) {
               console.log('No se encontró archivo de cobertura');
               return;
             }
 
-            const { execSync } = require('child_process');
-            const coverage = execSync('go tool cover -func=coverage/coverage.out | tail -1').toString();
+            const coverage = execSync('go tool cover -func=coverage/coverage-filtered.out | grep total').toString();
             const match = coverage.match(/(\d+\.\d+)%/);
             const percentage = match ? match[1] : 'N/A';
+            const threshold = ${{ env.COVERAGE_THRESHOLD }};
 
-            const body = `## 📊 Reporte de Cobertura\n\n**Cobertura total:** ${percentage}%\n\n[Ver reporte completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            const statusIcon = percentage >= threshold ? '✅' : '⚠️';
+            const statusText = percentage >= threshold ? 'Cobertura aprobada' : 'Cobertura por debajo del umbral';
+
+            const body = `## 📊 Reporte de Cobertura
+
+**Cobertura total (filtrada):** ${percentage}%
+**Umbral mínimo:** ${threshold}%
+
+${statusIcon} **${statusText}**
+
+<details>
+<summary>📋 Ver comandos disponibles</summary>
+
+\`\`\`bash
+# Ver reporte localmente
+make coverage-report
+open coverage/coverage.html
+
+# Verificar umbral
+make coverage-check
+
+# Saltar verificación (temporal)
+gh pr edit --add-label "skip-coverage"
+\`\`\`
+</details>
+
+[Ver reporte completo en Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
 
             github.rest.issues.createComment({
               owner: context.repo.owner,
