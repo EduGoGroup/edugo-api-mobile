@@ -28,6 +28,11 @@ func TestPostgresTablesExist(t *testing.T) {
 
 	t.Log("✅ Conectado a PostgreSQL")
 
+	// Ejecutar migraciones
+	err = RunPostgresMigrations(db)
+	assert.NoError(t, err)
+	t.Log("✅ Migraciones ejecutadas")
+
 	// Verificar que tablas principales existan
 	tables := []string{
 		"user",

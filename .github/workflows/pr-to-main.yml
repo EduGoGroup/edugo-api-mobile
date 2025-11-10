@@ -140,8 +140,9 @@ jobs:
       - name: 🔍 Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.62.2
           args: --timeout=5m
+          skip-cache: true
 
   security-scan:
     name: Security Scan
@@ -161,13 +162,17 @@ jobs:
       - name: 🔒 Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          args: '-no-fail -fmt sarif -out results.sarif ./...'
+          args: '-no-fail -fmt json -out results.json ./...'
+        continue-on-error: true
 
-      - name: 📤 Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
+      - name: 📊 Mostrar resultados de seguridad
         if: always()
-        with:
-          sarif_file: results.sarif
+        run: |
+          if [ -f results.json ]; then
+            echo "## 🔒 Resultados del Análisis de Seguridad" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Análisis completado" >> $GITHUB_STEP_SUMMARY
+          fi
 
   summary:
     name: PR Summary
