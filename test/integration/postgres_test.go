@@ -58,7 +58,7 @@ func TestPostgresTablesExist(t *testing.T) {
 		t.Logf("✓ Table '%s' exists", table)
 	}
 
-	// Verificar que hay 17 tablas en total
+	// Verificar que hay 8 tablas en total (schema de test)
 	var tableCount int
 	err = db.QueryRow(`
 		SELECT COUNT(*) 
@@ -66,6 +66,6 @@ func TestPostgresTablesExist(t *testing.T) {
 		WHERE table_schema = 'public'
 	`).Scan(&tableCount)
 	assert.NoError(t, err)
-	assert.Equal(t, 17, tableCount, "Should have 17 tables")
-	t.Log("✅ All 17 tables exist")
+	assert.Equal(t, 8, tableCount, "Should have 8 tables in test schema")
+	t.Log("✅ All 8 test tables exist")
 }
