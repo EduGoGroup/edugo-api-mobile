@@ -1,19 +1,25 @@
-name: Tests with Coverage
+name: Tests with Coverage (Manual)
 
-# Manual o en PRs
+# Solo ejecución manual - Los PRs usan workflows específicos
 on:
   workflow_dispatch: # Manual desde GitHub UI
     inputs:
+      test_type:
+        description: "Tipo de tests a ejecutar"
+        type: choice
+        options:
+          - unit
+          - integration
+          - all
+        default: all
       coverage_threshold:
         description: "Umbral de cobertura (%)"
         type: number
-        default: 60
+        default: 33
       skip_coverage_check:
         description: "Saltar verificación de umbral"
         type: boolean
         default: false
-  pull_request:
-    branches: [main, dev]
 
 env:
   GO_VERSION: "1.25.3"
@@ -21,56 +27,60 @@ env:
   COVERAGE_THRESHOLD: 33
 
 jobs:
-  test-coverage:
-    name: Tests with Coverage
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.test_type == 'unit' ||
+      github.event.inputs.test_type == 'all'
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout código
+      - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: 🔧 Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Configurar acceso a repos privados
+      - name: 🔐 Configurar acceso a repos privados
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
         env:
           GOPRIVATE: github.com/EduGoGroup/*
 
-      - name: Descargar dependencias
+      - name: 📦 Descargar dependencias
         run: go mod download
 
-      - name: Ejecutar tests con cobertura (con filtrado)
-        run: make coverage-report
-        timeout-minutes: 8
+      - name: 🧪 Ejecutar tests unitarios
+        run: make test-unit
+        timeout-minutes: 5
 
-      - name: Verificar umbral de cobertura
-        if: |
-          (env.ENABLE_COVERAGE_CHECK == 'true') &&
-          (!contains(github.event.pull_request.labels.*.name, 'skip-coverage')) &&
-          (github.event.inputs.skip_coverage_check != 'true')
+      - name: 📊 Generar reporte de cobertura
+        run: make coverage-report
+        timeout-minutes: 5
+
+      - name: ✅ Verificar umbral de cobertura
+        if: github.event.inputs.skip_coverage_check != 'true'
         run: |
           THRESHOLD=${{ github.event.inputs.coverage_threshold || env.COVERAGE_THRESHOLD }}
           ./scripts/check-coverage.sh coverage/coverage-filtered.out $THRESHOLD || {
             echo "::warning::Cobertura por debajo del umbral de ${THRESHOLD}%"
-            echo "💡 Tip: Agrega label 'skip-coverage' al PR si es temporal"
             exit 1
           }
         continue-on-error: false
 
-      - name: Subir reporte de cobertura
+      - name: 📤 Subir reporte de cobertura
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: coverage-report-manual
           path: coverage/
           retention-days: 30
 
-      - name: Subir a Codecov
+      - name: 📈 Subir a Codecov
         uses: codecov/codecov-action@v3
         if: success()
         with:
@@ -81,70 +91,47 @@ jobs:
 
 
   integration-tests:
-    name: Integration Tests (Optional)
+    name: Integration Tests
     runs-on: ubuntu-latest
-    continue-on-error: true
-
-    env:
-      # Deshabilitar tests de integración hasta que estén listos
-      SKIP_INTEGRATION_TESTS: "true"
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: edugo_test
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: edugo_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      mongodb:
-        image: mongo:7
-        env:
-          MONGO_INITDB_ROOT_USERNAME: edugo_test
-          MONGO_INITDB_ROOT_PASSWORD: test_password
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 27017:27017
+    if: |
+      github.event.inputs.test_type == 'integration' ||
+      github.event.inputs.test_type == 'all'
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout código
+      - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: 🔧 Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Configurar acceso a repos privados
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Configurar acceso a repos privados
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
         env:
           GOPRIVATE: github.com/EduGoGroup/*
 
-      - name: Descargar dependencias
+      - name: 📦 Descargar dependencias
         run: go mod download
 
-      - name: Ejecutar tests de integración
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_USER: edugo_test
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: edugo_test
-          MONGODB_URI: mongodb://edugo_test:test_password@localhost:27017/edugo_test?authSource=admin
-          APP_ENV: test
+      - name: 🐳 Verificar Docker
         run: |
-          # Ejecutar tests con tag de integración si existen
-          go test -v -tags=integration ./... || echo "No hay tests de integración configurados"
+          docker --version
+          docker ps
+
+      - name: 🧪 Ejecutar tests de integración
+        env:
+          RUN_INTEGRATION_TESTS: "true"
+        run: make test-integration
+        timeout-minutes: 10
+
+      - name: 🧹 Limpiar contenedores Docker
+        if: always()
+        run: |
+          docker ps -a | grep -E "postgres|mongo|rabbitmq" | awk '{print $1}' | xargs -r docker rm -f || true

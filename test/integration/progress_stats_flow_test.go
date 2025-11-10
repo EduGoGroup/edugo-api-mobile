@@ -17,7 +17,7 @@ import (
 // TestProgressFlow_UpsertProgress prueba crear progreso inicial
 func TestProgressFlow_UpsertProgress(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -78,7 +78,7 @@ func TestProgressFlow_UpsertProgress(t *testing.T) {
 // TestProgressFlow_UpsertProgressUpdate prueba actualizar progreso existente (idempotencia)
 func TestProgressFlow_UpsertProgressUpdate(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -147,7 +147,7 @@ func TestProgressFlow_UpsertProgressUpdate(t *testing.T) {
 // TestProgressFlow_UpsertProgressUnauthorized prueba actualizar progreso de otro usuario (403)
 func TestProgressFlow_UpsertProgressUnauthorized(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -201,7 +201,7 @@ func TestProgressFlow_UpsertProgressUnauthorized(t *testing.T) {
 // TestProgressFlow_UpsertProgressInvalidData prueba datos inválidos (400)
 func TestProgressFlow_UpsertProgressInvalidData(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -259,7 +259,7 @@ func TestProgressFlow_UpsertProgressInvalidData(t *testing.T) {
 // TestStatsFlow_GetMaterialStats prueba obtener estadísticas de un material
 func TestStatsFlow_GetMaterialStats(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -302,7 +302,7 @@ func TestStatsFlow_GetMaterialStats(t *testing.T) {
 // TestStatsFlow_GetGlobalStats prueba obtener estadísticas globales
 func TestStatsFlow_GetGlobalStats(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
