@@ -397,3 +397,336 @@ func TestAssessmentService_CalculateScore_IDInvalido(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
+
+// ============================================
+// Tests: GetAssessment
+// ============================================
+
+func TestAssessmentService_GetAssessment_Success(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	expectedAssessment := &repository.MaterialAssessment{
+		MaterialID: matID,
+		Questions: []repository.AssessmentQuestion{
+			{
+				ID:            "q1",
+				QuestionText:  "Test question",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+			},
+		},
+		CreatedAt: "2025-11-05T00:00:00Z",
+	}
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(expectedAssessment, nil)
+	mockLogger.On("Error", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.GetAssessment(context.Background(), materialID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, matID, result.MaterialID)
+	assert.Len(t, result.Questions, 1)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAssessmentService_GetAssessment_InvalidMaterialID(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	// Act
+	result, err := service.GetAssessment(context.Background(), "invalid-uuid")
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "invalid material_id")
+}
+
+func TestAssessmentService_GetAssessment_NotFound(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(nil, nil)
+	mockLogger.On("Error", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.GetAssessment(context.Background(), materialID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "not found")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAssessmentService_GetAssessment_DatabaseError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(nil, errors.New("database error"))
+	mockLogger.On("Error", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.GetAssessment(context.Background(), materialID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	mockRepo.AssertExpectations(t)
+}
+
+// ============================================
+// Tests: RecordAttempt
+// ============================================
+
+func TestAssessmentService_RecordAttempt_Success(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	assessment := &repository.MaterialAssessment{
+		MaterialID: matID,
+		Questions: []repository.AssessmentQuestion{
+			{
+				ID:            "q1",
+				QuestionText:  "Test question",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+			},
+		},
+		CreatedAt: "2025-11-05T00:00:00Z",
+	}
+
+	answers := map[string]interface{}{
+		"q1": "A",
+	}
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(assessment, nil)
+	mockRepo.On("SaveAttempt", mock.Anything, mock.AnythingOfType("*repository.AssessmentAttempt")).Return(nil)
+	mockPublisher.On("Publish", mock.Anything, "edugo.materials", "assessment.attempt.recorded", mock.Anything).Return(nil)
+	mockLogger.On("Info", mock.Anything, mock.Anything).Maybe()
+	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), materialID, userID, answers)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.NotEmpty(t, result.ID)
+	assert.Equal(t, matID, result.MaterialID)
+	assert.Equal(t, 75.0, result.Score) // Mock score
+
+	mockRepo.AssertExpectations(t)
+	mockPublisher.AssertExpectations(t)
+}
+
+func TestAssessmentService_RecordAttempt_InvalidMaterialID(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	answers := map[string]interface{}{"q1": "A"}
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), "invalid-uuid", userID, answers)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "invalid material_id")
+}
+
+func TestAssessmentService_RecordAttempt_InvalidUserID(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	answers := map[string]interface{}{"q1": "A"}
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), materialID, "invalid-uuid", answers)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "invalid user_id")
+}
+
+func TestAssessmentService_RecordAttempt_AssessmentNotFound(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	answers := map[string]interface{}{"q1": "A"}
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(nil, nil)
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), materialID, userID, answers)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "not found")
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAssessmentService_RecordAttempt_SaveAttemptError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	assessment := &repository.MaterialAssessment{
+		MaterialID: matID,
+		Questions: []repository.AssessmentQuestion{
+			{
+				ID:            "q1",
+				QuestionText:  "Test question",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+			},
+		},
+		CreatedAt: "2025-11-05T00:00:00Z",
+	}
+
+	answers := map[string]interface{}{"q1": "A"}
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(assessment, nil)
+	mockRepo.On("SaveAttempt", mock.Anything, mock.AnythingOfType("*repository.AssessmentAttempt")).Return(errors.New("database error"))
+	mockLogger.On("Error", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), materialID, userID, answers)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAssessmentService_RecordAttempt_PublishEventFailure(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockRepo := new(MockAssessmentRepository)
+	mockPublisher := new(MockPublisher)
+	mockLogger := new(MockLogger)
+
+	service := NewAssessmentService(mockRepo, mockPublisher, mockLogger)
+
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	assessment := &repository.MaterialAssessment{
+		MaterialID: matID,
+		Questions: []repository.AssessmentQuestion{
+			{
+				ID:            "q1",
+				QuestionText:  "Test question",
+				QuestionType:  enum.AssessmentTypeMultipleChoice,
+				CorrectAnswer: "A",
+			},
+		},
+		CreatedAt: "2025-11-05T00:00:00Z",
+	}
+
+	answers := map[string]interface{}{"q1": "A"}
+
+	mockRepo.On("FindAssessmentByMaterialID", mock.Anything, matID).Return(assessment, nil)
+	mockRepo.On("SaveAttempt", mock.Anything, mock.AnythingOfType("*repository.AssessmentAttempt")).Return(nil)
+	mockPublisher.On("Publish", mock.Anything, "edugo.materials", "assessment.attempt.recorded", mock.Anything).Return(errors.New("publish error"))
+	mockLogger.On("Info", mock.Anything, mock.Anything).Maybe()
+	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
+
+	// Act
+	result, err := service.RecordAttempt(context.Background(), materialID, userID, answers)
+
+	// Assert - Should succeed even if publish fails (non-blocking)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mockRepo.AssertExpectations(t)
+	mockPublisher.AssertExpectations(t)
+}

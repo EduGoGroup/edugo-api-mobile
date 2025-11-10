@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 )
 
@@ -155,5 +156,68 @@ func (m *MockAssessmentService) CalculateScore(ctx context.Context, assessmentID
 		TotalQuestions: 4,
 		CorrectAnswers: 3,
 		Feedback:       []repository.FeedbackItem{},
+	}, nil
+}
+
+// MockProgressService para tests de progress_handler
+type MockProgressService struct {
+	UpdateProgressFunc func(ctx context.Context, materialID, userID string, percentage, lastPage int) error
+}
+
+func (m *MockProgressService) UpdateProgress(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+	if m.UpdateProgressFunc != nil {
+		return m.UpdateProgressFunc(ctx, materialID, userID, percentage, lastPage)
+	}
+	return nil
+}
+
+// MockStatsService para tests de stats_handler
+type MockStatsService struct {
+	GetMaterialStatsFunc func(ctx context.Context, materialID string) (*service.MaterialStats, error)
+	GetGlobalStatsFunc   func(ctx context.Context) (*dto.GlobalStatsDTO, error)
+}
+
+func (m *MockStatsService) GetMaterialStats(ctx context.Context, materialID string) (*service.MaterialStats, error) {
+	if m.GetMaterialStatsFunc != nil {
+		return m.GetMaterialStatsFunc(ctx, materialID)
+	}
+	return &service.MaterialStats{
+		TotalViews:    150,
+		AvgProgress:   67.5,
+		TotalAttempts: 45,
+		AvgScore:      78.3,
+	}, nil
+}
+
+func (m *MockStatsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO, error) {
+	if m.GetGlobalStatsFunc != nil {
+		return m.GetGlobalStatsFunc(ctx)
+	}
+	return &dto.GlobalStatsDTO{
+		TotalPublishedMaterials:   150,
+		TotalCompletedAssessments: 1250,
+		AverageAssessmentScore:    78.5,
+		ActiveUsersLast30Days:     320,
+		AverageProgress:           65.3,
+	}, nil
+}
+
+// MockSummaryService para tests de summary_handler
+type MockSummaryService struct {
+	GetSummaryFunc func(ctx context.Context, materialID string) (*repository.MaterialSummary, error)
+}
+
+func (m *MockSummaryService) GetSummary(ctx context.Context, materialID string) (*repository.MaterialSummary, error) {
+	if m.GetSummaryFunc != nil {
+		return m.GetSummaryFunc(ctx, materialID)
+	}
+	return &repository.MaterialSummary{
+		MainIdeas:   []string{"Idea principal 1", "Idea principal 2"},
+		KeyConcepts: map[string]string{"concepto1": "definición1"},
+		Sections: []repository.SummarySection{
+			{Title: "Introducción", Content: "Contenido de introducción", Page: 1},
+		},
+		Glossary:  map[string]string{"término1": "definición1"},
+		CreatedAt: "2024-01-15T10:30:00Z",
 	}, nil
 }

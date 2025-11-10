@@ -4,8 +4,10 @@ package integration
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
@@ -52,7 +54,7 @@ func SetupContainers(t *testing.T) (*TestContainers, func()) {
 
 	// RabbitMQ
 	t.Log("🐰 Iniciando RabbitMQ testcontainer...")
-	rabbitContainer, err := rabbitmq.Run(ctx, "rabbitmq:3.12-management-alpine",
+	rabbitContainer, err := rabbitmq.Run(ctx, "rabbitmq:3.12-alpine", // Imagen más ligera sin management
 		rabbitmq.WithAdminUsername("edugo_user"),
 		rabbitmq.WithAdminPassword("edugo_pass"),
 	)
@@ -234,4 +236,57 @@ func SetupRabbitMQ(t *testing.T) (*rabbitmq.RabbitMQContainer, func()) {
 	}
 
 	return rabbitContainer, cleanup
+}
+
+// ConnectPostgresWithRetry conecta a PostgreSQL con reintentos automáticos
+// para manejar problemas temporales de conexión TCP
+func ConnectPostgresWithRetry(connStr string, maxRetries int) (*sql.DB, error) {
+	var db *sql.DB
+	var err error
+
+	for i := 0; i < maxRetries; i++ {
+		db, err = sql.Open("postgres", connStr)
+		if err == nil {
+			// Intentar ping para verificar conexión real
+			err = db.Ping()
+			if err == nil {
+				return db, nil
+			}
+		}
+
+		if i < maxRetries-1 {
+			// Esperar con backoff exponencial: 1s, 2s, 4s
+			waitTime := time.Second * time.Duration(1<<uint(i))
+			time.Sleep(waitTime)
+		}
+	}
+
+	return nil, fmt.Errorf("failed to connect after %d retries: %w", maxRetries, err)
+}
+
+// QueryRowWithRetry ejecuta una query con reintentos para manejar errores temporales
+func QueryRowWithRetry(db *sql.DB, query string, args ...interface{}) (*sql.Row, error) {
+	maxRetries := 3
+	var lastErr error
+
+	for i := 0; i < maxRetries; i++ {
+		row := db.QueryRow(query, args...)
+
+		// Intentar escanear para detectar errores de conexión
+		var testScan interface{}
+		err := row.Scan(&testScan)
+
+		if err == nil || err == sql.ErrNoRows {
+			// Recrear el row para que el caller pueda usarlo
+			return db.QueryRow(query, args...), nil
+		}
+
+		lastErr = err
+
+		if i < maxRetries-1 {
+			time.Sleep(time.Second * time.Duration(i+1))
+		}
+	}
+
+	return nil, fmt.Errorf("query failed after %d retries: %w", maxRetries, lastErr)
 }
