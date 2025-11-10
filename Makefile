@@ -183,16 +183,22 @@ swagger: ## Regenerar Swagger
 # Ambiente de Desarrollo
 # ============================================
 
-dev-setup: ## Configurar ambiente local (Docker)
+dev-init: ## Inicializar ambiente de desarrollo (Docker + DB + seed data)
+	@./scripts/dev-init.sh
+
+dev-setup: ## Configurar ambiente local (Docker) - llama a dev-init
 	@echo "$(YELLOW)🚀 Configurando ambiente...$(RESET)"
-	@docker ps > /dev/null 2>&1 || (echo "$(RED)❌ Docker no está corriendo$(RESET)" && exit 1)
-	@./test/scripts/setup_dev_env.sh
+	@./scripts/dev-init.sh
+
+dev-status: ## Mostrar estado del ambiente de desarrollo
+	@./scripts/dev-status.sh
+
+dev-reset: ## Resetear ambiente completo (⚠️  DESTRUCTIVO - borra datos)
+	@./scripts/dev-reset.sh
 
 dev-teardown: ## Limpiar ambiente local
 	@echo "$(YELLOW)🧹 Limpiando ambiente...$(RESET)"
 	@./test/scripts/teardown_dev_env.sh
-
-dev-reset: dev-teardown dev-setup ## Resetear ambiente completo
 
 # ============================================
 # Análisis y Validación
@@ -263,5 +269,5 @@ quick: fmt test-unit build ## Build rápido (sin integración)
         coverage-report coverage-check test-stats benchmark \
         fmt vet lint audit deps tidy tools configctl config-validate config-docs \
         swagger docker-build docker-up docker-down docker-logs \
-        dev-setup dev-teardown dev-reset \
+        dev-init dev-setup dev-status dev-reset dev-teardown \
         ci pre-commit clean info all quick

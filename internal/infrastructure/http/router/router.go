@@ -16,6 +16,7 @@ func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *
 	// Middleware global
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS())
+	r.Use(middleware.ClientInfoMiddleware()) // Extraer IP y User-Agent del cliente
 
 	// Health check (público, sin versión)
 	r.GET("/health", healthHandler.Check)

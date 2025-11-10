@@ -95,7 +95,7 @@ func setupTestContainers(t *testing.T, ctx context.Context) (*postgres.PostgresC
 
 	// Start PostgreSQL
 	t.Log("Starting PostgreSQL testcontainer...")
-	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
+	pgContainer, err := postgres.Run(ctx, "postgres:16-alpine",
 		postgres.WithDatabase("edugo_test"),
 		postgres.WithUsername("test_user"),
 		postgres.WithPassword("test_pass"),
@@ -302,7 +302,7 @@ func setupMinimalContainers(t *testing.T, ctx context.Context) (*postgres.Postgr
 
 	// Start PostgreSQL
 	t.Log("Starting PostgreSQL testcontainer...")
-	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
+	pgContainer, err := postgres.Run(ctx, "postgres:16-alpine",
 		postgres.WithDatabase("edugo_test"),
 		postgres.WithUsername("test_user"),
 		postgres.WithPassword("test_pass"),
@@ -425,7 +425,7 @@ func setupPostgresOnly(t *testing.T, ctx context.Context) *postgres.PostgresCont
 	t.Helper()
 
 	t.Log("Starting PostgreSQL testcontainer...")
-	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
+	pgContainer, err := postgres.Run(ctx, "postgres:16-alpine",
 		postgres.WithDatabase("edugo_test"),
 		postgres.WithUsername("test_user"),
 		postgres.WithPassword("test_pass"),
