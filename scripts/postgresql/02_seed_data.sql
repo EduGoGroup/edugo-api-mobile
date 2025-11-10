@@ -13,12 +13,17 @@
 -- Insertar usuarios de prueba
 -- =====================================================
 
+-- ⚠️  DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION
+-- All test users use the same password for convenience: password123
+
 -- Profesor 1: Juan Pérez
+-- Email: juan.perez@edugo.com
+-- Password: password123 (for development only)
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
 VALUES (
     '11111111-1111-1111-1111-111111111111',
     'juan.perez@edugo.com',
-    '$2a$10$example.hash.for.testing.only.password.123',  -- Hash bcrypt de "password123"
+    '$2a$12$IhuIXyaR1EyIIe3Jvdhut.Eb/lSj0n8gQR22jP2v7efg7xw1hubWS',  -- Hash bcrypt de "password123"
     'Juan',
     'Pérez',
     'teacher',
@@ -29,11 +34,13 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Profesor 2: María González
+-- Email: maria.gonzalez@edugo.com
+-- Password: password123 (for development only)
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
 VALUES (
     '22222222-2222-2222-2222-222222222222',
     'maria.gonzalez@edugo.com',
-    '$2a$10$example.hash.for.testing.only.password.123',
+    '$2a$12$IhuIXyaR1EyIIe3Jvdhut.Eb/lSj0n8gQR22jP2v7efg7xw1hubWS',
     'María',
     'González',
     'teacher',
@@ -44,11 +51,13 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Estudiante 1: Carlos Rodríguez
+-- Email: carlos.rodriguez@student.edugo.com
+-- Password: password123 (for development only)
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
 VALUES (
     '33333333-3333-3333-3333-333333333333',
     'carlos.rodriguez@student.edugo.com',
-    '$2a$10$example.hash.for.testing.only.password.123',
+    '$2a$12$IhuIXyaR1EyIIe3Jvdhut.Eb/lSj0n8gQR22jP2v7efg7xw1hubWS',
     'Carlos',
     'Rodríguez',
     'student',
@@ -59,11 +68,13 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Estudiante 2: Ana Martínez
+-- Email: ana.martinez@student.edugo.com
+-- Password: password123 (for development only)
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
 VALUES (
     '44444444-4444-4444-4444-444444444444',
     'ana.martinez@student.edugo.com',
-    '$2a$10$example.hash.for.testing.only.password.123',
+    '$2a$12$IhuIXyaR1EyIIe3Jvdhut.Eb/lSj0n8gQR22jP2v7efg7xw1hubWS',
     'Ana',
     'Martínez',
     'student',
@@ -74,11 +85,13 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Estudiante 3: Luis Fernández
+-- Email: luis.fernandez@student.edugo.com
+-- Password: password123 (for development only)
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
 VALUES (
     '55555555-5555-5555-5555-555555555555',
     'luis.fernandez@student.edugo.com',
-    '$2a$10$example.hash.for.testing.only.password.123',
+    '$2a$12$IhuIXyaR1EyIIe3Jvdhut.Eb/lSj0n8gQR22jP2v7efg7xw1hubWS',
     'Luis',
     'Fernández',
     'student',
@@ -350,3 +363,62 @@ END $$;
 
 -- Ver progreso de Carlos Rodríguez
 -- SELECT m.title, mp.percentage, mp.status, mp.last_accessed_at FROM material_progress mp JOIN materials m ON mp.material_id = m.id WHERE mp.user_id = '33333333-3333-3333-3333-333333333333' ORDER BY mp.last_accessed_at DESC;
+
+-- =====================================================
+-- Resumen de credenciales de usuarios de prueba
+-- =====================================================
+
+DO $
+DECLARE
+    user_record RECORD;
+BEGIN
+    RAISE NOTICE '';
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'TEST USER CREDENTIALS (DEVELOPMENT ONLY)';
+    RAISE NOTICE '====================================';
+    RAISE NOTICE '';
+    RAISE NOTICE '⚠️  WARNING: These credentials are for development/testing only!';
+    RAISE NOTICE '   DO NOT use these in production environments.';
+    RAISE NOTICE '';
+    RAISE NOTICE 'All users share the same password: password123';
+    RAISE NOTICE '';
+    RAISE NOTICE '------------------------------------';
+    RAISE NOTICE 'TEACHERS:';
+    RAISE NOTICE '------------------------------------';
+
+    FOR user_record IN
+        SELECT email, first_name, last_name, role
+        FROM users
+        WHERE role = 'teacher'
+        ORDER BY email
+    LOOP
+        RAISE NOTICE '  Email:    %', user_record.email;
+        RAISE NOTICE '  Password: password123';
+        RAISE NOTICE '  Name:     % %', user_record.first_name, user_record.last_name;
+        RAISE NOTICE '';
+    END LOOP;
+
+    RAISE NOTICE '------------------------------------';
+    RAISE NOTICE 'STUDENTS:';
+    RAISE NOTICE '------------------------------------';
+
+    FOR user_record IN
+        SELECT email, first_name, last_name, role
+        FROM users
+        WHERE role = 'student'
+        ORDER BY email
+    LOOP
+        RAISE NOTICE '  Email:    %', user_record.email;
+        RAISE NOTICE '  Password: password123';
+        RAISE NOTICE '  Name:     % %', user_record.first_name, user_record.last_name;
+        RAISE NOTICE '';
+    END LOOP;
+
+    RAISE NOTICE '====================================';
+    RAISE NOTICE 'Quick Login Test:';
+    RAISE NOTICE '  curl -X POST http://localhost:8080/api/v1/auth/login \';
+    RAISE NOTICE '    -H "Content-Type: application/json" \';
+    RAISE NOTICE '    -d ''{"email":"juan.perez@edugo.com","password":"password123"}''';
+    RAISE NOTICE '====================================';
+    RAISE NOTICE '';
+END $;
