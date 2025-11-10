@@ -236,3 +236,243 @@ func TestGetGlobalStats_DTOStructure(t *testing.T) {
 	assert.IsType(t, &dto.GlobalStatsDTO{}, stats)
 	assert.NotZero(t, stats.GeneratedAt, "GeneratedAt debe estar establecido")
 }
+
+// TestGetGlobalStats_MultipleErrors valida manejo cuando múltiples queries fallan
+func TestGetGlobalStats_MultipleErrors(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	// Configurar múltiples repos para retornar errores
+	mockMaterialRepo.On("CountPublishedMaterials", mock.Anything).Return(int64(0), errors.New("postgres error"))
+	mockAssessmentRepo.On("CountCompletedAssessments", mock.Anything).Return(int64(0), errors.New("mongo error"))
+	mockAssessmentRepo.On("CalculateAverageScore", mock.Anything).Return(float64(0), errors.New("mongo error"))
+	mockProgressRepo.On("CountActiveUsers", mock.Anything).Return(int64(0), errors.New("postgres error"))
+	mockProgressRepo.On("CalculateAverageProgress", mock.Anything).Return(float64(0), errors.New("postgres error"))
+
+	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
+	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
+
+	service := &statsService{
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
+	}
+
+	// Act
+	ctx := context.Background()
+	stats, err := service.GetGlobalStats(ctx)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, stats)
+}
+
+// TestGetGlobalStats_AverageScoreError valida error en cálculo de promedio de puntajes
+func TestGetGlobalStats_AverageScoreError(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	mockMaterialRepo.On("CountPublishedMaterials", mock.Anything).Return(int64(150), nil)
+	mockAssessmentRepo.On("CountCompletedAssessments", mock.Anything).Return(int64(320), nil)
+	// Error en cálculo de promedio
+	mockAssessmentRepo.On("CalculateAverageScore", mock.Anything).Return(float64(0), errors.New("calculation error"))
+	mockProgressRepo.On("CountActiveUsers", mock.Anything).Return(int64(85), nil)
+	mockProgressRepo.On("CalculateAverageProgress", mock.Anything).Return(float64(62.3), nil)
+
+	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
+	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
+
+	service := &statsService{
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
+	}
+
+	// Act
+	ctx := context.Background()
+	stats, err := service.GetGlobalStats(ctx)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, stats)
+}
+
+// TestGetGlobalStats_AverageProgressError valida error en cálculo de promedio de progreso
+func TestGetGlobalStats_AverageProgressError(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	mockMaterialRepo.On("CountPublishedMaterials", mock.Anything).Return(int64(150), nil)
+	mockAssessmentRepo.On("CountCompletedAssessments", mock.Anything).Return(int64(320), nil)
+	mockAssessmentRepo.On("CalculateAverageScore", mock.Anything).Return(float64(78.5), nil)
+	mockProgressRepo.On("CountActiveUsers", mock.Anything).Return(int64(85), nil)
+	// Error en cálculo de promedio de progreso
+	mockProgressRepo.On("CalculateAverageProgress", mock.Anything).Return(float64(0), errors.New("calculation error"))
+
+	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
+	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
+
+	service := &statsService{
+		logger:          mockLogger,
+		materialStats:   mockMaterialRepo,
+		assessmentStats: mockAssessmentRepo,
+		progressStats:   mockProgressRepo,
+	}
+
+	// Act
+	ctx := context.Background()
+	stats, err := service.GetGlobalStats(ctx)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, stats)
+}
+
+// Tests para GetMaterialStats
+
+// TestGetMaterialStats_Success valida obtención exitosa de estadísticas de material
+func TestGetMaterialStats_Success(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+
+	// Act
+	stats, err := service.GetMaterialStats(ctx, materialID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Equal(t, 150, stats.TotalViews)
+	assert.Equal(t, 67.5, stats.AvgProgress)
+	assert.Equal(t, 45, stats.TotalAttempts)
+	assert.Equal(t, 78.3, stats.AvgScore)
+}
+
+// TestGetMaterialStats_InvalidMaterialID valida error con materialID inválido
+func TestGetMaterialStats_InvalidMaterialID(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	ctx := context.Background()
+	materialID := "invalid-uuid"
+
+	// Act
+	stats, err := service.GetMaterialStats(ctx, materialID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, stats)
+	assert.Contains(t, err.Error(), "invalid material_id")
+}
+
+// TestGetMaterialStats_EmptyMaterialID valida error con materialID vacío
+func TestGetMaterialStats_EmptyMaterialID(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	ctx := context.Background()
+	materialID := ""
+
+	// Act
+	stats, err := service.GetMaterialStats(ctx, materialID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, stats)
+	assert.Contains(t, err.Error(), "invalid material_id")
+}
+
+// TestGetMaterialStats_ValidUUID valida que acepta cualquier UUID válido
+func TestGetMaterialStats_ValidUUID(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	ctx := context.Background()
+	materialIDs := []string{
+		"550e8400-e29b-41d4-a716-446655440000",
+		"660e8400-e29b-41d4-a716-446655440001",
+		"770e8400-e29b-41d4-a716-446655440002",
+	}
+
+	// Act & Assert
+	for _, materialID := range materialIDs {
+		stats, err := service.GetMaterialStats(ctx, materialID)
+		assert.NoError(t, err)
+		assert.NotNil(t, stats)
+	}
+}
+
+// TestGetMaterialStats_MockedValues valida que retorna valores mockeados correctos
+func TestGetMaterialStats_MockedValues(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+
+	// Act
+	stats, err := service.GetMaterialStats(ctx, materialID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, stats)
+	// Verificar valores específicos mockeados
+	assert.Greater(t, stats.TotalViews, 0, "TotalViews debe ser mayor a 0")
+	assert.Greater(t, stats.AvgProgress, 0.0, "AvgProgress debe ser mayor a 0")
+	assert.Greater(t, stats.TotalAttempts, 0, "TotalAttempts debe ser mayor a 0")
+	assert.Greater(t, stats.AvgScore, 0.0, "AvgScore debe ser mayor a 0")
+}
+
+// TestNewStatsService valida la creación del servicio
+func TestNewStatsService(t *testing.T) {
+	// Arrange
+	mockMaterialRepo := new(MockMaterialRepository)
+	mockAssessmentRepo := new(MockAssessmentRepository)
+	mockProgressRepo := new(MockProgressRepository)
+	mockLogger := new(MockLogger)
+
+	// Act
+	service := NewStatsService(mockLogger, mockMaterialRepo, mockAssessmentRepo, mockProgressRepo)
+
+	// Assert
+	assert.NotNil(t, service)
+	assert.Implements(t, (*StatsService)(nil), service)
+}

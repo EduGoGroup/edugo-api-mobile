@@ -676,3 +676,129 @@ func SeedTestUserWithRole(t *testing.T, db *sql.DB, email, role string) (userID 
 	t.Logf("👤 Test %s created: %s (email: %s, password: %s)", role, userID, email, password)
 	return userID, email
 }
+
+// SetupTestAppWithSharedContainers inicializa una aplicación completa para testing
+// usando contenedores compartidos para mejor performance
+func SetupTestAppWithSharedContainers(t *testing.T) *TestApp {
+	t.Helper()
+
+	// Skip si tests están deshabilitados
+	SkipIfIntegrationTestsDisabled(t)
+
+	// Obtener contenedores compartidos (se crean una sola vez)
+	containers, err := GetSharedContainers(t)
+	if err != nil {
+		t.Fatalf("Failed to get shared containers: %v", err)
+	}
+
+	// Limpiar datos de tests anteriores
+	if err := CleanSharedDatabases(t, containers); err != nil {
+		t.Logf("⚠️  Warning: Failed to clean databases: %v", err)
+	}
+
+	ctx := context.Background()
+
+	// Obtener connection strings
+	pgConnStr, err := containers.Postgres.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		t.Fatalf("Failed to get Postgres connection string: %v", err)
+	}
+
+	mongoConnStr, err := containers.MongoDB.ConnectionString(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get MongoDB connection string: %v", err)
+	}
+
+	rabbitConnStr, err := containers.RabbitMQ.AmqpURL(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get RabbitMQ connection string: %v", err)
+	}
+
+	// Conectar a PostgreSQL con retry
+	db, err := ConnectPostgresWithRetry(pgConnStr, 3)
+	if err != nil {
+		t.Fatalf("Failed to connect to Postgres: %v", err)
+	}
+
+	t.Log("✅ PostgreSQL connected")
+
+	// Crear schema básico para tests (si no existe)
+	if err := initTestSchema(db); err != nil {
+		db.Close()
+		t.Fatalf("Failed to init test schema: %v", err)
+	}
+
+	t.Log("✅ PostgreSQL schema initialized")
+
+	// Conectar a MongoDB
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoConnStr))
+	if err != nil {
+		db.Close()
+		t.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+
+	// Verificar conexión
+	if err := mongoClient.Ping(ctx, nil); err != nil {
+		mongoClient.Disconnect(ctx)
+		db.Close()
+		t.Fatalf("Failed to ping MongoDB: %v", err)
+	}
+
+	mongodb := mongoClient.Database("edugo_test")
+	t.Log("✅ MongoDB connected")
+
+	// Crear logger para tests (mock silencioso)
+	testLogger := &testLogger{}
+
+	// Crear RabbitMQ Publisher (opcional - puede fallar sin romper tests)
+	publisher, err := createTestRabbitMQPublisher(rabbitConnStr, testLogger)
+	if err != nil {
+		t.Logf("⚠️  Warning: RabbitMQ publisher failed (non-critical): %v", err)
+		// Usar mock publisher en lugar de fallar
+		publisher = &mockPublisher{}
+	}
+
+	// Crear S3 Client (mock para tests)
+	s3Client := createTestS3Client()
+
+	// JWT Secret para tests
+	jwtSecret := "test-jwt-secret-key-very-secure-for-testing-only"
+
+	// Crear Resources para Container DI
+	resources := &bootstrap.Resources{
+		Logger:            testLogger,
+		PostgreSQL:        db,
+		MongoDB:           mongodb,
+		RabbitMQPublisher: publisher,
+		S3Client:          s3Client,
+		JWTSecret:         jwtSecret,
+	}
+
+	// Crear Container DI
+	c := container.NewContainer(resources)
+
+	t.Log("✅ Container DI initialized")
+
+	// Cleanup ligero (NO destruye contenedores, solo cierra conexiones)
+	appCleanup := func() {
+		t.Log("🧹 Cleaning up test app...")
+		if c != nil {
+			c.Close()
+		}
+		if mongodb != nil {
+			mongoClient.Disconnect(ctx)
+		}
+		if db != nil {
+			db.Close()
+		}
+		// NO llamamos cleanup de contenedores - se reutilizan
+		t.Log("✅ Test app cleaned up")
+	}
+
+	return &TestApp{
+		Container: c,
+		DB:        db,
+		MongoDB:   mongodb,
+		Cleanup:   appCleanup,
+	}
+}

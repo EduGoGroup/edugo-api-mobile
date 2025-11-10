@@ -104,7 +104,7 @@ func TestMaterialRepository_FindByID_MaterialNotFound(t *testing.T) {
 	assert.Nil(t, material, "Material should be nil when not found")
 }
 
-func TestMaterialRepository_FindByAuthorID(t *testing.T) {
+func TestMaterialRepository_FindByAuthor(t *testing.T) {
 	// Arrange
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -124,7 +124,7 @@ func TestMaterialRepository_FindByAuthorID(t *testing.T) {
 	}
 
 	// Act
-	materials, err := repo.FindByAuthorID(context.Background(), authorID)
+	materials, err := repo.FindByAuthor(context.Background(), authorID)
 
 	// Assert
 	require.NoError(t, err)

@@ -460,3 +460,367 @@ func TestAssessmentHandler_SubmitAssessment_AssessmentAlreadyCompleted(t *testin
 	assert.Equal(t, "ASSESSMENT_ALREADY_COMPLETED", errorResponse.Code)
 	assert.Contains(t, errorResponse.Error, "assessment already completed")
 }
+
+// ============================================
+// Tests: GetAssessment
+// ============================================
+
+func TestAssessmentHandler_GetAssessment_Success(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+
+	expectedAssessment := &repository.MaterialAssessment{
+		MaterialID: matID,
+		Questions: []repository.AssessmentQuestion{
+			{
+				ID:            "q1",
+				QuestionText:  "Test question",
+				QuestionType:  "multiple_choice",
+				CorrectAnswer: "A",
+			},
+		},
+		CreatedAt: "2025-11-05T00:00:00Z",
+	}
+
+	mockService := &MockAssessmentService{
+		GetAssessmentFunc: func(ctx context.Context, matID string) (*repository.MaterialAssessment, error) {
+			assert.Equal(t, materialID, matID)
+			return expectedAssessment, nil
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+
+	// Act
+	handler.GetAssessment(c)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verificar que la respuesta contiene datos válidos
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Contains(t, response, "Questions")
+	questions := response["Questions"].([]interface{})
+	assert.Len(t, questions, 1)
+}
+
+func TestAssessmentHandler_GetAssessment_NotFound(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+
+	mockService := &MockAssessmentService{
+		GetAssessmentFunc: func(ctx context.Context, matID string) (*repository.MaterialAssessment, error) {
+			return nil, errors.NewNotFoundError("assessment")
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+
+	// Act
+	handler.GetAssessment(c)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "NOT_FOUND", errorResponse.Code)
+}
+
+func TestAssessmentHandler_GetAssessment_InvalidMaterialID(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "invalid-uuid"
+
+	mockService := &MockAssessmentService{
+		GetAssessmentFunc: func(ctx context.Context, matID string) (*repository.MaterialAssessment, error) {
+			return nil, errors.NewValidationError("invalid material_id")
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+
+	// Act
+	handler.GetAssessment(c)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "VALIDATION_ERROR", errorResponse.Code)
+}
+
+func TestAssessmentHandler_GetAssessment_DatabaseError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+
+	mockService := &MockAssessmentService{
+		GetAssessmentFunc: func(ctx context.Context, matID string) (*repository.MaterialAssessment, error) {
+			return nil, errors.NewDatabaseError("get assessment", assert.AnError)
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+
+	// Act
+	handler.GetAssessment(c)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "DATABASE_ERROR", errorResponse.Code)
+}
+
+// ============================================
+// Tests: RecordAttempt
+// ============================================
+
+func TestAssessmentHandler_RecordAttempt_Success(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	usrID, _ := valueobject.UserIDFromString(userID)
+
+	expectedAttempt := &repository.AssessmentAttempt{
+		ID:         "attempt-123",
+		MaterialID: matID,
+		UserID:     usrID,
+		Score:      75.0,
+		Answers: map[string]interface{}{
+			"q1": "A",
+		},
+	}
+
+	mockService := &MockAssessmentService{
+		RecordAttemptFunc: func(ctx context.Context, matID string, usrID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error) {
+			assert.Equal(t, materialID, matID)
+			assert.Equal(t, userID, usrID)
+			assert.NotNil(t, answers)
+			return expectedAttempt, nil
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	answers := map[string]interface{}{"q1": "A"}
+	bodyBytes, _ := json.Marshal(answers)
+
+	req, _ := http.NewRequest("POST", "/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+	c.Set("user_id", userID)
+
+	// Act
+	handler.RecordAttempt(c)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response repository.AssessmentAttempt
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "attempt-123", response.ID)
+	assert.Equal(t, 75.0, response.Score)
+}
+
+func TestAssessmentHandler_RecordAttempt_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+
+	mockService := &MockAssessmentService{}
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	invalidJSON := []byte(`{invalid json}`)
+
+	req, _ := http.NewRequest("POST", "/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(invalidJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+	c.Set("user_id", userID)
+
+	// Act
+	handler.RecordAttempt(c)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_REQUEST", errorResponse.Code)
+}
+
+func TestAssessmentHandler_RecordAttempt_AssessmentNotFound(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+
+	mockService := &MockAssessmentService{
+		RecordAttemptFunc: func(ctx context.Context, matID string, usrID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error) {
+			return nil, errors.NewNotFoundError("assessment")
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	answers := map[string]interface{}{"q1": "A"}
+	bodyBytes, _ := json.Marshal(answers)
+
+	req, _ := http.NewRequest("POST", "/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+	c.Set("user_id", userID)
+
+	// Act
+	handler.RecordAttempt(c)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "NOT_FOUND", errorResponse.Code)
+}
+
+func TestAssessmentHandler_RecordAttempt_InvalidMaterialID(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "invalid-uuid"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+
+	mockService := &MockAssessmentService{
+		RecordAttemptFunc: func(ctx context.Context, matID string, usrID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error) {
+			return nil, errors.NewValidationError("invalid material_id")
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	answers := map[string]interface{}{"q1": "A"}
+	bodyBytes, _ := json.Marshal(answers)
+
+	req, _ := http.NewRequest("POST", "/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+	c.Set("user_id", userID)
+
+	// Act
+	handler.RecordAttempt(c)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "VALIDATION_ERROR", errorResponse.Code)
+}
+
+func TestAssessmentHandler_RecordAttempt_DatabaseError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	materialID := "550e8400-e29b-41d4-a716-446655440001"
+	userID := "550e8400-e29b-41d4-a716-446655440002"
+
+	mockService := &MockAssessmentService{
+		RecordAttemptFunc: func(ctx context.Context, matID string, usrID string, answers map[string]interface{}) (*repository.AssessmentAttempt, error) {
+			return nil, errors.NewDatabaseError("save attempt", assert.AnError)
+		},
+	}
+
+	logger := NewTestLogger()
+	handler := NewAssessmentHandler(mockService, logger)
+
+	answers := map[string]interface{}{"q1": "A"}
+	bodyBytes, _ := json.Marshal(answers)
+
+	req, _ := http.NewRequest("POST", "/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Params = gin.Params{{Key: "id", Value: materialID}}
+	c.Set("user_id", userID)
+
+	// Act
+	handler.RecordAttempt(c)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "DATABASE_ERROR", errorResponse.Code)
+}

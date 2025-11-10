@@ -10,10 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
 // TestNewMaterialHandler verifica el constructor del handler
@@ -431,4 +434,112 @@ func TestMaterialHandler_GenerateDownloadURL_FileNotUploaded(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "FILE_NOT_FOUND")
 	assert.Contains(t, w.Body.String(), "material file not uploaded yet")
+}
+
+// ============================================
+// Tests: ListMaterials
+// ============================================
+
+func TestMaterialHandler_ListMaterials_Success(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockService := &MockMaterialService{
+		ListMaterialsFunc: func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error) {
+			return []*dto.MaterialResponse{
+				{
+					ID:          "material-1",
+					Title:       "Material 1",
+					Description: "Description 1",
+				},
+				{
+					ID:          "material-2",
+					Title:       "Material 2",
+					Description: "Description 2",
+				},
+			}, nil
+		},
+	}
+
+	logger := NewTestLogger()
+	mockS3 := &MockS3Storage{}
+	handler := NewMaterialHandler(mockService, mockS3, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	// Act
+	handler.ListMaterials(c)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response []map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Len(t, response, 2)
+}
+
+func TestMaterialHandler_ListMaterials_EmptyList(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockService := &MockMaterialService{
+		ListMaterialsFunc: func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error) {
+			return []*dto.MaterialResponse{}, nil
+		},
+	}
+
+	logger := NewTestLogger()
+	mockS3 := &MockS3Storage{}
+	handler := NewMaterialHandler(mockService, mockS3, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	// Act
+	handler.ListMaterials(c)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response []map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Len(t, response, 0)
+}
+
+func TestMaterialHandler_ListMaterials_DatabaseError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	mockService := &MockMaterialService{
+		ListMaterialsFunc: func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error) {
+			return nil, errors.NewDatabaseError("list materials", assert.AnError)
+		},
+	}
+
+	logger := NewTestLogger()
+	mockS3 := &MockS3Storage{}
+	handler := NewMaterialHandler(mockService, mockS3, logger)
+
+	req, _ := http.NewRequest("GET", "/v1/materials", nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	// Act
+	handler.ListMaterials(c)
+
+	// Assert
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var errorResponse ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Equal(t, "DATABASE_ERROR", errorResponse.Code)
 }

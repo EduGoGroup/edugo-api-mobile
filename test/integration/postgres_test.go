@@ -4,7 +4,6 @@ package integration
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -22,14 +21,11 @@ func TestPostgresTablesExist(t *testing.T) {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	assert.NoError(t, err)
 
-	// Conectar
-	db, err := sql.Open("postgres", connStr)
+	// Conectar con retry logic para manejar problemas temporales de TCP
+	db, err := ConnectPostgresWithRetry(connStr, 3)
 	assert.NoError(t, err)
 	defer db.Close()
 
-	// Verificar conexión
-	err = db.Ping()
-	assert.NoError(t, err)
 	t.Log("✅ Conectado a PostgreSQL")
 
 	// Verificar que tablas principales existan

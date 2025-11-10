@@ -17,7 +17,7 @@ import (
 // TestAssessmentFlow_GetAssessment prueba obtener un assessment por material ID
 func TestAssessmentFlow_GetAssessment(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -79,7 +79,7 @@ func TestAssessmentFlow_GetAssessment(t *testing.T) {
 // TestAssessmentFlow_GetAssessmentNotFound prueba obtener assessment inexistente
 func TestAssessmentFlow_GetAssessmentNotFound(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -111,7 +111,7 @@ func TestAssessmentFlow_GetAssessmentNotFound(t *testing.T) {
 // TestAssessmentFlow_SubmitAssessment prueba enviar respuestas y recibir score + feedback
 func TestAssessmentFlow_SubmitAssessment(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos
@@ -214,7 +214,7 @@ func TestAssessmentFlow_SubmitAssessment(t *testing.T) {
 // TestAssessmentFlow_SubmitAssessmentDuplicate prueba que no se puede enviar dos veces
 func TestAssessmentFlow_SubmitAssessmentDuplicate(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar bases de datos

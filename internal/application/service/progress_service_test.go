@@ -379,3 +379,284 @@ func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 	// Verificar que Upsert fue llamado exactamente 4 veces
 	mockRepo.AssertNumberOfCalls(t, "Upsert", 4)
 }
+
+// TestUpdateProgress_EdgeCase_ZeroPercentage prueba actualización con 0% (inicio)
+func TestUpdateProgress_EdgeCase_ZeroPercentage(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 0
+	lastPage := 0
+
+	// Crear progress esperado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	expectedProgress := entity.NewProgress(matID, uID)
+	_ = expectedProgress.UpdateProgress(percentage, lastPage)
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+		Return(expectedProgress, nil)
+	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, enum.ProgressStatusNotStarted, expectedProgress.Status())
+	mockRepo.AssertExpectations(t)
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage prueba completar exactamente al 100%
+func TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 100
+	lastPage := 100
+
+	// Crear progress completado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	completedProgress := entity.NewProgress(matID, uID)
+	_ = completedProgress.UpdateProgress(percentage, lastPage)
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+		Return(completedProgress, nil)
+	mockLogger.On("Info", "material completed by user", mock.Anything).Return()
+	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, 100, completedProgress.Percentage())
+	assert.Equal(t, enum.ProgressStatusCompleted, completedProgress.Status())
+	mockRepo.AssertExpectations(t)
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_BoundaryPercentageOne prueba con 1% (mínimo válido)
+func TestUpdateProgress_EdgeCase_BoundaryPercentageOne(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 1
+	lastPage := 1
+
+	// Crear progress esperado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	expectedProgress := entity.NewProgress(matID, uID)
+	_ = expectedProgress.UpdateProgress(percentage, lastPage)
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+		Return(expectedProgress, nil)
+	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, 1, expectedProgress.Percentage())
+	mockRepo.AssertExpectations(t)
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_BoundaryPercentageNinetyNine prueba con 99% (justo antes de completar)
+func TestUpdateProgress_EdgeCase_BoundaryPercentageNinetyNine(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 99
+	lastPage := 99
+
+	// Crear progress esperado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	expectedProgress := entity.NewProgress(matID, uID)
+	_ = expectedProgress.UpdateProgress(percentage, lastPage)
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+		Return(expectedProgress, nil)
+	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, 99, expectedProgress.Percentage())
+	assert.Equal(t, enum.ProgressStatusInProgress, expectedProgress.Status())
+	// No debe llamar a "material completed by user" porque no es 100%
+	mockLogger.AssertNotCalled(t, "Info", "material completed by user", mock.Anything)
+	mockRepo.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_NegativeLastPage prueba con lastPage negativo (edge case)
+func TestUpdateProgress_EdgeCase_NegativeLastPage(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 50
+	lastPage := -1 // Valor negativo
+
+	// Crear progress esperado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	expectedProgress := entity.NewProgress(matID, uID)
+	err := expectedProgress.UpdateProgress(percentage, lastPage)
+
+	// Si la entidad rechaza lastPage negativo, el servicio debe fallar
+	if err != nil {
+		// Mock expectations
+		mockLogger.On("Info", "updating progress", mock.Anything).Return()
+		mockLogger.On("Error", "failed to update progress entity", mock.Anything).Return()
+
+		// Act
+		err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+		// Assert
+		assert.Error(t, err)
+		mockRepo.AssertNotCalled(t, "Upsert")
+	} else {
+		// Si la entidad acepta lastPage negativo, el servicio debe continuar
+		mockLogger.On("Info", "updating progress", mock.Anything).Return()
+		mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+			Return(expectedProgress, nil)
+		mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+		// Act
+		err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+		// Assert
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	}
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_EmptyMaterialID prueba con materialID vacío
+func TestUpdateProgress_EdgeCase_EmptyMaterialID(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := ""
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 50
+	lastPage := 5
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockLogger.On("Error", "invalid material_id", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid material_id")
+	mockRepo.AssertNotCalled(t, "Upsert")
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_EmptyUserID prueba con userID vacío
+func TestUpdateProgress_EdgeCase_EmptyUserID(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := ""
+	percentage := 50
+	lastPage := 5
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockLogger.On("Error", "invalid user_id", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid user_id")
+	mockRepo.AssertNotCalled(t, "Upsert")
+	mockLogger.AssertExpectations(t)
+}
+
+// TestUpdateProgress_EdgeCase_VeryLargeLastPage prueba con lastPage muy grande
+func TestUpdateProgress_EdgeCase_VeryLargeLastPage(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockProgressRepository)
+	mockLogger := new(MockProgressLogger)
+	service := NewProgressService(mockRepo, mockLogger)
+
+	ctx := context.Background()
+	materialID := "550e8400-e29b-41d4-a716-446655440000"
+	userID := "660e8400-e29b-41d4-a716-446655440001"
+	percentage := 50
+	lastPage := 999999 // Valor muy grande pero válido
+
+	// Crear progress esperado
+	matID, _ := valueobject.MaterialIDFromString(materialID)
+	uID, _ := valueobject.UserIDFromString(userID)
+	expectedProgress := entity.NewProgress(matID, uID)
+	_ = expectedProgress.UpdateProgress(percentage, lastPage)
+
+	// Mock expectations
+	mockLogger.On("Info", "updating progress", mock.Anything).Return()
+	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*entity.Progress")).
+		Return(expectedProgress, nil)
+	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
+
+	// Act
+	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, lastPage, expectedProgress.LastPage())
+	mockRepo.AssertExpectations(t)
+	mockLogger.AssertExpectations(t)
+}

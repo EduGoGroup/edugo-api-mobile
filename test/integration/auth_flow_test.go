@@ -17,7 +17,7 @@ import (
 // TestAuthFlow_LoginSuccess prueba el flujo completo de login exitoso
 func TestAuthFlow_LoginSuccess(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
@@ -87,7 +87,7 @@ func TestAuthFlow_LoginSuccess(t *testing.T) {
 // TestAuthFlow_LoginInvalidCredentials prueba login con credenciales inválidas
 func TestAuthFlow_LoginInvalidCredentials(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
@@ -122,7 +122,7 @@ func TestAuthFlow_LoginInvalidCredentials(t *testing.T) {
 // TestAuthFlow_LoginNonexistentUser prueba login con usuario que no existe
 func TestAuthFlow_LoginNonexistentUser(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos (sin seed)

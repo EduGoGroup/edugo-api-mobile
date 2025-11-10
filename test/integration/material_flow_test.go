@@ -17,7 +17,7 @@ import (
 // TestMaterialFlow_CreateMaterial prueba la creación de un material
 func TestMaterialFlow_CreateMaterial(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
@@ -77,7 +77,7 @@ func TestMaterialFlow_CreateMaterial(t *testing.T) {
 // TestMaterialFlow_GetMaterial prueba obtener un material por ID
 func TestMaterialFlow_GetMaterial(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
@@ -140,7 +140,7 @@ func TestMaterialFlow_GetMaterial(t *testing.T) {
 // TestMaterialFlow_GetMaterialNotFound prueba obtener un material inexistente
 func TestMaterialFlow_GetMaterialNotFound(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
@@ -178,7 +178,7 @@ func TestMaterialFlow_GetMaterialNotFound(t *testing.T) {
 // TestMaterialFlow_ListMaterials prueba listar materiales
 func TestMaterialFlow_ListMaterials(t *testing.T) {
 	// Setup
-	app := SetupTestApp(t)
+	app := SetupTestAppWithSharedContainers(t)
 	defer app.Cleanup()
 
 	// Limpiar base de datos
