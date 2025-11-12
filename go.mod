@@ -1,12 +1,14 @@
 module github.com/EduGoGroup/edugo-api-mobile
 
-go 1.23
+go 1.24.0
+
+toolchain go1.24.10
 
 require (
-	github.com/EduGoGroup/edugo-shared/auth v0.3.0
-	github.com/EduGoGroup/edugo-shared/common v0.3.0
-	github.com/EduGoGroup/edugo-shared/logger v0.3.0
-	github.com/EduGoGroup/edugo-shared/middleware/gin v0.3.0
+	github.com/EduGoGroup/edugo-shared/auth v0.3.3
+	github.com/EduGoGroup/edugo-shared/common v0.3.3
+	github.com/EduGoGroup/edugo-shared/logger v0.3.3
+	github.com/EduGoGroup/edugo-shared/middleware/gin v0.3.3
 	github.com/aws/aws-sdk-go-v2 v1.39.5
 	github.com/aws/aws-sdk-go-v2/config v1.31.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.20
@@ -21,10 +23,10 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
-	github.com/testcontainers/testcontainers-go v0.39.0
-	github.com/testcontainers/testcontainers-go/modules/mongodb v0.39.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.39.0
-	github.com/testcontainers/testcontainers-go/modules/rabbitmq v0.39.0
+	github.com/testcontainers/testcontainers-go v0.38.0
+	github.com/testcontainers/testcontainers-go/modules/mongodb v0.38.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
+	github.com/testcontainers/testcontainers-go/modules/rabbitmq v0.38.0
 	go.mongodb.org/mongo-driver v1.17.6
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.43.0
