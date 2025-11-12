@@ -73,17 +73,17 @@ jobs:
             const totalLine = lines[lines.length - 2];
             const match = totalLine.match(/(\d+\.\d+)%/);
             const coveragePercent = match ? match[1] : 'N/A';
-            
+
             const comment = `## 📊 Cobertura de Tests Unitarios
-            
+
             **Cobertura Total**: ${coveragePercent}%
             **Umbral Mínimo**: ${process.env.COVERAGE_THRESHOLD}%
-            
+
             ${parseFloat(coveragePercent) >= parseFloat(process.env.COVERAGE_THRESHOLD) ? '✅ Cobertura cumple con el umbral' : '⚠️ Cobertura por debajo del umbral'}
-            
+
             📄 [Ver reporte completo](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -107,10 +107,11 @@ jobs:
           cache: true
 
       - name: 🔍 Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.62.2
           args: --timeout=5m
+          install-mode: binary
 
   summary:
     name: PR Summary
@@ -125,7 +126,7 @@ jobs:
           script: |
             const unitTests = '${{ needs.unit-tests.result }}';
             const lint = '${{ needs.lint.result }}';
-            
+
             const statusEmoji = (status) => {
               switch(status) {
                 case 'success': return '✅';
@@ -134,17 +135,17 @@ jobs:
                 default: return '⚠️';
               }
             };
-            
+
             const summary = `## 🔍 Resumen de Checks - PR a Dev
-            
+
             | Check | Estado |
             |-------|--------|
             | Tests Unitarios | ${statusEmoji(unitTests)} ${unitTests} |
             | Lint & Format | ${statusEmoji(lint)} ${lint} |
-            
+
             ${unitTests === 'success' && lint === 'success' ? '✅ **Todos los checks pasaron** - PR listo para review' : '⚠️ **Algunos checks fallaron** - Por favor revisa los errores'}
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
