@@ -6,6 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// contextKey es un tipo personalizado para keys de contexto, evitando colisiones
+type contextKey string
+
+const ginContextKey contextKey = "gin_context"
+
 // ClientInfoMiddleware extrae información del cliente (IP, User-Agent) y la agrega al contexto
 // Esta información es utilizada por el servicio de autenticación para rate limiting y auditoría
 func ClientInfoMiddleware() gin.HandlerFunc {
@@ -27,7 +32,7 @@ func ClientInfoMiddleware() gin.HandlerFunc {
 		}
 
 		// Agregar al contexto para que el servicio pueda accederlo
-		ctx := context.WithValue(c.Request.Context(), "gin_context", clientInfo)
+		ctx := context.WithValue(c.Request.Context(), ginContextKey, clientInfo)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()

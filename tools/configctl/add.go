@@ -28,10 +28,10 @@ The tool will:
 Examples:
   # Add a public config variable
   configctl add database.postgres.pool_size --type int --default 10 --desc "Connection pool size"
-  
+
   # Add a secret variable
   configctl add auth.jwt.secret --type string --secret --desc "JWT signing secret"
-  
+
   # Dry run to preview changes
   configctl add storage.s3.timeout --type duration --default 30s --desc "S3 timeout" --dry-run`,
 		Args: cobra.ExactArgs(1),
@@ -52,7 +52,7 @@ Examples:
 	cmd.Flags().StringVar(&defaultVal, "default", "", "Default value (for public vars)")
 	cmd.Flags().StringVar(&description, "desc", "", "Description of the variable")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without applying them")
-	cmd.MarkFlagRequired("desc")
+	_ = cmd.MarkFlagRequired("desc")
 
 	return cmd
 }

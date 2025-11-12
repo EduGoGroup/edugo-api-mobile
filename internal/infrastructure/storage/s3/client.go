@@ -45,17 +45,9 @@ func NewS3Client(ctx context.Context, cfg S3Config, log logger.Logger) (*S3Clien
 		config.WithCredentialsProvider(credentialsProvider),
 	}
 
-	// Si hay un endpoint personalizado (Localstack), agregarlo
+	// Si hay un endpoint personalizado (Localstack), agregarlo usando BaseEndpoint
 	if cfg.Endpoint != "" {
-		configOptions = append(configOptions, config.WithEndpointResolverWithOptions(
-			aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				return aws.Endpoint{
-					URL:               cfg.Endpoint,
-					HostnameImmutable: true,
-					SigningRegion:     cfg.Region,
-				}, nil
-			}),
-		))
+		configOptions = append(configOptions, config.WithBaseEndpoint(cfg.Endpoint))
 	}
 
 	// Cargar configuración de AWS

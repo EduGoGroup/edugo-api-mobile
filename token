@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Token Script - Atajo para obtener tokens con httpyac
+# ==============================================================================
+#
+# Este script es un atajo conveniente para ejecutar el login y obtener tokens
+# usando httpyac.
+#
+# Uso:
+#   ./token                    # Login y guardar tokens
+#   ./token --login-only       # Solo login (sin ejecutar otros requests)
+#   ./token --dotenv=FILE      # Usar archivo .env específico
+#
+# ==============================================================================
+
+exec "$(dirname "$0")/api-tests/scripts/run-httpyac.sh" --login-only --persist-token "$@"

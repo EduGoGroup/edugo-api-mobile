@@ -122,7 +122,7 @@ func (h *AssessmentHandler) SubmitAssessment(c *gin.Context) {
 	}
 
 	// Validar que el body tenga respuestas
-	if req.Responses == nil || len(req.Responses) == 0 {
+	if len(req.Responses) == 0 {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: "responses map is required",
 			Code:  "INVALID_REQUEST",
