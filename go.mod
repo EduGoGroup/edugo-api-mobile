@@ -1,6 +1,6 @@
 module github.com/EduGoGroup/edugo-api-mobile
 
-go 1.25.3
+go 1.23
 
 require (
 	github.com/EduGoGroup/edugo-shared/auth v0.3.0

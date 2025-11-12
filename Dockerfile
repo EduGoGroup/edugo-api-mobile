@@ -9,7 +9,7 @@
 #
 # Recomendación: construir con --no-cache si cambias dependencias o scripts.
 
-FROM golang:1.25-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Dependencias del sistema necesarias en builder
 RUN apk add --no-cache git ca-certificates

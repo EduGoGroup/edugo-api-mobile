@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  GO_VERSION: "1.25.3"
+  GO_VERSION: "1.23"
   COVERAGE_THRESHOLD: 33
 
 jobs:
@@ -161,7 +161,7 @@ jobs:
       - name: 🔒 Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          args: '-no-fail -fmt json -out results.json ./...'
+          args: "-no-fail -fmt json -out results.json ./..."
         continue-on-error: true
 
       - name: 📊 Mostrar resultados de seguridad
@@ -188,7 +188,7 @@ jobs:
             const integrationTests = '${{ needs.integration-tests.result }}';
             const lint = '${{ needs.lint.result }}';
             const security = '${{ needs.security-scan.result }}';
-            
+
             const statusEmoji = (status) => {
               switch(status) {
                 case 'success': return '✅';
@@ -197,41 +197,41 @@ jobs:
                 default: return '⚠️';
               }
             };
-            
-            const allPassed = unitTests === 'success' && 
-                             integrationTests === 'success' && 
-                             lint === 'success' && 
+
+            const allPassed = unitTests === 'success' &&
+                             integrationTests === 'success' &&
+                             lint === 'success' &&
                              security === 'success';
-            
+
             const summary = `## 🚀 Resumen de Checks - PR a Main
-            
+
             | Check | Estado | Descripción |
             |-------|--------|-------------|
             | Tests Unitarios | ${statusEmoji(unitTests)} ${unitTests} | 77 tests, ~5 segundos |
             | Tests Integración | ${statusEmoji(integrationTests)} ${integrationTests} | 18 tests, ~1-2 minutos |
             | Lint & Format | ${statusEmoji(lint)} ${lint} | Calidad de código |
             | Security Scan | ${statusEmoji(security)} ${security} | Análisis de seguridad |
-            
+
             ---
-            
-            ${allPassed ? 
-              '✅ **Todos los checks pasaron** - PR listo para merge a main 🎉' : 
+
+            ${allPassed ?
+              '✅ **Todos los checks pasaron** - PR listo para merge a main 🎉' :
               '⚠️ **Algunos checks fallaron** - Por favor revisa los errores antes de merge'}
-            
+
             ### 📊 Métricas de Performance
-            
+
             - **Tiempo total estimado**: ~3-4 minutos
             - **Tests unitarios**: ~5 segundos (77 tests)
             - **Tests integración**: ~1-2 minutos (18 tests con contenedores compartidos)
             - **Mejora vs anterior**: 81.5% más rápido 🚀
-            
+
             ### 📝 Próximos Pasos
-            
-            ${allPassed ? 
+
+            ${allPassed ?
               '1. ✅ Aprobar el PR\n2. ✅ Merge a main\n3. ✅ Deploy automático se ejecutará' :
               '1. ⚠️ Revisar errores en los checks fallidos\n2. ⚠️ Corregir y hacer push\n3. ⚠️ Esperar a que pasen todos los checks'}
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
