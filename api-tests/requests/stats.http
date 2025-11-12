@@ -1,0 +1,19 @@
+###
+# ⚠️ PREREQUISITO: Autenticación
+# Ejecuta en terminal: ./token
+
+###
+# Estadísticas - Estadísticas Globales del Sistema
+# Obtiene métricas globales del sistema (solo admins en futuro)
+GET {{baseUrl}}/v1/stats/global
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Estadísticas - Estadísticas de Material
+# Obtiene estadísticas de uso de un material específico
+GET {{baseUrl}}/v1/materials/{{material_id}}/stats
+Authorization: Bearer {{access_token}}
+
+?? status == 200

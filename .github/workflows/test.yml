@@ -22,7 +22,7 @@ on:
         default: false
 
 env:
-  GO_VERSION: "1.25.3"
+  GO_VERSION: "1.24"
   ENABLE_COVERAGE_CHECK: true # ← Control ON/OFF
   COVERAGE_THRESHOLD: 33
 
@@ -34,7 +34,6 @@ jobs:
       github.event.inputs.test_type == 'unit' ||
       github.event.inputs.test_type == 'all'
     timeout-minutes: 10
-
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
@@ -89,7 +88,6 @@ jobs:
           name: codecov-edugo-api-mobile
           fail_ci_if_error: false
 
-
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -97,7 +95,6 @@ jobs:
       github.event.inputs.test_type == 'integration' ||
       github.event.inputs.test_type == 'all'
     timeout-minutes: 15
-
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4

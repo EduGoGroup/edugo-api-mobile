@@ -49,6 +49,9 @@ tmp/
 temp/
 *.tmp
 
+# Binarios de debug de Delve
+__debug_bin*
+
 # Archivos de build
 build/
 _build/
@@ -92,4 +95,4 @@ Desktop.ini
 __debug_bin
 debug.test
 .envrc
-__debug_bin*
+__debug_bin**

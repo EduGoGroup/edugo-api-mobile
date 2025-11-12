@@ -1,0 +1,125 @@
+###
+```http
+###
+# ⚠️ PREREQUISITO: Autenticación
+#
+# FLUJO SIMPLE (Recomendado):
+# 1. Ejecuta en terminal: ./token
+# 2. Listo, ya puedes ejecutar estas requests
+#
+# FLUJO MANUAL:
+# 1. Ejecuta login en auth.http
+# 2. Copia access_token del response
+# 3. Pega en .vscode/settings.json → $shared → access_token
+
+###
+# Materiales - Listar Todos
+# Obtiene lista paginada de materiales
+GET {{baseUrl}}/v1/materials
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Listar con Query Params
+# Filtra materiales por tipo, título, etc.
+GET {{baseUrl}}/v1/materials?type=pdf&limit=10&offset=0
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Obtener por ID
+# Obtiene detalles de un material específico
+GET {{baseUrl}}/v1/materials/{{material_id}}
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Crear Nuevo
+# Crea un nuevo material educativo
+POST {{baseUrl}}/v1/materials
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "title": "Introducción a Go",
+  "description": "Material sobre fundamentos de Go",
+  "type": "pdf",
+  "subject": "programming",
+  "grade_level": "intermediate",
+  "s3_key": "materials/intro-go.pdf"
+}
+
+{{
+  // post-request: capturar el id del material para encadenar tests
+  try {
+    exports.material_id = response.parsedBody && (response.parsedBody.id || (response.parsedBody.data && response.parsedBody.data.id));
+  } catch (e) {}
+  // esperar 201 Created
+  test.status(201);
+}}
+
+###
+# Materiales - Generar URL de Subida (S3)
+# Obtiene URL presignada para subir archivo a S3
+POST {{baseUrl}}/v1/materials/{{material_id}}/upload-url
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "file_name": "intro-go.pdf",
+  "content_type": "application/pdf"
+}
+
+?? status >= 200
+?? status < 300
+
+###
+# Materiales - Generar URL de Descarga (S3)
+# Obtiene URL presignada para descargar archivo de S3
+GET {{baseUrl}}/v1/materials/{{material_id}}/download-url
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Notificar Subida Completa
+# Notifica al sistema que el archivo fue subido exitosamente
+POST {{baseUrl}}/v1/materials/{{material_id}}/upload-complete
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "s3_key": "materials/intro-go.pdf"
+}
+
+?? status >= 200
+?? status < 300
+
+###
+# Materiales - Obtener Versiones
+# Obtiene historial de versiones de un material
+GET {{baseUrl}}/v1/materials/{{material_id}}/versions
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Obtener Resumen
+# Obtiene resumen generado del material
+GET {{baseUrl}}/v1/materials/{{material_id}}/summary
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+###
+# Materiales - Obtener Estadísticas
+# Obtiene estadísticas de uso del material
+GET {{baseUrl}}/v1/materials/{{material_id}}/stats
+Authorization: Bearer {{access_token}}
+
+?? status == 200
+
+```

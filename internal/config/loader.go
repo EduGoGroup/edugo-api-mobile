@@ -131,48 +131,48 @@ func setDefaults(v *viper.Viper) {
 // Esto es necesario para que Unmarshal() tome los valores de ENV vars
 func bindEnvVars(v *viper.Viper) {
 	// Server
-	v.BindEnv("server.port")
-	v.BindEnv("server.host")
-	v.BindEnv("server.read_timeout")
-	v.BindEnv("server.write_timeout")
+	_ = v.BindEnv("server.port")
+	_ = v.BindEnv("server.host")
+	_ = v.BindEnv("server.read_timeout")
+	_ = v.BindEnv("server.write_timeout")
 
 	// Database - Postgres
-	v.BindEnv("database.postgres.host")
-	v.BindEnv("database.postgres.port")
-	v.BindEnv("database.postgres.database")
-	v.BindEnv("database.postgres.user")
-	v.BindEnv("database.postgres.password")
-	v.BindEnv("database.postgres.max_connections")
-	v.BindEnv("database.postgres.ssl_mode")
+	_ = v.BindEnv("database.postgres.host")
+	_ = v.BindEnv("database.postgres.port")
+	_ = v.BindEnv("database.postgres.database")
+	_ = v.BindEnv("database.postgres.user")
+	_ = v.BindEnv("database.postgres.password")
+	_ = v.BindEnv("database.postgres.max_connections")
+	_ = v.BindEnv("database.postgres.ssl_mode")
 
 	// Database - MongoDB
-	v.BindEnv("database.mongodb.uri")
-	v.BindEnv("database.mongodb.database")
-	v.BindEnv("database.mongodb.timeout")
+	_ = v.BindEnv("database.mongodb.uri")
+	_ = v.BindEnv("database.mongodb.database")
+	_ = v.BindEnv("database.mongodb.timeout")
 
 	// Messaging - RabbitMQ
-	v.BindEnv("messaging.rabbitmq.url")
-	v.BindEnv("messaging.rabbitmq.queues.material_uploaded")
-	v.BindEnv("messaging.rabbitmq.queues.assessment_attempt")
-	v.BindEnv("messaging.rabbitmq.exchanges.materials")
-	v.BindEnv("messaging.rabbitmq.prefetch_count")
+	_ = v.BindEnv("messaging.rabbitmq.url")
+	_ = v.BindEnv("messaging.rabbitmq.queues.material_uploaded")
+	_ = v.BindEnv("messaging.rabbitmq.queues.assessment_attempt")
+	_ = v.BindEnv("messaging.rabbitmq.exchanges.materials")
+	_ = v.BindEnv("messaging.rabbitmq.prefetch_count")
 
 	// Storage - S3
-	v.BindEnv("storage.s3.region")
-	v.BindEnv("storage.s3.bucket_name")
-	v.BindEnv("storage.s3.access_key_id")
-	v.BindEnv("storage.s3.secret_access_key")
-	v.BindEnv("storage.s3.endpoint")
+	_ = v.BindEnv("storage.s3.region")
+	_ = v.BindEnv("storage.s3.bucket_name")
+	_ = v.BindEnv("storage.s3.access_key_id")
+	_ = v.BindEnv("storage.s3.secret_access_key")
+	_ = v.BindEnv("storage.s3.endpoint")
 
 	// Logging
-	v.BindEnv("logging.level")
-	v.BindEnv("logging.format")
+	_ = v.BindEnv("logging.level")
+	_ = v.BindEnv("logging.format")
 
 	// Auth - JWT secret
 	// Mapeado explícitamente a JWT_SECRET (sin prefijo AUTH_)
-	v.BindEnv("auth.jwt.secret", "JWT_SECRET")
+	_ = v.BindEnv("auth.jwt.secret", "JWT_SECRET")
 
 	// Bootstrap - Optional resources
-	v.BindEnv("bootstrap.optional_resources.rabbitmq")
-	v.BindEnv("bootstrap.optional_resources.s3")
+	_ = v.BindEnv("bootstrap.optional_resources.rabbitmq")
+	_ = v.BindEnv("bootstrap.optional_resources.s3")
 }
