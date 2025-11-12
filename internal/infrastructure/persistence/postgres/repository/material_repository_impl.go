@@ -124,12 +124,10 @@ func (r *postgresMaterialRepository) List(ctx context.Context, filters repositor
 	`
 
 	args := []interface{}{}
-	argCount := 1
 
 	if filters.Status != nil {
-		query += ` AND status = $` + string(rune(argCount+'0'))
+		query += ` AND status = $1`
 		args = append(args, filters.Status.String())
-		argCount++
 	}
 
 	query += ` ORDER BY created_at DESC LIMIT 50`

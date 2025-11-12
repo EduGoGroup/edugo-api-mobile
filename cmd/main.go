@@ -33,7 +33,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Error inicializando infraestructura: %v", err)
 	}
-	defer cleanup()
+	defer func() {
+		if err := cleanup(); err != nil {
+			log.Printf("⚠️  Error durante cleanup: %v", err)
+		}
+	}()
 
 	// Regenerar documentación Swagger
 	if err := regenerateSwagger(resources.Logger); err != nil {
