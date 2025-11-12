@@ -32,7 +32,7 @@ func bridgeToSharedBootstrap(
 			JWTSecret:         cfg.Auth.JWT.Secret,
 		}
 		// Crear lifecycle manager vacío para mocks
-		lifecycleManager := lifecycle.NewManager(nil)
+		lifecycleManager := lifecycle.NewManager(opts.Logger)
 		return resources, lifecycleManager, nil
 	}
 
@@ -98,7 +98,7 @@ func bridgeToSharedBootstrap(
 	customFactories := createCustomFactories(wrapper)
 
 	// 4. Crear lifecycle manager de shared (sin logger por ahora, lo configuraremos después)
-	lifecycleManager := lifecycle.NewManager(nil)
+	lifecycleManager := lifecycle.NewManager(opts.Logger)
 
 	// 5. Configurar opciones de bootstrap de shared
 	var bootstrapOpts []sharedBootstrap.BootstrapOption
