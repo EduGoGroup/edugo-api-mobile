@@ -64,7 +64,7 @@ func (b *Bootstrapper) InitializeInfrastructure(ctx context.Context) (*Resources
 	// Crear función de cleanup que usa el lifecycle manager de shared
 	cleanup := func() error {
 		resources.Logger.Info("starting infrastructure cleanup")
-		
+
 		// shared/lifecycle.Cleanup() no toma contexto
 		err := lifecycleManager.Cleanup()
 		if err != nil {
@@ -73,7 +73,7 @@ func (b *Bootstrapper) InitializeInfrastructure(ctx context.Context) (*Resources
 			)
 			return err
 		}
-		
+
 		resources.Logger.Info("infrastructure cleanup completed successfully")
 		return nil
 	}

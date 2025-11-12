@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap/adapter"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	sharedBootstrap "github.com/EduGoGroup/edugo-shared/bootstrap"
 	"github.com/EduGoGroup/edugo-shared/lifecycle"
 	"gorm.io/gorm/logger"
@@ -64,7 +64,7 @@ func bridgeToSharedBootstrap(
 	// 3. Crear wrapper de factories personalizado que retiene tipos concretos
 	// IMPORTANTE: PostgreSQLFactory requiere un logger de GORM
 	gormLogger := logger.Default.LogMode(logger.Silent) // Usamos silent por ahora
-	
+
 	sharedFactories := &sharedBootstrap.Factories{
 		Logger:     sharedBootstrap.NewDefaultLoggerFactory(),
 		PostgreSQL: sharedBootstrap.NewDefaultPostgreSQLFactory(gormLogger),
@@ -72,7 +72,7 @@ func bridgeToSharedBootstrap(
 		RabbitMQ:   sharedBootstrap.NewDefaultRabbitMQFactory(),
 		S3:         sharedBootstrap.NewDefaultS3Factory(),
 	}
-	
+
 	wrapper := newCustomFactoriesWrapper(sharedFactories)
 	customFactories := createCustomFactories(wrapper)
 

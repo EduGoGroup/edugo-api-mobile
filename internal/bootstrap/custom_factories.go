@@ -17,7 +17,7 @@ import (
 type customFactoriesWrapper struct {
 	// Factories de shared (usamos delegación)
 	sharedFactories *bootstrap.Factories
-	
+
 	// Referencias a tipos concretos que necesitamos retener
 	sqlDB         *sql.DB
 	mongoClient   *mongo.Client
@@ -48,10 +48,10 @@ func (f *customPostgreSQLFactory) CreateRawConnection(ctx context.Context, confi
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Guardar referencia para uso posterior
 	*f.sqlDB = db
-	
+
 	return db, nil
 }
 
@@ -74,10 +74,10 @@ func (f *customMongoDBFactory) CreateConnection(ctx context.Context, config boot
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Guardar referencia para uso posterior
 	*f.mongoClient = client
-	
+
 	return client, nil
 }
 
@@ -108,10 +108,10 @@ func (f *customRabbitMQFactory) CreateChannel(conn *amqp.Connection) (*amqp.Chan
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Guardar referencia para uso posterior
 	*f.channel = ch
-	
+
 	return ch, nil
 }
 
@@ -134,10 +134,10 @@ func (f *customS3Factory) CreateClient(ctx context.Context, config bootstrap.S3C
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Guardar referencia para uso posterior
 	*f.s3Client = client
-	
+
 	return client, nil
 }
 
@@ -160,10 +160,10 @@ func (f *customLoggerFactory) CreateLogger(ctx context.Context, env string, vers
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Guardar referencia para uso posterior
 	*f.logger = logger
-	
+
 	return logger, nil
 }
 
