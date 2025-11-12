@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	infraS3 "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -112,4 +111,4 @@ func (a *StorageClientAdapter) GeneratePresignedDownloadURL(
 }
 
 // Verificar en compile-time que StorageClientAdapter implementa s3.S3Storage
-var _ s3.S3Storage = (*StorageClientAdapter)(nil)
+var _ infraS3.S3Storage = (*StorageClientAdapter)(nil)
