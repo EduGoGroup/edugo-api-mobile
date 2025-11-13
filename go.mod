@@ -4,10 +4,10 @@ go 1.24.10
 
 require (
 	github.com/EduGoGroup/edugo-shared/auth v0.3.3
-	github.com/EduGoGroup/edugo-shared/bootstrap v0.4.0
-	github.com/EduGoGroup/edugo-shared/common v0.3.3
-	github.com/EduGoGroup/edugo-shared/lifecycle v0.4.0
-	github.com/EduGoGroup/edugo-shared/logger v0.4.0
+	github.com/EduGoGroup/edugo-shared/bootstrap v0.5.0
+	github.com/EduGoGroup/edugo-shared/common v0.5.0
+	github.com/EduGoGroup/edugo-shared/lifecycle v0.5.0
+	github.com/EduGoGroup/edugo-shared/logger v0.5.0
 	github.com/EduGoGroup/edugo-shared/middleware/gin v0.3.3
 	github.com/aws/aws-sdk-go-v2 v1.39.5
 	github.com/aws/aws-sdk-go-v2/config v1.31.16
