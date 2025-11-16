@@ -56,15 +56,6 @@ __debug_bin*
 build/
 _build/
 
-# Archivos específicos del proyecto
-api-mobile
-edugo-api-mobile
-
-# Documentación generada
-docs/docs.go
-docs/swagger.json
-docs/swagger.yaml
-
 # Coverage reports
 coverage/
 *.out
