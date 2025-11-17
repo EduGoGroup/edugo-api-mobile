@@ -91,9 +91,9 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 		// Resúmenes de materiales
 		materials.GET("/:id/summary", c.Handlers.SummaryHandler.GetSummary)
 
-		// Evaluaciones (assessments)
-		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetAssessment)
-		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.RecordAttempt)
+		// Evaluaciones (assessments) - Sprint-04
+		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetMaterialAssessment)
+		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
 
 		// Progreso del estudiante
 		materials.PATCH("/:id/progress", c.Handlers.ProgressHandler.UpdateProgress)
@@ -105,9 +105,21 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 
 // setupAssessmentRoutes configura todas las rutas relacionadas con evaluaciones.
 func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
+	// Rutas de intentos (attempts) - Sprint-04
+	attempts := rg.Group("/attempts")
+	{
+		attempts.GET("/:id/results", c.Handlers.AssessmentHandler.GetAttemptResults)
+	}
+
+	// Rutas de historial de usuario - Sprint-04
+	users := rg.Group("/users")
+	{
+		users.GET("/me/attempts", c.Handlers.AssessmentHandler.GetUserAttemptHistory)
+	}
+
+	// Submit de evaluación con cálculo automático de score y feedback detallado (legacy)
 	assessments := rg.Group("/assessments")
 	{
-		// Submit de evaluación con cálculo automático de score y feedback detallado
 		assessments.POST("/:id/submit", c.Handlers.AssessmentHandler.SubmitAssessment)
 	}
 }

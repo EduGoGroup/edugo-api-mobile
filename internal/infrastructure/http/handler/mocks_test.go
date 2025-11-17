@@ -7,6 +7,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/google/uuid"
 )
 
 // MockMaterialService para tests de material_handler
@@ -220,4 +221,40 @@ func (m *MockSummaryService) GetSummary(ctx context.Context, materialID string) 
 		Glossary:  map[string]string{"término1": "definición1"},
 		CreatedAt: "2024-01-15T10:30:00Z",
 	}, nil
+}
+
+// MockAssessmentAttemptService para tests de assessment_handler (SPRINT-04)
+type MockAssessmentAttemptService struct {
+	GetAssessmentByMaterialIDFunc func(ctx context.Context, materialID uuid.UUID) (*dto.AssessmentResponse, error)
+	CreateAttemptFunc             func(ctx context.Context, studentID, materialID uuid.UUID, req dto.CreateAttemptRequest) (*dto.AttemptResultResponse, error)
+	GetAttemptResultFunc          func(ctx context.Context, attemptID, studentID uuid.UUID) (*dto.AttemptResultResponse, error)
+	GetAttemptHistoryFunc         func(ctx context.Context, studentID uuid.UUID, limit, offset int) (*dto.AttemptHistoryResponse, error)
+}
+
+func (m *MockAssessmentAttemptService) GetAssessmentByMaterialID(ctx context.Context, materialID uuid.UUID) (*dto.AssessmentResponse, error) {
+	if m.GetAssessmentByMaterialIDFunc != nil {
+		return m.GetAssessmentByMaterialIDFunc(ctx, materialID)
+	}
+	return &dto.AssessmentResponse{}, nil
+}
+
+func (m *MockAssessmentAttemptService) CreateAttempt(ctx context.Context, studentID, materialID uuid.UUID, req dto.CreateAttemptRequest) (*dto.AttemptResultResponse, error) {
+	if m.CreateAttemptFunc != nil {
+		return m.CreateAttemptFunc(ctx, studentID, materialID, req)
+	}
+	return &dto.AttemptResultResponse{}, nil
+}
+
+func (m *MockAssessmentAttemptService) GetAttemptResult(ctx context.Context, attemptID, studentID uuid.UUID) (*dto.AttemptResultResponse, error) {
+	if m.GetAttemptResultFunc != nil {
+		return m.GetAttemptResultFunc(ctx, attemptID, studentID)
+	}
+	return &dto.AttemptResultResponse{}, nil
+}
+
+func (m *MockAssessmentAttemptService) GetAttemptHistory(ctx context.Context, studentID uuid.UUID, limit, offset int) (*dto.AttemptHistoryResponse, error) {
+	if m.GetAttemptHistoryFunc != nil {
+		return m.GetAttemptHistoryFunc(ctx, studentID, limit, offset)
+	}
+	return &dto.AttemptHistoryResponse{}, nil
 }
