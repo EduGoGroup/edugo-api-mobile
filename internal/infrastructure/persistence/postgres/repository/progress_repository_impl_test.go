@@ -1,4 +1,5 @@
 //go:build integration
+// +build integration
 
 package repository
 
@@ -8,182 +9,116 @@ import (
 	"testing"
 	"time"
 
+	testifySuite "github.com/stretchr/testify/suite"
+
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
-	_ "github.com/lib/pq" // PostgreSQL driver
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-// setupProgressTestDB crea un testcontainer de PostgreSQL con todas las tablas necesarias
-func setupProgressTestDB(t *testing.T) (*sql.DB, func()) {
-	t.Helper()
-
-	ctx := context.Background()
-
-	// Levantar PostgreSQL testcontainer
-	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
-		postgres.WithDatabase("edugo"),
-		postgres.WithUsername("edugo_user"),
-		postgres.WithPassword("edugo_pass"),
-	)
-	require.NoError(t, err, "Failed to start PostgreSQL testcontainer")
-
-	// Obtener connection string
-	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	// Conectar a la base de datos
-	db, err := sql.Open("postgres", connStr)
-	require.NoError(t, err)
-
-	// Retry ping to ensure database is ready
-	var pingErr error
-	for i := 0; i < 10; i++ {
-		pingErr = db.Ping()
-		if pingErr == nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	require.NoError(t, pingErr, "Failed to ping database after retries")
-
-	// Crear todas las tablas necesarias
-	_, err = db.Exec(`
-		-- Users table
-		CREATE TABLE IF NOT EXISTS users (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			email VARCHAR(255) UNIQUE NOT NULL,
-			password_hash VARCHAR(255) NOT NULL,
-			first_name VARCHAR(100) NOT NULL,
-			last_name VARCHAR(100) NOT NULL,
-			role VARCHAR(50) NOT NULL,
-			is_active BOOLEAN DEFAULT true,
-			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-		);
-
-		-- Materials table
-		CREATE TABLE IF NOT EXISTS materials (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			title VARCHAR(255) NOT NULL,
-			description TEXT,
-			author_id UUID NOT NULL,
-			status VARCHAR(50) NOT NULL DEFAULT 'draft',
-			processing_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-		);
-
-		-- Material Progress table
-		CREATE TABLE IF NOT EXISTS material_progress (
-			material_id UUID NOT NULL REFERENCES materials(id),
-			user_id UUID NOT NULL REFERENCES users(id),
-			percentage INT DEFAULT 0 CHECK (percentage >= 0 AND percentage <= 100),
-			last_page INT DEFAULT 0,
-			status VARCHAR(50) DEFAULT 'not_started',
-			last_accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			completed_at TIMESTAMP NULL,
-			PRIMARY KEY (material_id, user_id)
-		);
-	`)
-	require.NoError(t, err, "Failed to create tables")
-
-	cleanup := func() {
-		db.Close()
-		pgContainer.Terminate(ctx)
-	}
-
-	return db, cleanup
+// ProgressRepositoryIntegrationSuite tests de integración para ProgressRepository
+type ProgressRepositoryIntegrationSuite struct {
+	suite.IntegrationTestSuite
+	repo repository.ProgressRepository
 }
 
-// seedTestUserAndMaterial crea un usuario y material de prueba
-func seedTestUserAndMaterial(t *testing.T, db *sql.DB) (valueobject.UserID, valueobject.MaterialID) {
-	t.Helper()
+// SetupSuite se ejecuta UNA VEZ antes de todos los tests
+func (s *ProgressRepositoryIntegrationSuite) SetupSuite() {
+	s.IntegrationTestSuite.SetupSuite()
+	// Las tablas users, materials, material_progress ya deben existir por las migraciones
+}
 
+// SetupTest prepara cada test individual
+func (s *ProgressRepositoryIntegrationSuite) SetupTest() {
+	s.IntegrationTestSuite.SetupTest()
+	s.repo = NewPostgresProgressRepository(s.PostgresDB)
+}
+
+// TestProgressRepositoryIntegration ejecuta la suite
+func TestProgressRepositoryIntegration(t *testing.T) {
+	testifySuite.Run(t, new(ProgressRepositoryIntegrationSuite))
+}
+
+// seedUserAndMaterial crea un usuario y material de prueba usando los datos ya seeded
+func (s *ProgressRepositoryIntegrationSuite) seedUserAndMaterial() (valueobject.UserID, valueobject.MaterialID) {
 	ctx := context.Background()
 
-	// Crear usuario
+	// Usar el usuario y material ya creados por la suite (via infrastructure seeds)
+	// O crear nuevos para mayor aislamiento
 	var userIDStr string
-	err := db.QueryRowContext(ctx, `
+	err := s.PostgresDB.QueryRowContext(ctx, `
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'Test', 'User', 'student', true)
 		RETURNING id
 	`, "test@example.com", "hashedpassword").Scan(&userIDStr)
-	require.NoError(t, err, "Failed to create test user")
+	s.Require().NoError(err, "Failed to create test user")
 
 	userID, err := valueobject.UserIDFromString(userIDStr)
-	require.NoError(t, err, "Failed to parse user ID")
+	s.Require().NoError(err, "Failed to parse user ID")
 
-	// Crear material
 	var materialIDStr string
-	err = db.QueryRowContext(ctx, `
+	err = s.PostgresDB.QueryRowContext(ctx, `
 		INSERT INTO materials (title, description, author_id, status, processing_status)
 		VALUES ($1, $2, $3, 'published', 'completed')
 		RETURNING id
 	`, "Test Material", "Test Description", userIDStr).Scan(&materialIDStr)
-	require.NoError(t, err, "Failed to create test material")
+	s.Require().NoError(err, "Failed to create test material")
 
 	materialID, err := valueobject.MaterialIDFromString(materialIDStr)
-	require.NoError(t, err, "Failed to parse material ID")
+	s.Require().NoError(err, "Failed to parse material ID")
 
 	return userID, materialID
 }
 
-func TestProgressRepository_Upsert_CreateNewProgress(t *testing.T) {
+// TestUpsert_CreateNewProgress valida que Upsert crea nuevo progreso
+func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CreateNewProgress() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
+	userID, materialID := s.seedUserAndMaterial()
 
-	userID, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
-
-	// Crear nuevo progreso
 	progress := entity.NewProgress(materialID, userID)
 	err := progress.UpdateProgress(25, 5)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	result, err := repo.Upsert(context.Background(), progress)
+	result, err := s.repo.Upsert(ctx, progress)
 
 	// Assert
-	require.NoError(t, err, "Upsert should not return error when creating new progress")
-	assert.NotNil(t, result)
-	assert.Equal(t, materialID.String(), result.MaterialID().String())
-	assert.Equal(t, userID.String(), result.UserID().String())
-	assert.Equal(t, 25, result.Percentage())
-	assert.Equal(t, 5, result.LastPage())
-	assert.Equal(t, enum.ProgressStatusInProgress, result.Status())
+	s.NoError(err, "Upsert should not return error when creating new progress")
+	s.NotNil(result)
+	s.Equal(materialID.String(), result.MaterialID().String())
+	s.Equal(userID.String(), result.UserID().String())
+	s.Equal(25, result.Percentage())
+	s.Equal(5, result.LastPage())
+	s.Equal(enum.ProgressStatusInProgress, result.Status())
 
 	// Verificar que se creó en DB
 	var count int
-	err = db.QueryRow(`
-		SELECT COUNT(*) FROM material_progress 
+	err = s.PostgresDB.QueryRow(`
+		SELECT COUNT(*) FROM material_progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&count)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "Progress should be in database")
+	s.Require().NoError(err)
+	s.Equal(1, count, "Progress should be in database")
 }
 
-func TestProgressRepository_Upsert_UpdateExistingProgress(t *testing.T) {
-	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
+// TestUpsert_UpdateExistingProgress valida que Upsert actualiza progreso existente
+func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress() {
+	ctx := context.Background()
 
-	userID, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
+	// Arrange
+	userID, materialID := s.seedUserAndMaterial()
 
 	// Crear progreso inicial
 	initialProgress := entity.NewProgress(materialID, userID)
 	err := initialProgress.UpdateProgress(25, 5)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	_, err = repo.Upsert(context.Background(), initialProgress)
-	require.NoError(t, err)
+	_, err = s.repo.Upsert(ctx, initialProgress)
+	s.Require().NoError(err)
 
 	// Esperar un momento para asegurar que updated_at sea diferente
 	time.Sleep(10 * time.Millisecond)
@@ -201,145 +136,138 @@ func TestProgressRepository_Upsert_UpdateExistingProgress(t *testing.T) {
 	)
 
 	// Act
-	result, err := repo.Upsert(context.Background(), updatedProgress)
+	result, err := s.repo.Upsert(ctx, updatedProgress)
 
 	// Assert
-	require.NoError(t, err, "Upsert should not return error when updating existing progress")
-	assert.NotNil(t, result)
-	assert.Equal(t, 50, result.Percentage())
-	assert.Equal(t, 10, result.LastPage())
-	assert.Equal(t, enum.ProgressStatusInProgress, result.Status())
+	s.NoError(err, "Upsert should not return error when updating existing progress")
+	s.NotNil(result)
+	s.Equal(50, result.Percentage())
+	s.Equal(10, result.LastPage())
+	s.Equal(enum.ProgressStatusInProgress, result.Status())
 
 	// Verificar que solo hay un registro en DB
 	var count int
-	err = db.QueryRow(`
-		SELECT COUNT(*) FROM material_progress 
+	err = s.PostgresDB.QueryRow(`
+		SELECT COUNT(*) FROM material_progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&count)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "Should still have only one progress record")
+	s.Require().NoError(err)
+	s.Equal(1, count, "Should still have only one progress record")
 
 	// Verificar que el porcentaje se actualizó
 	var percentage int
-	err = db.QueryRow(`
-		SELECT percentage FROM material_progress 
+	err = s.PostgresDB.QueryRow(`
+		SELECT percentage FROM material_progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&percentage)
-	require.NoError(t, err)
-	assert.Equal(t, 50, percentage)
+	s.Require().NoError(err)
+	s.Equal(50, percentage)
 }
 
-func TestProgressRepository_Upsert_CompleteProgress(t *testing.T) {
+// TestUpsert_CompleteProgress valida que Upsert maneja progreso completado
+func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CompleteProgress() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
+	userID, materialID := s.seedUserAndMaterial()
 
-	userID, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
-
-	// Crear progreso completado
 	progress := entity.NewProgress(materialID, userID)
 	err := progress.UpdateProgress(100, 20)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	result, err := repo.Upsert(context.Background(), progress)
+	result, err := s.repo.Upsert(ctx, progress)
 
 	// Assert
-	require.NoError(t, err, "Upsert should not return error when completing progress")
-	assert.NotNil(t, result)
-	assert.Equal(t, 100, result.Percentage())
-	assert.Equal(t, enum.ProgressStatusCompleted, result.Status())
+	s.NoError(err, "Upsert should not return error when completing progress")
+	s.NotNil(result)
+	s.Equal(100, result.Percentage())
+	s.Equal(enum.ProgressStatusCompleted, result.Status())
 
 	// Verificar que completed_at se estableció
 	var completedAt sql.NullTime
-	err = db.QueryRow(`
-		SELECT completed_at FROM material_progress 
+	err = s.PostgresDB.QueryRow(`
+		SELECT completed_at FROM material_progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&completedAt)
-	require.NoError(t, err)
-	assert.True(t, completedAt.Valid, "completed_at should be set when percentage is 100")
+	s.Require().NoError(err)
+	s.True(completedAt.Valid, "completed_at should be set when percentage is 100")
 }
 
-func TestProgressRepository_FindByMaterialAndUser_ProgressExists(t *testing.T) {
+// TestFindByMaterialAndUser_ProgressExists valida que FindByMaterialAndUser retorna progreso
+func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_ProgressExists() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
+	userID, materialID := s.seedUserAndMaterial()
 
-	userID, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
-
-	// Crear progreso directamente en DB
 	now := time.Now()
-	_, err := db.Exec(`
+	_, err := s.PostgresDB.Exec(`
 		INSERT INTO material_progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`, materialID.String(), userID.String(), 75, 15, "in_progress", now, now, now)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	progress, err := repo.FindByMaterialAndUser(context.Background(), materialID, userID)
+	progress, err := s.repo.FindByMaterialAndUser(ctx, materialID, userID)
 
 	// Assert
-	require.NoError(t, err, "FindByMaterialAndUser should not return error when progress exists")
-	assert.NotNil(t, progress)
-	assert.Equal(t, materialID.String(), progress.MaterialID().String())
-	assert.Equal(t, userID.String(), progress.UserID().String())
-	assert.Equal(t, 75, progress.Percentage())
-	assert.Equal(t, 15, progress.LastPage())
-	assert.Equal(t, enum.ProgressStatusInProgress, progress.Status())
+	s.NoError(err, "FindByMaterialAndUser should not return error when progress exists")
+	s.NotNil(progress)
+	s.Equal(materialID.String(), progress.MaterialID().String())
+	s.Equal(userID.String(), progress.UserID().String())
+	s.Equal(75, progress.Percentage())
+	s.Equal(15, progress.LastPage())
+	s.Equal(enum.ProgressStatusInProgress, progress.Status())
 }
 
-func TestProgressRepository_FindByMaterialAndUser_ProgressNotFound(t *testing.T) {
+// TestFindByMaterialAndUser_ProgressNotFound valida que FindByMaterialAndUser retorna nil cuando no existe
+func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_ProgressNotFound() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
-
-	userID, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
-
+	userID, materialID := s.seedUserAndMaterial()
 	// No crear ningún progreso
 
 	// Act
-	progress, err := repo.FindByMaterialAndUser(context.Background(), materialID, userID)
+	progress, err := s.repo.FindByMaterialAndUser(ctx, materialID, userID)
 
 	// Assert
-	require.NoError(t, err, "FindByMaterialAndUser should not return error when progress not found")
-	assert.Nil(t, progress, "Progress should be nil when not found")
+	s.NoError(err, "FindByMaterialAndUser should not return error when progress not found")
+	s.Nil(progress, "Progress should be nil when not found")
 }
 
-func TestProgressRepository_FindByMaterialAndUser_DifferentUser(t *testing.T) {
-	// Arrange
-	db, cleanup := setupProgressTestDB(t)
-	defer cleanup()
+// TestFindByMaterialAndUser_DifferentUser valida que progreso es específico por usuario
+func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_DifferentUser() {
+	ctx := context.Background()
 
-	userID1, materialID := seedTestUserAndMaterial(t, db)
-	repo := NewPostgresProgressRepository(db)
+	// Arrange
+	userID1, materialID := s.seedUserAndMaterial()
 
 	// Crear segundo usuario
 	var userID2Str string
-	err := db.QueryRow(`
+	err := s.PostgresDB.QueryRow(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'Test2', 'User2', 'student', true)
 		RETURNING id
 	`, "test2@example.com", "hashedpassword").Scan(&userID2Str)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	userID2, err := valueobject.UserIDFromString(userID2Str)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Crear progreso para userID1
 	now := time.Now()
-	_, err = db.Exec(`
+	_, err = s.PostgresDB.Exec(`
 		INSERT INTO material_progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`, materialID.String(), userID1.String(), 50, 10, "in_progress", now, now, now)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act - Buscar progreso para userID2 (no existe)
-	progress, err := repo.FindByMaterialAndUser(context.Background(), materialID, userID2)
+	progress, err := s.repo.FindByMaterialAndUser(ctx, materialID, userID2)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Nil(t, progress, "Should not find progress for different user")
+	s.NoError(err)
+	s.Nil(progress, "Should not find progress for different user")
 }
