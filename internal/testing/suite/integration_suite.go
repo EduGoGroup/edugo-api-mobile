@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	infrastructureTesting "github.com/EduGoGroup/edugo-infrastructure/testing"
+	infrastructureTesting "github.com/EduGoGroup/edugo-infrastructure/migrations"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
