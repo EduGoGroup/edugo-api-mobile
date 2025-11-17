@@ -8,7 +8,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
@@ -82,14 +81,21 @@ func (s *materialService) CreateMaterial(
 		"title", material.Title(),
 	)
 
-	// Publicar evento de material creado
-	event := messaging.MaterialUploadedEvent{
-		MaterialID:  material.ID().String(),
-		Title:       material.Title(),
-		ContentType: "application/pdf", // TODO: obtener del request cuando se implemente S3
-		UploadedAt:  material.CreatedAt(),
+	// Publicar evento de material creado (nuevo formato con envelope)
+	payload := rabbitmq.MaterialUploadedPayload{
+		MaterialID:    material.ID().String(),
+		SchoolID:      "00000000-0000-0000-0000-000000000000", // TODO: obtener school_id del contexto
+		TeacherID:     authorID.String(),
+		FileURL:       "s3://edugo/materials/" + material.ID().String() + ".pdf", // TODO: URL real de S3
+		FileSizeBytes: 0, // TODO: obtener tamaño real del archivo
+		FileType:      "application/pdf",
+		Metadata: map[string]interface{}{
+			"title":       material.Title(),
+			"description": material.Description(),
+		},
 	}
 
+	event := rabbitmq.NewMaterialUploadedEvent(payload)
 	eventJSON, err := event.ToJSON()
 	if err != nil {
 		s.logger.Warn("failed to serialize material uploaded event",
@@ -106,6 +112,7 @@ func (s *materialService) CreateMaterial(
 		} else {
 			s.logger.Info("material uploaded event published",
 				zap.String("material_id", material.ID().String()),
+				zap.String("event_id", event.EventID),
 			)
 		}
 	}
