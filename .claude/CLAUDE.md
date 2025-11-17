@@ -444,6 +444,123 @@ git push
 
 ---
 
+## 📁 Documentación Isolated (Sistema de Evaluaciones)
+
+### Ubicación y Estructura
+
+Este proyecto cuenta con **documentación aislada y autocontenida** para el Sistema de Evaluaciones:
+
+```
+docs/
+├── workflow-templates/              # Templates genéricos reutilizables
+│   ├── README.md                    # Cómo usar los templates
+│   ├── WORKFLOW_ORCHESTRATION.md   # Sistema de 2 fases (Web + Local)
+│   ├── TRACKING_SYSTEM.md          # Sistema de tracking con PROGRESS.json
+│   ├── PHASE2_BRIDGE_TEMPLATE.md   # Template para documentos puente
+│   ├── PROGRESS_TEMPLATE.json      # Template de tracking
+│   └── scripts/                    # Scripts de automatización
+│
+└── isolated/                        # Documentación específica del proyecto
+    ├── START_HERE.md                # ⭐ PUNTO DE ENTRADA ÚNICO
+    ├── EXECUTION_PLAN.md            # Plan detallado de 6 sprints
+    ├── PROGRESS.json                # Estado actual del proyecto
+    │
+    ├── 01-Context/                  # Contexto del proyecto
+    │   ├── PROJECT_OVERVIEW.md
+    │   ├── ECOSYSTEM_CONTEXT.md
+    │   ├── DEPENDENCIES.md
+    │   └── TECH_STACK.md
+    │
+    ├── 02-Requirements/             # Requisitos funcionales y técnicos
+    │   ├── PRD.md
+    │   ├── FUNCTIONAL_SPECS.md
+    │   ├── TECHNICAL_SPECS.md
+    │   └── ACCEPTANCE_CRITERIA.md
+    │
+    ├── 03-Design/                   # Diseño arquitectónico
+    │   ├── ARCHITECTURE.md
+    │   ├── DATA_MODEL.md
+    │   ├── API_CONTRACTS.md
+    │   └── SECURITY_DESIGN.md
+    │
+    ├── 04-Implementation/           # Implementación (7 sprints)
+    │   ├── Sprint-00-Integrar-Infrastructure/
+    │   ├── Sprint-01-Schema-BD/
+    │   ├── Sprint-02-Dominio/
+    │   ├── Sprint-03-Repositorios/
+    │   ├── Sprint-04-Services-API/
+    │   ├── Sprint-05-Testing/
+    │   └── Sprint-06-CI-CD/
+    │
+    ├── 05-Testing/                  # Estrategia de testing
+    │   ├── TEST_STRATEGY.md
+    │   ├── TEST_CASES.md
+    │   └── COVERAGE_REPORT.md
+    │
+    └── 06-Deployment/               # Deployment y monitoreo
+        ├── DEPLOYMENT_GUIDE.md
+        ├── INFRASTRUCTURE.md
+        └── MONITORING.md
+```
+
+### Cómo Usar la Documentación Isolated
+
+#### Para Implementar el Sistema de Evaluaciones
+
+```bash
+# 1. Leer punto de entrada
+cat docs/isolated/START_HERE.md
+
+# 2. Revisar plan de ejecución
+cat docs/isolated/EXECUTION_PLAN.md
+
+# 3. Iniciar con primer sprint
+cd docs/isolated/04-Implementation/Sprint-01-Schema-BD/
+cat README.md
+cat TASKS.md
+
+# 4. Seguir sprints en orden (Sprint-01 → Sprint-06)
+```
+
+#### Para Workflow de 2 Fases (Opcional)
+
+Si deseas usar el workflow de 2 fases (Web + Local):
+
+```bash
+# 1. Leer documentación de workflow
+cat docs/workflow-templates/README.md
+cat docs/workflow-templates/WORKFLOW_ORCHESTRATION.md
+
+# 2. Copiar templates a isolated/ si es necesario
+cp docs/workflow-templates/PROGRESS_TEMPLATE.json docs/isolated/PROGRESS.json
+```
+
+### Filosofía de la Documentación Isolated
+
+> **"Todo lo que necesitas está aquí. No necesitas buscar en archivos externos."**
+
+La documentación isolated es:
+- ✅ **Autocontenida**: Todo el contexto necesario incluido
+- ✅ **Ejecutable**: Planes detallados paso a paso
+- ✅ **Actualizada**: Refleja decisiones y estado actual
+- ✅ **Completa**: Desde contexto hasta deployment
+
+### Diferencia: sprint/current/ vs. docs/isolated/
+
+| Aspecto | `sprint/current/` | `docs/isolated/` |
+|---------|-------------------|------------------|
+| **Propósito** | Sprint activo de trabajo incremental | Proyecto completo de Sistema Evaluaciones |
+| **Alcance** | Una funcionalidad específica | Sistema completo (6 sprints) |
+| **Duración** | Días/semanas | Meses |
+| **Estado** | Work in progress | Plan maestro |
+| **Actualización** | Diaria | Por sprint |
+
+**Regla de oro:** 
+- Para trabajo actual → Usar `sprint/current/`
+- Para contexto completo del Sistema de Evaluaciones → Usar `docs/isolated/`
+
+---
+
 ## 🎯 Objetivo Final del Sprint
 
 Completar la migración de handlers mock a implementación real, eliminando código duplicado y completando todas las funcionalidades pendientes (S3, RabbitMQ, queries complejas).
@@ -452,5 +569,5 @@ Completar la migración de handlers mock a implementación real, eliminando cód
 
 ---
 
-**Última actualización**: 2025-11-05 (v3 - Agregado sistema /pr-fix para revisión automática de PRs)
+**Última actualización**: 2025-11-16 (v4 - Reorganizada documentación isolated, agregada sección workflow-templates)
 **Responsable**: Claude Code + Jhoan Medina
