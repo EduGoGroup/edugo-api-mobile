@@ -40,7 +40,21 @@ type customPostgreSQLFactory struct {
 }
 
 func (f *customPostgreSQLFactory) CreateConnection(ctx context.Context, config bootstrap.PostgreSQLConfig) (*gorm.DB, error) {
-	return f.shared.CreateConnection(ctx, config)
+	gormDB, err := f.shared.CreateConnection(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Guardar referencia a *sql.DB para uso posterior
+	// IMPORTANTE: shared/bootstrap llama a CreateConnection (no CreateRawConnection)
+	// por lo que necesitamos extraer sqlDB del gormDB aquí
+	sqlDB, err := gormDB.DB()
+	if err != nil {
+		return nil, err
+	}
+	*f.sqlDB = sqlDB
+
+	return gormDB, nil
 }
 
 func (f *customPostgreSQLFactory) CreateRawConnection(ctx context.Context, config bootstrap.PostgreSQLConfig) (*sql.DB, error) {
