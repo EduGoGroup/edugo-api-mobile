@@ -5,6 +5,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	testifySuite "github.com/stretchr/testify/suite"
@@ -111,7 +112,7 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
 		_, err := s.PostgresDB.Exec(`
 			INSERT INTO materials (id, title, description, author_id, status, processing_status)
 			VALUES ($1, $2, $3, $4, 'published', 'completed')
-		`, materialID.String(), "Material "+string(rune('0'+i)), "Description", authorID.String())
+		`, materialID.String(), fmt.Sprintf("Material %d", i), "Description", authorID.String())
 		s.Require().NoError(err)
 	}
 
