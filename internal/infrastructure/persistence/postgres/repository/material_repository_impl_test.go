@@ -1,132 +1,124 @@
 //go:build integration
+// +build integration
 
 package repository
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
+	testifySuite "github.com/stretchr/testify/suite"
+
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
 )
 
-func setupMaterialTable(t *testing.T, db *sql.DB) {
-	t.Helper()
-
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS materials (
-			id UUID PRIMARY KEY,
-			title VARCHAR(255) NOT NULL,
-			description TEXT,
-			author_id UUID NOT NULL,
-			subject_id VARCHAR(100),
-			s3_key VARCHAR(500),
-			s3_url TEXT,
-			status VARCHAR(50) NOT NULL DEFAULT 'draft',
-			processing_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-			is_deleted BOOLEAN DEFAULT false,
-			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-		)
-	`)
-	require.NoError(t, err, "Failed to create materials table")
+// MaterialRepositoryIntegrationSuite tests de integración para MaterialRepository
+type MaterialRepositoryIntegrationSuite struct {
+	suite.IntegrationTestSuite
+	repo repository.MaterialRepository
 }
 
-func TestMaterialRepository_Create(t *testing.T) {
+// SetupSuite se ejecuta UNA VEZ antes de todos los tests
+func (s *MaterialRepositoryIntegrationSuite) SetupSuite() {
+	s.IntegrationTestSuite.SetupSuite()
+	// La tabla materials ya debe existir por las migraciones de infrastructure
+}
+
+// SetupTest prepara cada test individual
+func (s *MaterialRepositoryIntegrationSuite) SetupTest() {
+	s.IntegrationTestSuite.SetupTest()
+	s.repo = NewPostgresMaterialRepository(s.PostgresDB)
+}
+
+// TestMaterialRepositoryIntegration ejecuta la suite
+func TestMaterialRepositoryIntegration(t *testing.T) {
+	testifySuite.Run(t, new(MaterialRepositoryIntegrationSuite))
+}
+
+// TestCreate valida que Create inserta un material correctamente
+func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-	setupMaterialTable(t, db)
-
-	repo := NewPostgresMaterialRepository(db)
-
 	authorID := valueobject.NewUserID()
 	material, err := entity.NewMaterial("Test Material", "Description", authorID, "subject-1")
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	err = repo.Create(context.Background(), material)
+	err = s.repo.Create(ctx, material)
 
 	// Assert
-	require.NoError(t, err, "Create should not return error")
+	s.NoError(err, "Create should not return error")
 
 	// Verificar que se creó en DB
 	var count int
-	db.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID().String()).Scan(&count)
-	assert.Equal(t, 1, count, "Material should be in database")
+	s.PostgresDB.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID().String()).Scan(&count)
+	s.Equal(1, count, "Material should be in database")
 }
 
-func TestMaterialRepository_FindByID_MaterialExists(t *testing.T) {
-	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-	setupMaterialTable(t, db)
+// TestFindByID_MaterialExists valida que FindByID retorna material cuando existe
+func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
+	ctx := context.Background()
 
-	repo := NewPostgresMaterialRepository(db)
-
-	// Crear material directamente en DB
+	// Arrange - Crear material directamente en DB
 	materialID := valueobject.NewMaterialID()
 	authorID := valueobject.NewUserID()
 
-	_, err := db.Exec(`
+	_, err := s.PostgresDB.Exec(`
 		INSERT INTO materials (id, title, description, author_id, subject_id, status, processing_status)
 		VALUES ($1, $2, $3, $4, $5, 'published', 'completed')
 	`, materialID.String(), "Test Material", "Test Description", authorID.String(), "subject-1")
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	material, err := repo.FindByID(context.Background(), materialID)
+	material, err := s.repo.FindByID(ctx, materialID)
 
 	// Assert
-	require.NoError(t, err, "FindByID should not return error when material exists")
-	assert.NotNil(t, material)
-	assert.Equal(t, "Test Material", material.Title())
-	assert.Equal(t, "Test Description", material.Description())
+	s.NoError(err, "FindByID should not return error when material exists")
+	s.NotNil(material)
+	s.Equal("Test Material", material.Title())
+	s.Equal("Test Description", material.Description())
 }
 
-func TestMaterialRepository_FindByID_MaterialNotFound(t *testing.T) {
-	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-	setupMaterialTable(t, db)
+// TestFindByID_MaterialNotFound valida que FindByID retorna nil cuando no existe
+func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialNotFound() {
+	ctx := context.Background()
 
-	repo := NewPostgresMaterialRepository(db)
+	// Arrange
 	nonExistentID := valueobject.NewMaterialID()
 
 	// Act
-	material, err := repo.FindByID(context.Background(), nonExistentID)
+	material, err := s.repo.FindByID(ctx, nonExistentID)
 
 	// Assert
-	assert.NoError(t, err, "FindByID should not error on not found")
-	assert.Nil(t, material, "Material should be nil when not found")
+	s.NoError(err, "FindByID should not error on not found")
+	s.Nil(material, "Material should be nil when not found")
 }
 
-func TestMaterialRepository_FindByAuthor(t *testing.T) {
-	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-	setupMaterialTable(t, db)
+// TestFindByAuthor valida que FindByAuthor retorna materiales del autor
+func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
+	ctx := context.Background()
 
-	repo := NewPostgresMaterialRepository(db)
+	// Arrange
 	authorID := valueobject.NewUserID()
 
 	// Crear 2 materiales del mismo autor
 	for i := 1; i <= 2; i++ {
 		materialID := valueobject.NewMaterialID()
-		_, err := db.Exec(`
+		_, err := s.PostgresDB.Exec(`
 			INSERT INTO materials (id, title, description, author_id, status, processing_status)
 			VALUES ($1, $2, $3, $4, 'published', 'completed')
-		`, materialID.String(), "Material "+string(rune(i)), "Description", authorID.String())
-		require.NoError(t, err)
+		`, materialID.String(), "Material "+string(rune('0'+i)), "Description", authorID.String())
+		s.Require().NoError(err)
 	}
 
 	// Act
-	materials, err := repo.FindByAuthor(context.Background(), authorID)
+	materials, err := s.repo.FindByAuthor(ctx, authorID)
 
 	// Assert
-	require.NoError(t, err)
-	assert.Len(t, materials, 2, "Should find 2 materials")
+	s.NoError(err)
+	s.Len(materials, 2, "Should find 2 materials")
 }
