@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"edugo-api-mobile/internal/domain/valueobjects"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobjects"
 )
 
 func TestNewScore_Success(t *testing.T) {

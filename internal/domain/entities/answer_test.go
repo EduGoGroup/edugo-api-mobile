@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"edugo-api-mobile/internal/domain/entities"
-	domainErrors "edugo-api-mobile/internal/domain/errors"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
+	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
 )
 
 func TestNewAnswer_Success(t *testing.T) {

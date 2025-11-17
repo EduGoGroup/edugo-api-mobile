@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	domainErrors "edugo-api-mobile/internal/domain/errors"
+	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
 )
 
 // Assessment representa una evaluación de un material educativo

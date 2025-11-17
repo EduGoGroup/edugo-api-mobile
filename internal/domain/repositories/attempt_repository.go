@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"edugo-api-mobile/internal/domain/entities"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 )
 
 // AttemptRepository define el contrato para persistencia de intentos

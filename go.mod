@@ -1,6 +1,6 @@
 module github.com/EduGoGroup/edugo-api-mobile
 
-go 1.24.7
+go 1.24.10
 
 require (
 	github.com/EduGoGroup/edugo-infrastructure/migrations v0.6.0
