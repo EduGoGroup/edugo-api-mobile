@@ -205,8 +205,8 @@ func TestAssessment_Validate_WithLimits(t *testing.T) {
 		70,
 	)
 
-	assessment.SetMaxAttempts(3)
-	assessment.SetTimeLimit(30)
+	require.NoError(t, assessment.SetMaxAttempts(3))
+	require.NoError(t, assessment.SetTimeLimit(30))
 
 	err := assessment.Validate()
 	assert.NoError(t, err)
@@ -297,7 +297,7 @@ func TestAssessment_RemoveMaxAttempts(t *testing.T) {
 	)
 
 	// Primero establecer límite
-	assessment.SetMaxAttempts(3)
+	require.NoError(t, assessment.SetMaxAttempts(3))
 	assert.NotNil(t, assessment.MaxAttempts)
 
 	oldUpdatedAt := assessment.UpdatedAt
@@ -325,7 +325,7 @@ func TestAssessment_IsTimeLimited(t *testing.T) {
 	assert.False(t, assessment.IsTimeLimited())
 
 	// Con límite de tiempo
-	assessment.SetTimeLimit(30)
+	require.NoError(t, assessment.SetTimeLimit(30))
 	assert.True(t, assessment.IsTimeLimited())
 
 	// Quitar límite
@@ -387,7 +387,7 @@ func TestAssessment_RemoveTimeLimit(t *testing.T) {
 	)
 
 	// Primero establecer límite
-	assessment.SetTimeLimit(30)
+	require.NoError(t, assessment.SetTimeLimit(30))
 	assert.NotNil(t, assessment.TimeLimitMinutes)
 	assert.True(t, assessment.IsTimeLimited())
 
