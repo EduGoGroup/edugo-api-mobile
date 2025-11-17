@@ -72,20 +72,20 @@ type Metadata struct {
 	EstimatedTimeMinutes int       `bson:"estimated_time_minutes"`
 }
 
-// mongoAssessmentDocumentRepository implementa AssessmentDocumentRepository
-type mongoAssessmentDocumentRepository struct {
+// MongoAssessmentDocumentRepository implementa AssessmentDocumentRepository
+type MongoAssessmentDocumentRepository struct {
 	collection *mongo.Collection
 }
 
 // NewMongoAssessmentDocumentRepository crea una nueva instancia del repositorio
 func NewMongoAssessmentDocumentRepository(db *mongo.Database) AssessmentDocumentRepository {
-	return &mongoAssessmentDocumentRepository{
+	return &MongoAssessmentDocumentRepository{
 		collection: db.Collection("material_assessment"),
 	}
 }
 
 // FindByMaterialID busca un documento de assessment por material_id
-func (r *mongoAssessmentDocumentRepository) FindByMaterialID(ctx context.Context, materialID string) (*AssessmentDocument, error) {
+func (r *MongoAssessmentDocumentRepository) FindByMaterialID(ctx context.Context, materialID string) (*AssessmentDocument, error) {
 	if materialID == "" {
 		return nil, fmt.Errorf("mongo: material_id cannot be empty")
 	}
@@ -105,7 +105,7 @@ func (r *mongoAssessmentDocumentRepository) FindByMaterialID(ctx context.Context
 }
 
 // FindByID busca un documento por ObjectID de MongoDB
-func (r *mongoAssessmentDocumentRepository) FindByID(ctx context.Context, objectID string) (*AssessmentDocument, error) {
+func (r *MongoAssessmentDocumentRepository) FindByID(ctx context.Context, objectID string) (*AssessmentDocument, error) {
 	if objectID == "" {
 		return nil, fmt.Errorf("mongo: objectID cannot be empty")
 	}
@@ -131,7 +131,7 @@ func (r *mongoAssessmentDocumentRepository) FindByID(ctx context.Context, object
 }
 
 // Save guarda o actualiza un documento de assessment (upsert)
-func (r *mongoAssessmentDocumentRepository) Save(ctx context.Context, doc *AssessmentDocument) error {
+func (r *MongoAssessmentDocumentRepository) Save(ctx context.Context, doc *AssessmentDocument) error {
 	if doc == nil {
 		return fmt.Errorf("mongo: document cannot be nil")
 	}
@@ -148,19 +148,31 @@ func (r *mongoAssessmentDocumentRepository) Save(ctx context.Context, doc *Asses
 		return fmt.Errorf("mongo: at least one question is required")
 	}
 
-	// Si no tiene ID, generar uno nuevo
-	if doc.ID.IsZero() {
-		doc.ID = primitive.NewObjectID()
-		doc.CreatedAt = time.Now().UTC()
-	}
-
+	// Actualizar timestamp
 	doc.UpdatedAt = time.Now().UTC()
 
-	// Upsert por material_id
+	// Buscar documento existente por material_id para preservar el _id
 	filter := bson.M{"material_id": doc.MaterialID}
+	existing, err := r.FindByMaterialID(ctx, doc.MaterialID)
+
+	if err == nil && existing != nil {
+		// Documento existe: preservar _id y created_at
+		doc.ID = existing.ID
+		doc.CreatedAt = existing.CreatedAt
+	} else {
+		// Documento nuevo: generar _id y created_at
+		if doc.ID.IsZero() {
+			doc.ID = primitive.NewObjectID()
+		}
+		if doc.CreatedAt.IsZero() {
+			doc.CreatedAt = time.Now().UTC()
+		}
+	}
+
+	// Upsert por material_id
 	opts := options.Replace().SetUpsert(true)
 
-	_, err := r.collection.ReplaceOne(ctx, filter, doc, opts)
+	_, err = r.collection.ReplaceOne(ctx, filter, doc, opts)
 	if err != nil {
 		return fmt.Errorf("mongo: error saving assessment document: %w", err)
 	}
@@ -169,7 +181,7 @@ func (r *mongoAssessmentDocumentRepository) Save(ctx context.Context, doc *Asses
 }
 
 // Delete elimina un documento de assessment
-func (r *mongoAssessmentDocumentRepository) Delete(ctx context.Context, objectID string) error {
+func (r *MongoAssessmentDocumentRepository) Delete(ctx context.Context, objectID string) error {
 	if objectID == "" {
 		return fmt.Errorf("mongo: objectID cannot be empty")
 	}
@@ -196,7 +208,7 @@ func (r *mongoAssessmentDocumentRepository) Delete(ctx context.Context, objectID
 
 // GetQuestionByID busca una pregunta específica dentro de un documento
 // Helper method útil para recuperar feedback durante corrección
-func (r *mongoAssessmentDocumentRepository) GetQuestionByID(ctx context.Context, materialID, questionID string) (*Question, error) {
+func (r *MongoAssessmentDocumentRepository) GetQuestionByID(ctx context.Context, materialID, questionID string) (*Question, error) {
 	if materialID == "" || questionID == "" {
 		return nil, fmt.Errorf("mongo: materialID and questionID are required")
 	}

@@ -18,7 +18,7 @@ func TestNewMongoAssessmentDocumentRepository(t *testing.T) {
 	repo := NewMongoAssessmentDocumentRepository(mockDB)
 
 	assert.NotNil(t, repo)
-	assert.IsType(t, &mongoAssessmentDocumentRepository{}, repo)
+	assert.IsType(t, &MongoAssessmentDocumentRepository{}, repo)
 }
 
 func TestMongoAssessmentDocumentRepository_FindByMaterialID_Success(t *testing.T) {
@@ -276,7 +276,7 @@ func TestMongoAssessmentDocumentRepository_Delete_EmptyID(t *testing.T) {
 func TestMongoAssessmentDocumentRepository_GetQuestionByID_Success(t *testing.T) {
 	// Arrange
 	var mockDB *mongo.Database
-	repo := NewMongoAssessmentDocumentRepository(mockDB).(*mongoAssessmentDocumentRepository)
+	repo := NewMongoAssessmentDocumentRepository(mockDB).(*MongoAssessmentDocumentRepository)
 
 	ctx := context.Background()
 	materialID := "01936d9a-7f8e-7e4c-9d3f-987654321cba"
@@ -296,7 +296,7 @@ func TestMongoAssessmentDocumentRepository_GetQuestionByID_Success(t *testing.T)
 func TestMongoAssessmentDocumentRepository_GetQuestionByID_EmptyIDs(t *testing.T) {
 	// Arrange
 	var mockDB *mongo.Database
-	repo := NewMongoAssessmentDocumentRepository(mockDB).(*mongoAssessmentDocumentRepository)
+	repo := NewMongoAssessmentDocumentRepository(mockDB).(*MongoAssessmentDocumentRepository)
 
 	ctx := context.Background()
 
