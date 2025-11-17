@@ -3,6 +3,8 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.24.10
 
 require (
+	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1
+	github.com/EduGoGroup/edugo-infrastructure/testing v0.1.1
 	github.com/EduGoGroup/edugo-shared/auth v0.7.0
 	github.com/EduGoGroup/edugo-shared/bootstrap v0.5.0
 	github.com/EduGoGroup/edugo-shared/common v0.5.0
@@ -25,7 +27,6 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
-	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/mongodb v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/rabbitmq v0.40.0
@@ -39,8 +40,6 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/EduGoGroup/edugo-infrastructure/messaging v0.5.0 // indirect
-	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -136,6 +135,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/testcontainers/testcontainers-go v0.40.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

@@ -4,10 +4,10 @@ github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8af
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6/go.mod h1:8o94RPi1/7XTJvwPpRSzSUedZrtlirdB3r9Z20bi2f8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
-github.com/EduGoGroup/edugo-infrastructure/messaging v0.5.0 h1:+qiNHOSWepyVhfT+1CJPKZCT7DwNm1Do26NPhd4Hh40=
-github.com/EduGoGroup/edugo-infrastructure/messaging v0.5.0/go.mod h1:i1JUhWoeA0woP47PJftsDqSEGQXg0OBuI0e0wLMpquU=
 github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1 h1:IZSAIAVa1uN9YE3DiftDKHpUo+bqE9NRCwetat4AYmE=
 github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1/go.mod h1:f1wD3I1KUWUJaVkFjHKzoMSPIV0dWWa8RFfPK2dfLyg=
+github.com/EduGoGroup/edugo-infrastructure/testing v0.1.1 h1:GoeljqSqem8rLcpt1KUtCX0f7yDoxezpNWHJZSdRl20=
+github.com/EduGoGroup/edugo-infrastructure/testing v0.1.1/go.mod h1:pkPJpBZgjO6UrSdoJBNTSEfypt8w4Vb9UZkCD/eCeK0=
 github.com/EduGoGroup/edugo-shared/auth v0.7.0 h1:agTXwYYqmf1NWpBGuhg0dj/Pgje7GNlAYnszI4qODyk=
 github.com/EduGoGroup/edugo-shared/auth v0.7.0/go.mod h1:VQ6mfe6sMeaWkR99wmgqOrem05eNSwhF70BEW0+KoBw=
 github.com/EduGoGroup/edugo-shared/bootstrap v0.5.0 h1:yLclK7OHoEQsRn3m1Rzr5gJvf06q1uSvjr6upuO39jw=
