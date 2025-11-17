@@ -1,21 +1,19 @@
-package messaging
+package rabbitmq
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 )
 
 // EventPublisher es un wrapper sobre RabbitMQPublisher que valida eventos antes de publicarlos
 type EventPublisher struct {
-	publisher rabbitmq.Publisher
+	publisher Publisher
 	exchange  string
 }
 
 // NewEventPublisher crea una nueva instancia de EventPublisher
-func NewEventPublisher(publisher rabbitmq.Publisher, exchange string) *EventPublisher {
+func NewEventPublisher(publisher Publisher, exchange string) *EventPublisher {
 	return &EventPublisher{
 		publisher: publisher,
 		exchange:  exchange,

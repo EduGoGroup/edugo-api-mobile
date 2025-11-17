@@ -109,7 +109,8 @@ func TestAssessmentService_CalculateScore_TodasRespuestasCorrectas(t *testing.T)
 	mockRepo.On("SaveResult", mock.Anything, mock.AnythingOfType("*repository.AssessmentResult")).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
-	mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// TODO(sprint-01): Restaurar mock cuando se implemente evento assessment.completed
+	// mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Act
 	result, err := service.CalculateScore(context.Background(), assessmentID, userID, userResponses)
@@ -187,7 +188,8 @@ func TestAssessmentService_CalculateScore_RespuestasParciales(t *testing.T) {
 	mockRepo.On("SaveResult", mock.Anything, mock.AnythingOfType("*repository.AssessmentResult")).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
-	mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// TODO(sprint-01): Restaurar mock cuando se implemente evento assessment.completed
+	// mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Act
 	result, err := service.CalculateScore(context.Background(), assessmentID, userID, userResponses)
@@ -250,7 +252,8 @@ func TestAssessmentService_CalculateScore_NingunaCorrecta(t *testing.T) {
 	mockRepo.On("SaveResult", mock.Anything, mock.AnythingOfType("*repository.AssessmentResult")).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
-	mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// TODO(sprint-01): Restaurar mock cuando se implemente evento assessment.completed
+	// mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Act
 	result, err := service.CalculateScore(context.Background(), assessmentID, userID, userResponses)
@@ -311,7 +314,8 @@ func TestAssessmentService_CalculateScore_PreguntaSinResponder(t *testing.T) {
 	mockRepo.On("SaveResult", mock.Anything, mock.AnythingOfType("*repository.AssessmentResult")).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
-	mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// TODO(sprint-01): Restaurar mock cuando se implemente evento assessment.completed
+	// mockPublisher.On("Publish", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Act
 	result, err := service.CalculateScore(context.Background(), assessmentID, userID, userResponses)
