@@ -8,12 +8,13 @@ import (
 // Responsabilidad: Gestionar la lógica de negocio de la aplicación
 // Implementa casos de uso y orquesta repositorios
 type ServiceContainer struct {
-	AuthService       service.AuthService
-	MaterialService   service.MaterialService
-	ProgressService   service.ProgressService
-	SummaryService    service.SummaryService
-	AssessmentService service.AssessmentService
-	StatsService      service.StatsService
+	AuthService              service.AuthService
+	MaterialService          service.MaterialService
+	ProgressService          service.ProgressService
+	SummaryService           service.SummaryService
+	AssessmentService        service.AssessmentService
+	AssessmentAttemptService service.AssessmentAttemptService // Sprint-04
+	StatsService             service.StatsService
 }
 
 // NewServiceContainer crea y configura todos los servicios de aplicación
@@ -58,6 +59,17 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 		AssessmentService: service.NewAssessmentService(
 			repos.AssessmentRepository,
 			infra.MessagePublisher,
+			infra.Logger,
+		),
+
+		// AssessmentAttemptService gestiona intentos de evaluación (Sprint-04)
+		// Orquesta repositorios de PostgreSQL (Sprint-03) y MongoDB
+		// Valida respuestas servidor-side y calcula scores
+		AssessmentAttemptService: service.NewAssessmentAttemptService(
+			repos.AssessmentRepoV2,
+			repos.AttemptRepo,
+			repos.AnswerRepo,
+			repos.AssessmentDocumentRepo,
 			infra.Logger,
 		),
 
