@@ -107,7 +107,7 @@ func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*entities
 	if err != nil {
 		return fmt.Errorf("postgres: error starting transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // Ignorar error si ya se hizo Commit
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {

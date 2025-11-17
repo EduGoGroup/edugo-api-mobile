@@ -285,7 +285,7 @@ func (r *PostgresAttemptRepository) Save(ctx context.Context, attempt *entities.
 	if err != nil {
 		return fmt.Errorf("postgres: error starting transaction: %w", err)
 	}
-	defer tx.Rollback() // Rollback si no se hace Commit
+	defer func() { _ = tx.Rollback() }() // Ignorar error si ya se hizo Commit
 
 	// 2. INSERT del attempt
 	attemptQuery := `
