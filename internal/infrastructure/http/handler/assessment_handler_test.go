@@ -22,7 +22,8 @@ func TestNewAssessmentHandler(t *testing.T) {
 	logger := NewTestLogger()
 
 	// Act
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	// Assert
 	assert.NotNil(t, handler)
@@ -77,7 +78,8 @@ func TestAssessmentHandler_SubmitAssessment_Success(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	// Preparar request body
 	requestBody := SubmitAssessmentRequest{
@@ -169,7 +171,8 @@ func TestAssessmentHandler_SubmitAssessment_PartialCorrect(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	// Preparar request body
 	requestBody := SubmitAssessmentRequest{
@@ -216,7 +219,8 @@ func TestAssessmentHandler_SubmitAssessment_InvalidRequest(t *testing.T) {
 
 	mockService := &MockAssessmentService{}
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	// Body JSON inválido
 	invalidJSON := []byte(`{"responses": "invalid"}`)
@@ -250,7 +254,8 @@ func TestAssessmentHandler_SubmitAssessment_EmptyResponses(t *testing.T) {
 
 	mockService := &MockAssessmentService{}
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	// Body con responses vacío
 	requestBody := SubmitAssessmentRequest{
@@ -293,7 +298,8 @@ func TestAssessmentHandler_SubmitAssessment_AssessmentNotFound(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	requestBody := SubmitAssessmentRequest{
 		Responses: map[string]interface{}{
@@ -341,7 +347,8 @@ func TestAssessmentHandler_SubmitAssessment_InvalidAssessmentID(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	requestBody := SubmitAssessmentRequest{
 		Responses: map[string]interface{}{
@@ -385,7 +392,8 @@ func TestAssessmentHandler_SubmitAssessment_DatabaseError(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	requestBody := SubmitAssessmentRequest{
 		Responses: map[string]interface{}{
@@ -429,7 +437,8 @@ func TestAssessmentHandler_SubmitAssessment_AssessmentAlreadyCompleted(t *testin
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	requestBody := SubmitAssessmentRequest{
 		Responses: map[string]interface{}{
@@ -493,7 +502,8 @@ func TestAssessmentHandler_GetAssessment_Success(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
 	w := httptest.NewRecorder()
@@ -530,7 +540,8 @@ func TestAssessmentHandler_GetAssessment_NotFound(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
 	w := httptest.NewRecorder()
@@ -563,7 +574,8 @@ func TestAssessmentHandler_GetAssessment_InvalidMaterialID(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
 	w := httptest.NewRecorder()
@@ -596,7 +608,8 @@ func TestAssessmentHandler_GetAssessment_DatabaseError(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	req, _ := http.NewRequest("GET", "/v1/materials/"+materialID+"/assessment", nil)
 	w := httptest.NewRecorder()
@@ -649,7 +662,8 @@ func TestAssessmentHandler_RecordAttempt_Success(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	answers := map[string]interface{}{"q1": "A"}
 	bodyBytes, _ := json.Marshal(answers)
@@ -684,7 +698,8 @@ func TestAssessmentHandler_RecordAttempt_InvalidJSON(t *testing.T) {
 
 	mockService := &MockAssessmentService{}
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	invalidJSON := []byte(`{invalid json}`)
 
@@ -722,7 +737,8 @@ func TestAssessmentHandler_RecordAttempt_AssessmentNotFound(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	answers := map[string]interface{}{"q1": "A"}
 	bodyBytes, _ := json.Marshal(answers)
@@ -761,7 +777,8 @@ func TestAssessmentHandler_RecordAttempt_InvalidMaterialID(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	answers := map[string]interface{}{"q1": "A"}
 	bodyBytes, _ := json.Marshal(answers)
@@ -800,7 +817,8 @@ func TestAssessmentHandler_RecordAttempt_DatabaseError(t *testing.T) {
 	}
 
 	logger := NewTestLogger()
-	handler := NewAssessmentHandler(mockService, logger)
+	mockAttemptService := &MockAssessmentAttemptService{}
+	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
 
 	answers := map[string]interface{}{"q1": "A"}
 	bodyBytes, _ := json.Marshal(answers)
