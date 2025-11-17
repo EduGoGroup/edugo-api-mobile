@@ -8,7 +8,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service/scoring"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/common/types"
@@ -98,7 +97,11 @@ func (s *assessmentService) RecordAttempt(ctx context.Context, materialID string
 
 	s.logger.Info("attempt recorded", "material_id", materialID, "user_id", userIDStr, "score", score)
 
-	// Publicar evento de intento registrado
+	// TODO(sprint-00): Restaurar publicación de eventos cuando se defina schema
+	// para assessment.attempt.recorded en edugo-infrastructure/schemas
+	// El evento assessment.generated es para cuando el WORKER genera un quiz,
+	// pero necesitamos un evento diferente para cuando un ESTUDIANTE completa un intento
+	/*
 	event := messaging.AssessmentAttemptRecordedEvent{
 		AttemptID:    attempt.ID,
 		UserID:       userID.String(),
@@ -126,6 +129,7 @@ func (s *assessmentService) RecordAttempt(ctx context.Context, materialID string
 			)
 		}
 	}
+	*/
 
 	return attempt, nil
 }
@@ -264,6 +268,8 @@ func (s *assessmentService) CalculateScore(ctx context.Context, assessmentID str
 	)
 
 	// 8. Publicar evento de evaluación completada (asíncrono, no bloqueante)
+	// TODO(sprint-00): Restaurar cuando se defina schema para assessment.completed
+	/*
 	event := messaging.AssessmentAttemptRecordedEvent{
 		AttemptID:    result.ID,
 		UserID:       userIDStr,
@@ -290,6 +296,7 @@ func (s *assessmentService) CalculateScore(ctx context.Context, assessmentID str
 			)
 		}
 	}
+	*/
 
 	return result, nil
 }

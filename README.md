@@ -105,6 +105,61 @@ make test-all
    docker-compose up
    ```
 
+### 🗄️ Setup Base de Datos
+
+**IMPORTANTE:** Las migraciones de base de datos ahora están centralizadas en [`edugo-infrastructure`](https://github.com/EduGoGroup/edugo-infrastructure).
+
+#### Opción 1: Usar edugo-infrastructure (RECOMENDADO)
+
+Si tienes acceso al repositorio `edugo-infrastructure`:
+
+```bash
+# 1. Clonar infrastructure (si no lo tienes)
+cd /path/to/your/workspace
+git clone https://github.com/EduGoGroup/edugo-infrastructure.git
+
+# 2. Levantar servicios (PostgreSQL, MongoDB, RabbitMQ)
+cd edugo-infrastructure
+make dev-up
+
+# 3. Ejecutar migraciones
+cd postgres && make migrate-up
+cd ../mongodb && make migrate-up
+```
+
+**Ventajas:**
+- ✅ Migraciones versionadas y compartidas entre proyectos
+- ✅ Schemas validados con tests automáticos
+- ✅ Rollback automático en caso de errores
+
+#### Opción 2: Docker Compose local (legacy)
+
+Si NO tienes acceso a `edugo-infrastructure`, puedes usar Docker Compose local:
+
+```bash
+# Levantar servicios locales
+docker-compose -f docker-compose-local.yml up -d
+
+# Ejecutar script de inicialización (crea schema básico)
+./scripts/dev-init.sh
+```
+
+**Nota:** Esta opción NO ejecuta las migraciones oficiales de infrastructure. Solo crea un schema mínimo para desarrollo local.
+
+#### Verificar Conexión a Base de Datos
+
+```bash
+# PostgreSQL
+docker exec -it edugo-postgres psql -U edugo -d edugo -c "SELECT COUNT(*) FROM users;"
+
+# MongoDB
+docker exec -it edugo-mongodb mongosh -u edugo -p edugo123 --eval "db.adminCommand('ping')"
+```
+
+**📖 Más información:**
+- [edugo-infrastructure/postgres](https://github.com/EduGoGroup/edugo-infrastructure/tree/main/postgres) - Migraciones PostgreSQL
+- [edugo-infrastructure/mongodb](https://github.com/EduGoGroup/edugo-infrastructure/tree/main/mongodb) - Migraciones MongoDB
+
 ### Sistema de Bootstrap de Infraestructura
 
 La aplicación utiliza un sistema de bootstrap modular que gestiona la inicialización de todos los recursos de infraestructura (bases de datos, mensajería, almacenamiento, logging). Este sistema proporciona:
