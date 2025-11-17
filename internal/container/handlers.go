@@ -50,9 +50,10 @@ func NewHandlerContainer(infra *InfrastructureContainer, services *ServiceContai
 			infra.Logger,
 		),
 
-		// AssessmentHandler gestiona evaluaciones y attempts
+		// AssessmentHandler gestiona evaluaciones y attempts (Sprint-04 actualizado)
 		AssessmentHandler: handler.NewAssessmentHandler(
 			services.AssessmentService,
+			services.AssessmentAttemptService, // Inyectar Sprint-04 service
 			infra.Logger,
 		),
 

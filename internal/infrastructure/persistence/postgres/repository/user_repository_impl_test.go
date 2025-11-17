@@ -1,238 +1,196 @@
 //go:build integration
+// +build integration
 
 package repository
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq" // PostgreSQL driver
+	testifySuite "github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// setupTestDB crea un testcontainer de PostgreSQL para tests de repository
-func setupTestDB(t *testing.T) (*sql.DB, func()) {
-	t.Helper()
-
-	ctx := context.Background()
-
-	// Levantar PostgreSQL testcontainer
-	pgContainer, err := postgres.Run(ctx, "postgres:15-alpine",
-		postgres.WithDatabase("edugo"),
-		postgres.WithUsername("edugo_user"),
-		postgres.WithPassword("edugo_pass"),
-	)
-	require.NoError(t, err, "Failed to start PostgreSQL testcontainer")
-
-	// Obtener connection string
-	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	// Conectar a la base de datos
-	db, err := sql.Open("postgres", connStr)
-	require.NoError(t, err)
-	require.NoError(t, db.Ping())
-
-	// Crear schema de users
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			email VARCHAR(255) UNIQUE NOT NULL,
-			password_hash VARCHAR(255) NOT NULL,
-			first_name VARCHAR(100) NOT NULL,
-			last_name VARCHAR(100) NOT NULL,
-			role VARCHAR(50) NOT NULL,
-			is_active BOOLEAN DEFAULT true,
-			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-		)
-	`)
-	require.NoError(t, err, "Failed to create users table")
-
-	cleanup := func() {
-		db.Close()
-		pgContainer.Terminate(ctx)
-	}
-
-	return db, cleanup
+// UserRepositoryIntegrationSuite tests de integración para UserRepository
+type UserRepositoryIntegrationSuite struct {
+	suite.IntegrationTestSuite
+	repo repository.UserRepository
 }
 
-func TestUserRepository_FindByEmail_UserExists(t *testing.T) {
+// SetupSuite se ejecuta UNA VEZ antes de todos los tests
+func (s *UserRepositoryIntegrationSuite) SetupSuite() {
+	s.IntegrationTestSuite.SetupSuite()
+	// La tabla users ya debe existir por las migraciones de infrastructure
+}
+
+// SetupTest prepara cada test individual
+func (s *UserRepositoryIntegrationSuite) SetupTest() {
+	s.IntegrationTestSuite.SetupTest()
+	s.repo = NewPostgresUserRepository(s.PostgresDB)
+}
+
+// TestUserRepositoryIntegration ejecuta la suite
+func TestUserRepositoryIntegration(t *testing.T) {
+	testifySuite.Run(t, new(UserRepositoryIntegrationSuite))
+}
+
+// TestFindByEmail_UserExists valida que FindByEmail retorna usuario cuando existe
+func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserExists() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	repo := NewPostgresUserRepository(db)
-
-	// Crear usuario de prueba
 	email := "test@example.com"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 
 	var userID string
-	err := db.QueryRow(`
+	err := s.PostgresDB.QueryRow(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'John', 'Doe', 'student', true)
 		RETURNING id
 	`, email, string(hashedPassword)).Scan(&userID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Crear value object de email
 	emailVO, errEmail := valueobject.NewEmail(email)
-	require.NoError(t, errEmail)
+	s.Require().NoError(errEmail)
 
 	// Act
-	user, err := repo.FindByEmail(context.Background(), emailVO)
+	user, err := s.repo.FindByEmail(ctx, emailVO)
 
 	// Assert
-	require.NoError(t, err, "FindByEmail should not return error when user exists")
-	assert.NotNil(t, user)
-	assert.Equal(t, email, user.Email().String())
-	assert.Equal(t, "John", user.FirstName())
-	assert.Equal(t, "Doe", user.LastName())
-	assert.Equal(t, enum.SystemRoleStudent, user.Role())
-	assert.True(t, user.IsActive())
+	s.NoError(err, "FindByEmail should not return error when user exists")
+	s.NotNil(user)
+	s.Equal(email, user.Email().String())
+	s.Equal("John", user.FirstName())
+	s.Equal("Doe", user.LastName())
+	s.Equal(enum.SystemRoleStudent, user.Role())
+	s.True(user.IsActive())
 }
 
-func TestUserRepository_FindByEmail_UserNotFound(t *testing.T) {
+// TestFindByEmail_UserNotFound valida que FindByEmail retorna error cuando no existe
+func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserNotFound() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	repo := NewPostgresUserRepository(db)
-
-	// Crear value object de email
 	emailVO, errEmail := valueobject.NewEmail("nonexistent@example.com")
-	require.NoError(t, errEmail)
+	s.Require().NoError(errEmail)
 
 	// Act
-	user, err := repo.FindByEmail(context.Background(), emailVO)
+	user, err := s.repo.FindByEmail(ctx, emailVO)
 
 	// Assert
-	require.Error(t, err, "FindByEmail should return error when user not found")
-	assert.Nil(t, user)
-	assert.Contains(t, err.Error(), "user not found")
+	s.Error(err, "FindByEmail should return error when user not found")
+	s.Nil(user)
+	s.Contains(err.Error(), "user not found")
 }
 
-func TestUserRepository_FindByID_UserExists(t *testing.T) {
+// TestFindByID_UserExists valida que FindByID retorna usuario cuando existe
+func (s *UserRepositoryIntegrationSuite) TestFindByID_UserExists() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	repo := NewPostgresUserRepository(db)
-
-	// Crear usuario de prueba
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 
 	var userID string
-	err := db.QueryRow(`
+	err := s.PostgresDB.QueryRow(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'Jane', 'Smith', 'teacher', true)
 		RETURNING id
 	`, "jane@example.com", string(hashedPassword)).Scan(&userID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	userValueObject, err := valueobject.UserIDFromString(userID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Act
-	user, err := repo.FindByID(context.Background(), userValueObject)
+	user, err := s.repo.FindByID(ctx, userValueObject)
 
 	// Assert
-	require.NoError(t, err, "FindByID should not return error when user exists")
-	assert.NotNil(t, user)
-	assert.Equal(t, userID, user.ID().String())
-	assert.Equal(t, "jane@example.com", user.Email().String())
-	assert.Equal(t, "Jane", user.FirstName())
-	assert.Equal(t, "Smith", user.LastName())
-	assert.Equal(t, enum.SystemRoleTeacher, user.Role())
+	s.NoError(err, "FindByID should not return error when user exists")
+	s.NotNil(user)
+	s.Equal(userID, user.ID().String())
+	s.Equal("jane@example.com", user.Email().String())
+	s.Equal("Jane", user.FirstName())
+	s.Equal("Smith", user.LastName())
+	s.Equal(enum.SystemRoleTeacher, user.Role())
 }
 
-func TestUserRepository_FindByID_UserNotFound(t *testing.T) {
+// TestFindByID_UserNotFound valida que FindByID retorna error cuando no existe
+func (s *UserRepositoryIntegrationSuite) TestFindByID_UserNotFound() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	repo := NewPostgresUserRepository(db)
-
-	// Crear un ID que no existe
 	nonExistentID := valueobject.NewUserID()
 
 	// Act
-	user, err := repo.FindByID(context.Background(), nonExistentID)
+	user, err := s.repo.FindByID(ctx, nonExistentID)
 
 	// Assert
-	require.Error(t, err, "FindByID should return error when user not found")
-	assert.Nil(t, user)
-	assert.Contains(t, err.Error(), "user not found")
+	s.Error(err, "FindByID should return error when user not found")
+	s.Nil(user)
+	s.Contains(err.Error(), "user not found")
 }
 
-func TestUserRepository_FindByEmail_MultipleUsersWithSameEmail(t *testing.T) {
+// TestFindByEmail_MultipleUsersWithSameEmail valida que DB enforce UNIQUE constraint
+func (s *UserRepositoryIntegrationSuite) TestFindByEmail_MultipleUsersWithSameEmail() {
+	ctx := context.Background()
+
 	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	repo := NewPostgresUserRepository(db)
-
 	email := "unique@example.com"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 
 	// Intentar crear primer usuario
-	_, err := db.Exec(`
+	_, err := s.PostgresDB.Exec(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'User', 'One', 'student', true)
 	`, email, string(hashedPassword))
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Intentar crear segundo usuario con mismo email (debe fallar por UNIQUE constraint)
-	_, err = db.Exec(`
+	_, err = s.PostgresDB.Exec(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'User', 'Two', 'student', true)
 	`, email, string(hashedPassword))
-	require.Error(t, err, "Database should enforce UNIQUE constraint on email")
+	s.Error(err, "Database should enforce UNIQUE constraint on email")
 
 	// Act - Verificar que FindByEmail devuelve el primer usuario
 	emailVO, err := valueobject.NewEmail(email)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	user, err := repo.FindByEmail(context.Background(), emailVO)
+	user, err := s.repo.FindByEmail(ctx, emailVO)
 
 	// Assert
-	require.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.Equal(t, "User", user.FirstName())
-	assert.Equal(t, "One", user.LastName())
+	s.NoError(err)
+	s.NotNil(user)
+	s.Equal("User", user.FirstName())
+	s.Equal("One", user.LastName())
 }
 
-func TestUserRepository_Update(t *testing.T) {
-	// Arrange
-	db, cleanup := setupTestDB(t)
-	defer cleanup()
+// TestUpdate valida que Update actualiza correctamente un usuario
+func (s *UserRepositoryIntegrationSuite) TestUpdate() {
+	ctx := context.Background()
 
-	repo := NewPostgresUserRepository(db)
-
-	// Crear usuario inicial
+	// Arrange - Crear usuario inicial
 	email, _ := valueobject.NewEmail("original@example.com")
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 
 	var userID string
-	err := db.QueryRow(`
+	err := s.PostgresDB.QueryRow(`
 		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
 		VALUES ($1, $2, 'Original', 'Name', 'student', true)
 		RETURNING id
 	`, email.String(), string(hashedPassword)).Scan(&userID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	userIDValue, err := valueobject.UserIDFromString(userID)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	// Reconstruir user con cambios
 	updatedUser := entity.ReconstructUser(
@@ -248,22 +206,22 @@ func TestUserRepository_Update(t *testing.T) {
 	)
 
 	// Act
-	err = repo.Update(context.Background(), updatedUser)
+	err = s.repo.Update(ctx, updatedUser)
 
 	// Assert
-	require.NoError(t, err, "Update should not return error")
+	s.NoError(err, "Update should not return error")
 
 	// Verificar que se actualizó
 	var firstName, lastName string
 	var isActive bool
-	err = db.QueryRow(`
+	err = s.PostgresDB.QueryRow(`
 		SELECT first_name, last_name, is_active
 		FROM users
 		WHERE id = $1
 	`, userID).Scan(&firstName, &lastName, &isActive)
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
-	assert.Equal(t, "Updated", firstName)
-	assert.Equal(t, "Name", lastName)
-	assert.False(t, isActive)
+	s.Equal("Updated", firstName)
+	s.Equal("Name", lastName)
+	s.False(isActive)
 }
