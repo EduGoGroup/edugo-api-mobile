@@ -5,6 +5,15 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-11-18
+
+### Tipo de Release: minor
+
+- chore: sync dev to main - Sprint 05 (Testing + Docs)
+- feat: Sprint 04 - Services y API REST del Sistema de Evaluaciones
+
+---
+
 ## [0.3.2] - 2025-11-17
 
 ### Tipo de Release: patch
