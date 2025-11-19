@@ -6,12 +6,11 @@ package suite
 import (
 	"context"
 	"database/sql"
-	"path/filepath"
-	"runtime"
 	"time"
 
-	pgtesting "github.com/EduGoGroup/edugo-infrastructure/postgres/testing"
+	"github.com/EduGoGroup/edugo-infrastructure/postgres/migrations"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	_ "github.com/lib/pq" // Driver PostgreSQL
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -36,10 +35,6 @@ type IntegrationTestSuite struct {
 
 	// Contexto de la suite
 	ctx context.Context
-
-	// Paths a scripts de infrastructure
-	migrationsPath string
-	seedsPath      string
 }
 
 // SetupSuite se ejecuta UNA VEZ antes de todos los tests
@@ -50,9 +45,6 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// Inicializar logger
 	s.Logger = logger.NewZapLogger("info", "json")
 	s.Logger.Info("🚀 Iniciando suite de integración...")
-
-	// Calcular paths a scripts de infrastructure
-	s.calculateInfrastructurePaths()
 
 	// Levantar contenedores compartidos
 	s.startContainers()
@@ -96,13 +88,17 @@ func (s *IntegrationTestSuite) SetupTest() {
 	s.Logger.Info("🧪 Preparando test individual...")
 
 	// Limpiar datos de PostgreSQL
-	if err := pgtesting.CleanDatabase(s.PostgresDB); err != nil {
+	if err := s.cleanDatabase(); err != nil {
 		s.T().Fatalf("Error limpiando base de datos: %v", err)
 	}
 
-	// Re-aplicar seeds para tener datos frescos
-	if err := pgtesting.ApplySeeds(s.PostgresDB, s.seedsPath); err != nil {
+	// Re-aplicar seeds y mock data para tener datos frescos
+	if err := migrations.ApplySeeds(s.PostgresDB); err != nil {
 		s.T().Fatalf("Error aplicando seeds: %v", err)
+	}
+
+	if err := migrations.ApplyMockData(s.PostgresDB); err != nil {
+		s.T().Fatalf("Error aplicando mock data: %v", err)
 	}
 
 	s.Logger.Info("✅ Test individual listo con datos frescos")
@@ -154,44 +150,66 @@ func (s *IntegrationTestSuite) startContainers() {
 	s.Logger.Info("✅ Contenedores iniciados")
 }
 
-// applyMigrations ejecuta migraciones de edugo-infrastructure
+// applyMigrations ejecuta migraciones de edugo-infrastructure usando sistema embed
 func (s *IntegrationTestSuite) applyMigrations() {
 	s.Logger.Info("📝 Aplicando migraciones de infrastructure...")
 
-	err := pgtesting.ApplyMigrations(s.PostgresDB, s.migrationsPath)
+	err := migrations.ApplyAll(s.PostgresDB)
 	s.Require().NoError(err, "Migraciones deben aplicarse correctamente")
 
 	s.Logger.Info("✅ Migraciones aplicadas")
 }
 
-// applySeeds ejecuta seeds de edugo-infrastructure
+// applySeeds ejecuta seeds de edugo-infrastructure usando sistema embed
 func (s *IntegrationTestSuite) applySeeds() {
 	s.Logger.Info("🌱 Aplicando seeds de infrastructure...")
 
-	err := pgtesting.ApplySeeds(s.PostgresDB, s.seedsPath)
+	err := migrations.ApplySeeds(s.PostgresDB)
 	s.Require().NoError(err, "Seeds deben aplicarse correctamente")
 
 	s.Logger.Info("✅ Seeds aplicados")
 }
 
-// calculateInfrastructurePaths calcula paths relativos a edugo-infrastructure
-// Asume que edugo-infrastructure está en el mismo nivel que edugo-api-mobile
-func (s *IntegrationTestSuite) calculateInfrastructurePaths() {
-	// Obtener directorio del archivo actual
-	_, filename, _, _ := runtime.Caller(0)
-	currentDir := filepath.Dir(filename)
+// cleanDatabase limpia todas las tablas de la base de datos (excepto schema_migrations)
+// Implementación local ya que pgtesting.CleanDatabase() fue removido en v0.9.0
+func (s *IntegrationTestSuite) cleanDatabase() error {
+	s.Logger.Info("🧹 Limpiando base de datos...")
 
-	// Subir desde internal/testing/suite hasta raíz del proyecto
-	projectRoot := filepath.Join(currentDir, "..", "..", "..")
+	// Obtener todas las tablas (excepto schema_migrations)
+	query := `
+		SELECT tablename
+		FROM pg_tables
+		WHERE schemaname = 'public'
+		AND tablename != 'schema_migrations'
+		ORDER BY tablename
+	`
 
-	// Calcular path a infrastructure (directorio hermano)
-	infrastructureRoot := filepath.Join(projectRoot, "..", "edugo-infrastructure")
+	rows, err := s.PostgresDB.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
 
-	s.migrationsPath = filepath.Join(infrastructureRoot, "database", "migrations", "postgres")
-	s.seedsPath = filepath.Join(infrastructureRoot, "seeds", "postgres")
+	var tables []string
+	for rows.Next() {
+		var table string
+		if err := rows.Scan(&table); err != nil {
+			return err
+		}
+		tables = append(tables, table)
+	}
 
-	s.Logger.Info("📁 Paths de infrastructure calculados",
-		"migrations", s.migrationsPath,
-		"seeds", s.seedsPath,
-	)
+	// Truncar todas las tablas en cascada
+	if len(tables) > 0 {
+		for _, table := range tables {
+			truncateQuery := "TRUNCATE TABLE " + table + " CASCADE"
+			if _, err := s.PostgresDB.Exec(truncateQuery); err != nil {
+				s.Logger.Info("⚠️ Error truncando tabla", "table", table, "error", err)
+				// Continuar con otras tablas incluso si una falla
+			}
+		}
+	}
+
+	s.Logger.Info("✅ Base de datos limpiada", "tables_truncated", len(tables))
+	return nil
 }
