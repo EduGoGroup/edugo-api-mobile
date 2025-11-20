@@ -629,3 +629,19 @@ git revert <commit-lint-fixes>
 **Fecha:** 19 de Noviembre, 2025  
 **Versión:** 1.0  
 **Estado:** Listo para Ejecución
+
+---
+
+## ❓ Sobre la Numeración de Sprints
+
+**¿Por qué este proyecto no tiene todos los sprints (1, 2, 3, 4)?**
+
+Los sprints se asignan según las **necesidades específicas** de cada proyecto, no como una secuencia obligatoria:
+
+- **Sprint 1:** Fundamentos (solo shared e infrastructure)
+- **Sprint 2:** APIs con endpoints HTTP (solo mobile y admin)
+- **Sprint 3:** Procesamiento/utilidades (solo worker y dev-environment)
+- **Sprint 4:** Optimización global (TODOS los proyectos)
+
+**Este diseño es intencional** para evitar trabajo innecesario en cada proyecto.
+
