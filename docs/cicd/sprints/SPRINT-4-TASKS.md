@@ -277,14 +277,14 @@ echo "🚀 Siguiente paso: Tarea 4.2 (Crear pr-validation.yml)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/setup-infrastructure-reusables.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/setup-infrastructure-reusables.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/setup-infrastructure-reusables.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh
 ```
 
 #### Criterios de Validación
@@ -628,14 +628,14 @@ echo "🚀 Siguiente paso: Tarea 4.3 (Crear sync-branches.yml)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/create-pr-validation-reusable.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/create-pr-validation-reusable.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/create-pr-validation-reusable.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh
 ```
 
 #### Commitear

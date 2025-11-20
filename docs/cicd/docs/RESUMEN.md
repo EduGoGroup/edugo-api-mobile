@@ -285,7 +285,7 @@ open SPRINT-2-TASKS.md
 # Ir a Tarea 2.1 y seguir paso a paso
 
 # 3. Ejecutar scripts incluidos
-cd SCRIPTS/
+cd assets/scripts/
 ./prepare-sprint-2.sh
 ./migrate-to-go-1.25.sh
 # ... etc
@@ -320,9 +320,9 @@ open README.md
 └── RESUMEN-GENERADO.md   (este archivo)
 ```
 
-### Scripts (Directorio SCRIPTS/)
+### Scripts (Directorio assets/scripts/)
 ```
-SCRIPTS/
+assets/scripts/
 ├── prepare-sprint-2.sh
 ├── migrate-to-go-1.25.sh
 ├── validate-go-1.25-local.sh
@@ -333,9 +333,9 @@ SCRIPTS/
 └── create-sync-branches-reusable.sh
 ```
 
-### Templates de Workflows (Directorio WORKFLOWS/)
+### Templates de Workflows (Directorio assets/workflows/)
 ```
-WORKFLOWS/
+assets/workflows/
 ├── pr-validation.yml         (reusable)
 ├── sync-branches.yml         (reusable)
 ├── pr-to-dev.yml            (caller)

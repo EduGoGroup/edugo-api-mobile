@@ -1,9 +1,29 @@
 # Estado del Sprint Actual
 
-**Proyecto:** edugo-shared  
+**Proyecto:** edugo-api-mobile  
 **Sprint:** Pendiente  
 **Fase Actual:** Ninguna  
 **Última Actualización:** Pendiente
+
+⚠️ **CONTEXTO DE UBICACIÓN:**
+```
+📍 Estás en: tracking/SPRINT-STATUS.md (dentro de 03-api-mobile/)
+📍 Este archivo se actualiza después de CADA tarea
+⚠️ Usa solo archivos en 03-api-mobile/, NO en otros proyectos
+```
+
+---
+
+## 🚀 Indicadores Rápidos
+
+| Indicador | Valor |
+|-----------|-------|
+| ⏰ **Próxima acción** | Iniciar sprint (ver PROMPTS.md) |
+| 📊 **Progreso global** | 0% |
+| 🔄 **Fase actual** | Ninguna |
+| ✅ **Tareas completadas** | 0/0 |
+| ⏳ **Tareas pendientes** | 0 |
+| 🔴 **Bloqueadores** | Ninguno |
 
 ---
 

@@ -202,11 +202,11 @@ echo "🚀 Siguiente paso: Ejecutar Tarea 2.2 (Migrar a Go 1.25)"
 mkdir -p /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS
 
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/prepare-sprint-2.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/prepare-sprint-2.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/prepare-sprint-2.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/prepare-sprint-2.sh
 ```
 
 #### Criterios de Validación
@@ -388,14 +388,14 @@ echo "  4. Continuar con Tarea 2.3 (Validar compilación)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/migrate-to-go-1.25.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/migrate-to-go-1.25.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/migrate-to-go-1.25.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh
 ```
 
 #### Revisar Cambios
@@ -697,14 +697,14 @@ echo "🚀 Siguiente paso: Tarea 2.4 (Validar en CI)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-local.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-local.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-local.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh
 ```
 
 #### Criterios de Validación
@@ -990,18 +990,18 @@ echo "   Revisar manualmente: gh pr view $PR_NUMBER --web"
 #### Guardar Script
 
 ```bash
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-ci.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-ci.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh
 ```
 
 #### Ejecutar Validación en CI
 
 ```bash
 # Opción A: Usar script automatizado
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/validate-go-1.25-ci.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh
 
 # Opción B: Manualmente
 cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
@@ -1545,14 +1545,14 @@ echo "  3. Validar en CI: Push y monitorear"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/implement-parallelism-pr-to-dev.sh << 'SCRIPT'
+cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/implement-parallelism-pr-to-dev.sh
+chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS/implement-parallelism-pr-to-dev.sh
+/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh
 ```
 
 #### Commitear Cambios

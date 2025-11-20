@@ -2,6 +2,13 @@
 
 **Proyecto PILOTO para Optimización de CI/CD**
 
+⚠️ **CONTEXTO DE UBICACIÓN:**
+```
+📍 Estás en: 03-api-mobile/ (plan de implementación CI/CD)
+📍 Todas las rutas mencionadas son relativas a: 03-api-mobile/
+⚠️ NO uses archivos de otros proyectos (01-shared, 02-infrastructure, etc.)
+```
+
 ---
 
 ## 📋 Información del Proyecto
@@ -606,6 +613,9 @@ git revert <commit-lint-fixes>
 - [Matriz Comparativa](../../04-MATRIZ-COMPARATIVA.md)
 - [Quick Wins](../../05-QUICK-WINS.md)
 - [Resultado Pruebas Go 1.25](../../08-RESULTADO-PRUEBAS-GO-1.25.md)
+- [Sprint 2 Tasks](./sprints/SPRINT-2-TASKS.md)
+- [Sprint 4 Tasks](./sprints/SPRINT-4-TASKS.md)
+- [Sprint Entities Adaptation](./sprints/SPRINT-ENTITIES-ADAPTATION.md)
 
 ### Documentación Externa
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
@@ -617,7 +627,7 @@ git revert <commit-lint-fixes>
 
 ## 🎯 Próximos Pasos
 
-1. **Leer:** [SPRINT-2-TASKS.md](./SPRINT-2-TASKS.md) - Plan detallado
+1. **Leer:** [SPRINT-2-TASKS.md](./sprints/SPRINT-2-TASKS.md) - Plan detallado
 2. **Preparar:** Entorno local, verificar acceso
 3. **Ejecutar:** Tareas del Sprint 2 una por una
 4. **Validar:** Cada tarea con sus checkpoints
