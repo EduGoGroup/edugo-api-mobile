@@ -16,7 +16,7 @@
 ### Proyecto: EduGo API Mobile
 API REST backend para plataforma educativa. Implementa Clean Architecture (Hexagonal) con Go + Gin.
 
-**Stack**: 
+**Stack**:
 - Framework: Gin
 - DB: PostgreSQL + MongoDB
 - Messaging: RabbitMQ (pendiente completar)
@@ -140,7 +140,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 #### Corrección 3: Agregar Directiva Temporal de Manejo de Errores ✅ COMPLETADA
 - **Comando/Agente**: Todos los agentes (analysis, planner, execution, review)
 - **Problema**: Los agentes no tienen instrucciones claras sobre cómo manejar errores durante la fase de refinamiento
-- **Objetivo**: 
+- **Objetivo**:
   - Distinguir entre errores estructurales (del sistema) y errores de ejecución (del ambiente/plan)
   - Errores tipo A (estructurales): Agente detiene y reporta, Claude corrige
   - Errores tipo B (ejecución): Agente detiene, presenta opciones, usuario decide
@@ -161,7 +161,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 #### Corrección 4: Eliminación de Referencias al Task Tool ✅ COMPLETADA (MANUAL)
 - **Comando/Agente**: Todos los comandos (`/01-analysis`, `/02-planning`, `/03-execution`, `/04-review`)
 - **Problema**: El Task tool tiene un bug que causa error 400 "Tool names must be unique"
-- **Causa raíz confirmada**: 
+- **Causa raíz confirmada**:
   - El error NO es de los agentes (Correcciones 2 y 3 no resolvieron el problema)
   - El error ocurre en el Task tool mismo, antes de invocar al agente
   - Afecta tanto a agentes específicos como a "general-purpose"
@@ -231,7 +231,7 @@ Esta directiva es temporal porque solo es necesaria durante la fase de refinamie
 
 ### Error #1: Tool names must be unique (Sesión 1) - ✅ RESUELTO PARCIALMENTE
 ```
-API Error: 400 
+API Error: 400
 {
   "type":"error",
   "error":{
@@ -241,11 +241,11 @@ API Error: 400
 }
 ```
 
-**Contexto**: 
+**Contexto**:
 - Comando: `/01-analysis --source=sprint --phase=2`
 - Intento de invocar: `Task` tool con `subagent_type: "analysis"`
 
-**Causa raíz**: 
+**Causa raíz**:
 - Agentes tenían `allowed-tools` en frontmatter
 - Esto causaba duplicación al invocar con Task tool
 
@@ -257,7 +257,7 @@ API Error: 400
 
 ### Error #2: Tool names must be unique (Sesión 3) - ⚠️ PERSISTE
 ```
-API Error: 400 
+API Error: 400
 {
   "type":"error",
   "error":{
@@ -267,7 +267,7 @@ API Error: 400
 }
 ```
 
-**Contexto**: 
+**Contexto**:
 - Comando: `/01-analysis --source=sprint --phase=2`
 - Sesión: 3 (nueva sesión después de Correcciones 2 y 3)
 - Intento 1: `Task` tool con `subagent_type: "analysis"` → Error 400

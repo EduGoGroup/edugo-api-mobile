@@ -138,7 +138,7 @@ func TestIntegration(t *testing.T) {
     if testing.Short() {
         t.Skip("Skipping integration test")
     }
-    
+
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
@@ -174,14 +174,14 @@ func TestIntegration(t *testing.T) {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     container := container.NewContainer(resources)
     router := router.SetupRouter(container)
     router.Run(fmt.Sprintf(":%d", cfg.Server.Port))

@@ -153,14 +153,14 @@ BOOTSTRAP_OPTIONAL_RESOURCES_S3=true APP_ENV=dev go run cmd/main.go
 func TestAPIWithMocks(t *testing.T) {
     ctx := context.Background()
     cfg := testConfig()
-    
+
     // Create mock resources
     mockLogger := logger.NewZapLogger("debug", "text")
     mockDB := setupTestDB(t)
     mockMongoDB := setupTestMongoDB(t)
     mockPublisher := noop.NewNoopPublisher(mockLogger)
     mockS3 := noop.NewNoopS3Storage(mockLogger)
-    
+
     // Bootstrap with all mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -169,11 +169,11 @@ func TestAPIWithMocks(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Run tests with mocked infrastructure
     // ...
 }

@@ -48,7 +48,7 @@ feature/nueva-funcionalidad → dev
   ├─ ✅ Tests Unitarios (5s)
   ├─ ✅ Lint (30s)
   └─ ✅ Cobertura (5s)
-  
+
 Total: ~2 minutos
 ```
 
@@ -82,7 +82,7 @@ dev → main
   ├─ ✅ Lint (30s)
   ├─ ✅ Security Scan (30s) ← NUEVO
   └─ ✅ Cobertura (5s)
-  
+
 Total: ~3-4 minutos
 ```
 
@@ -369,4 +369,3 @@ git push origin feature/nueva-funcionalidad
 
 **Mantenido por**: Equipo de DevOps  
 **Última revisión**: 9 de noviembre de 2025
-

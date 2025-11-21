@@ -259,5 +259,5 @@ go tool cover -func=coverage/coverage.out | tail -1
 
 ---
 
-**Nota**: El reporte anterior era inexacto porque no incluía los tests de integración. 
+**Nota**: El reporte anterior era inexacto porque no incluía los tests de integración.
 La situación real es **mucho mejor** de lo que parecía inicialmente.

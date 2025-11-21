@@ -155,7 +155,7 @@ go test -bench=. -benchmem -benchtime=1s ./internal/infrastructure/http/handler/
 | StatsHandler | 0 | - | 0% |
 | SummaryHandler | 0 | - | 0% |
 
-**Total**: 
+**Total**:
 - ✅ **33 tests pasando**
 - ⏭️ **7 tests skipped** (requieren testcontainers)
 - ❌ **0 tests fallando**
@@ -274,7 +274,7 @@ docker exec -i edugo-postgres psql -U edugo -d edugo < scripts/postgresql/archiv
   ```
 
 - [x] **2.3** - Crear archivo `scripts/postgresql/05_indexes_materials.sql` (ajustado desde 06)
-  
+
   **Contenido del archivo**:
   ```sql
   -- ============================================================

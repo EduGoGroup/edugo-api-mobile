@@ -119,9 +119,9 @@
 
 **Flujo propuesto:**
 ```
-Sprint 05-A (✅ DONE) 
-  → Sprint 06 (CI/CD) 
-  → MVP en Producción 
+Sprint 05-A (✅ DONE)
+  → Sprint 06 (CI/CD)
+  → MVP en Producción
   → Sprint 05-B (Testing Avanzado post-deployment)
 ```
 

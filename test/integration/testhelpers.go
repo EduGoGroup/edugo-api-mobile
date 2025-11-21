@@ -4,9 +4,9 @@ package integration
 
 import (
 	"context"
-	"github.com/EduGoGroup/edugo-shared/testing/containers"
 	"database/sql"
 	"fmt"
+	"github.com/EduGoGroup/edugo-shared/testing/containers"
 	"testing"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"

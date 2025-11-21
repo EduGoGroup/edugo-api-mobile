@@ -90,7 +90,7 @@ quick: fmt test-unit build  # Build rápido sin integración
 
 ### Antes (58 comandos)
 ```
-test, test-coverage, test-unit, test-unit-coverage, 
+test, test-coverage, test-unit, test-unit-coverage,
 test-integration, test-integration-verbose, test-integration-skip,
 test-integration-coverage, test-all, test-watch, coverage-report,
 coverage-check, test-analyze, test-missing, test-validate, ...
@@ -271,5 +271,5 @@ open coverage/coverage.html
 
 ---
 
-**Conclusión**: El Makefile ahora es más limpio, preciso y fácil de usar, 
+**Conclusión**: El Makefile ahora es más limpio, preciso y fácil de usar,
 con cobertura real de 46.8% que incluye todos los tests de integración.

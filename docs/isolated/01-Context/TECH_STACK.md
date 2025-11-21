@@ -76,11 +76,11 @@ import "github.com/gin-gonic/gin"
 
 func main() {
     router := gin.Default()
-    
+
     // Middleware
     router.Use(AuthMiddleware())
     router.Use(LoggingMiddleware())
-    
+
     // Rutas
     v1 := router.Group("/api/v1")
     {
@@ -88,36 +88,36 @@ func main() {
         v1.GET("/evaluations/:id", GetEvaluation)
         v1.PUT("/evaluations/:id", UpdateEvaluation)
         v1.DELETE("/evaluations/:id", DeleteEvaluation)
-        
+
         v1.POST("/evaluations/:id/preguntas", CreateQuestion)
         v1.GET("/evaluations/:id/preguntas", ListQuestions)
     }
-    
+
     // Correr servidor
     router.Run(":8080")
 }
 
 func CreateEvaluation(c *gin.Context) {
     var req CreateEvaluationRequest
-    
+
     // Bind JSON request
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(400, gin.H{"error": err.Error()})
         return
     }
-    
+
     // Procesar
     evaluation := &Evaluation{
         Title: req.Title,
         Type:  req.Type,
     }
-    
+
     // Guardar
     if err := db.Create(evaluation).Error; err != nil {
         c.JSON(500, gin.H{"error": "Internal error"})
         return
     }
-    
+
     c.JSON(201, evaluation)
 }
 ```
@@ -185,7 +185,7 @@ type Evaluation struct {
     CreatedAt   time.Time
     UpdatedAt   time.Time
     DeletedAt   gorm.DeletedAt `gorm:"index"` // Soft delete
-    
+
     // Relations
     Questions []Question `gorm:"foreignKey:EvaluationID"`
 }
@@ -289,14 +289,14 @@ func CreateIndexes(db *gorm.DB) error {
    ```sql
    -- INT para IDs
    id BIGSERIAL PRIMARY KEY
-   
+
    -- VARCHAR/TEXT para strings
    title VARCHAR(255)
    description TEXT
-   
+
    -- ENUM para estados
    type VARCHAR(50) CHECK (type IN ('manual', 'generated'))
-   
+
    -- TIMESTAMP para auditoría
    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
    ```
@@ -305,13 +305,13 @@ func CreateIndexes(db *gorm.DB) error {
    ```sql
    -- Primary keys
    PRIMARY KEY (id)
-   
+
    -- Foreign keys (relaciones)
    FOREIGN KEY (evaluation_id) REFERENCES evaluations(id)
-   
+
    -- Unique constraints
    UNIQUE (email)
-   
+
    -- NOT NULL
    title VARCHAR(255) NOT NULL
    ```
@@ -329,7 +329,7 @@ func CreateIndexes(db *gorm.DB) error {
    INSERT INTO evaluations VALUES (...);
    INSERT INTO questions VALUES (...);
    COMMIT;
-   
+
    -- O ROLLBACK si error
    ```
 
@@ -394,7 +394,7 @@ err = collection.FindOne(ctx, bson.M{
 }).Decode(&result)
 
 // Actualizar
-_, err = collection.UpdateOne(ctx, 
+_, err = collection.UpdateOne(ctx,
     bson.M{"_id": id},
     bson.M{"$set": bson.M{"status": "graded"}},
 )
@@ -476,7 +476,7 @@ type Publisher struct {
 
 func (p *Publisher) PublishGenerateQuiz(req GenerateQuizRequest) error {
     body, _ := json.Marshal(req)
-    
+
     return p.ch.Publish(
         "assessment.requests",        // exchange
         "worker.assessment.requests", // routing key
@@ -503,7 +503,7 @@ func (s *Subscriber) ConsumeAssessmentResponses(handler func([]byte) error) erro
     if err != nil {
         return err
     }
-    
+
     msgs, err := s.ch.Consume(
         queue.Name,
         "",    // consumer tag
@@ -513,7 +513,7 @@ func (s *Subscriber) ConsumeAssessmentResponses(handler func([]byte) error) erro
         false, // no-wait
         nil,   // args
     )
-    
+
     go func() {
         for d := range msgs {
             if err := handler(d.Body); err == nil {
@@ -523,7 +523,7 @@ func (s *Subscriber) ConsumeAssessmentResponses(handler func([]byte) error) erro
             }
         }
     }()
-    
+
     return nil
 }
 ```
@@ -565,16 +565,16 @@ func InitConfig() error {
     viper.SetConfigType("yaml") // o "json", "env"
     viper.AddConfigPath(".")
     viper.AddConfigPath("/etc/edugo/")
-    
+
     // Leer variables de entorno
     viper.AutomaticEnv()
     viper.BindEnv("db.host", "DB_HOST")
     viper.BindEnv("db.port", "DB_PORT")
-    
+
     // Valores por defecto
     viper.SetDefault("api.port", 8080)
     viper.SetDefault("api.timeout", 30*time.Second)
-    
+
     return viper.ReadInConfig()
 }
 
@@ -608,7 +608,7 @@ database:
     user: edugo_user
     password: ${DB_PASSWORD}  # From env var
     name: edugo_mobile
-    
+
   mongo:
     uri: mongodb://localhost:27017
     database: edugo_assessments
@@ -650,14 +650,14 @@ func ValidateToken() gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         claims, err := ParseToken(token[7:]) // Remove "Bearer "
         if err != nil {
             c.JSON(401, gin.H{"error": "Invalid token"})
             c.Abort()
             return
         }
-        
+
         // Inyectar en contexto
         c.Set("user_id", claims.UserID)
         c.Set("school_id", claims.SchoolID)
@@ -669,7 +669,7 @@ func ValidateToken() gin.HandlerFunc {
 func CreateEvaluation(c *gin.Context) {
     userID := c.GetInt64("user_id")
     schoolID := c.GetInt64("school_id")
-    
+
     eval := &Evaluation{
         CreatedBy: userID,
         SchoolID: schoolID,

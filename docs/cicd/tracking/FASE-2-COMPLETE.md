@@ -101,7 +101,7 @@
 
 **Problema:**
 ```
-Error: can't load config: the Go language version (go1.24) used to build 
+Error: can't load config: the Go language version (go1.24) used to build
 golangci-lint is lower than the targeted Go version (1.25)
 ```
 

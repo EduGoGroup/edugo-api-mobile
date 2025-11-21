@@ -221,7 +221,7 @@ type TestContainers struct {
     Postgres *postgresContainer.PostgresContainer
     MongoDB  *mongoContainer.MongoDBContainer
     RabbitMQ *rabbitmqContainer.RabbitMQContainer
-    
+
     PostgresURI string
     MongoURI    string
     RabbitURI   string
@@ -231,7 +231,7 @@ type TestContainers struct {
 // Se ejecuta UNA VEZ por suite de tests
 func SetupContainers(ctx context.Context) (*TestContainers, error) {
     tc := &TestContainers{}
-    
+
     // PostgreSQL
     pgContainer, err := postgresContainer.Run(ctx,
         "postgres:16-alpine",
@@ -248,13 +248,13 @@ func SetupContainers(ctx context.Context) (*TestContainers, error) {
         return nil, err
     }
     tc.Postgres = pgContainer
-    
+
     // Obtener URI de conexión
     tc.PostgresURI, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
     if err != nil {
         return nil, err
     }
-    
+
     // MongoDB
     mongoContainer, err := mongoContainer.Run(ctx,
         "mongo:7",
@@ -266,7 +266,7 @@ func SetupContainers(ctx context.Context) (*TestContainers, error) {
     }
     tc.MongoDB = mongoContainer
     tc.MongoURI, err = mongoContainer.ConnectionString(ctx)
-    
+
     // RabbitMQ
     rabbitContainer, err := rabbitmqContainer.Run(ctx,
         "rabbitmq:3.12-alpine",
@@ -276,7 +276,7 @@ func SetupContainers(ctx context.Context) (*TestContainers, error) {
     }
     tc.RabbitMQ = rabbitContainer
     tc.RabbitURI, err = rabbitContainer.AmqpURL(ctx)
-    
+
     return tc, nil
 }
 
@@ -323,29 +323,29 @@ var (
 // TestMain se ejecuta UNA VEZ antes de todos los tests
 func TestMain(m *testing.M) {
     ctx := context.Background()
-    
+
     // Setup contenedores
     tc, err := testcontainers.SetupContainers(ctx)
     if err != nil {
         log.Fatalf("Failed to setup containers: %v", err)
     }
     testContainers = tc
-    
+
     // Ejecutar migraciones
     if err := runMigrations(tc.PostgresURI); err != nil {
         log.Fatalf("Failed to run migrations: %v", err)
     }
-    
+
     // Inicializar container DI con URIs de test
     container = initializeTestContainer(
         tc.PostgresURI,
         tc.MongoURI,
         tc.RabbitURI,
     )
-    
+
     // Ejecutar tests
     code := m.Run()
-    
+
     // Cleanup
     tc.TeardownContainers(ctx)
     os.Exit(code)
@@ -353,10 +353,10 @@ func TestMain(m *testing.M) {
 
 func TestAuthFlow_CompleteLogin(t *testing.T) {
     ctx := context.Background()
-    
+
     // 1. Crear usuario de prueba
     user := createTestUser(t, container.UserRepository)
-    
+
     // 2. Login
     loginReq := dto.LoginRequest{
         Email:    user.Email,
@@ -366,19 +366,19 @@ func TestAuthFlow_CompleteLogin(t *testing.T) {
     require.NoError(t, err)
     require.NotEmpty(t, loginResp.AccessToken)
     require.NotEmpty(t, loginResp.RefreshToken)
-    
+
     // 3. Verificar que access token es válido
     claims, err := container.JWTManager.ValidateToken(loginResp.AccessToken)
     require.NoError(t, err)
     assert.Equal(t, user.ID.String(), claims.UserID)
-    
+
     // 4. Verificar refresh token está en BD
     tokenHash := auth.HashToken(loginResp.RefreshToken)
     token, err := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
     require.NoError(t, err)
     assert.NotNil(t, token)
     assert.Equal(t, user.ID, token.UserID)
-    
+
     // 5. Usar access token para acceder a recurso protegido
     material, err := container.MaterialService.GetMaterial(ctx, "some-id")
     // Validar que funciona...
@@ -390,15 +390,15 @@ func TestAuthFlow_RefreshToken(t *testing.T) {
 
 func TestAuthFlow_Logout(t *testing.T) {
     ctx := context.Background()
-    
+
     // 1. Login
     user := createTestUser(t, container.UserRepository)
     loginResp, _ := container.AuthService.Login(ctx, dto.LoginRequest{...})
-    
+
     // 2. Logout
     err := container.AuthService.Logout(ctx, user.ID.String(), loginResp.RefreshToken)
     require.NoError(t, err)
-    
+
     // 3. Verificar refresh token revocado
     tokenHash := auth.HashToken(loginResp.RefreshToken)
     token, _ := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
@@ -424,13 +424,13 @@ func runMigrations(dbURI string) error {
     // 2. Ejecutar fixtures de prueba
     db, _ := sql.Open("postgres", dbURI)
     defer db.Close()
-    
+
     fixtures := []string{
         "INSERT INTO users ...",
         "INSERT INTO materials ...",
         // ...
     }
-    
+
     for _, query := range fixtures {
         _, err := db.Exec(query)
         if err != nil {
@@ -464,18 +464,18 @@ func createTestUser(t *testing.T, repo repository.UserRepository) *entity.User {
 ```go
 func TestWithTransaction(t *testing.T) {
     ctx := context.Background()
-    
+
     // Iniciar transacción
     tx, err := container.DB.Begin()
     require.NoError(t, err)
     defer tx.Rollback()  ← Rollback al final (cleanup automático)
-    
+
     // Usar repositorios con la transacción
     repo := postgresRepo.NewPostgresUserRepository(tx)
-    
+
     // Test...
     user := createTestUser(t, repo)
-    
+
     // Al terminar, rollback automático
     // (siguiente test tendrá BD limpia)
 }
@@ -499,7 +499,7 @@ func TestWithTransaction(t *testing.T) {
    - SetupContainers()
    - Contenedores PostgreSQL, MongoDB, RabbitMQ
    - Gestión de puertos y URIs
-   
+
 2. Configurar TestMain en cada archivo de test (1h)
    - Reutilizar contenedores
    - Ejecutar migraciones
@@ -649,15 +649,15 @@ on: [push, pull_request]
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-    
+
     - name: Run integration tests
       run: make test-integration-run
 ```
@@ -778,7 +778,7 @@ jobs:
 Fase 1 (4h)  →  Fase 2 (6h)  →  Fase 3 (4h)  →  Fase 4 (2h)
    Setup     →   Críticos    →  Importantes  →   CI/CD
     ✅       →      ✅       →      ✅       →    🟡 Pendiente
-                                                 
+
 Completado: 14 de 16 horas (87.5%)
 ```
 

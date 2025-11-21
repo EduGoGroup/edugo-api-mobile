@@ -92,7 +92,7 @@ El sistema de bootstrap facilita el testing con inyección de mocks:
 ```go
 func TestMyFeature(t *testing.T) {
     cfg := testConfig()
-    
+
     // Inyectar mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -101,11 +101,11 @@ func TestMyFeature(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(context.Background())
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Usar resources en tus tests
 }
 ```
@@ -158,7 +158,7 @@ La aplicación iniciará con implementaciones noop para estos recursos. Las func
 - ❌ **PostgreSQL**: Siempre requerido (datos principales)
 - ❌ **MongoDB**: Siempre requerido (evaluaciones y resúmenes)
 
-**📖 Más información**: 
+**📖 Más información**:
 - [config/OPTIONAL_RESOURCES.md](config/OPTIONAL_RESOURCES.md) - Configuración de recursos opcionales
 - [docs/BOOTSTRAP_USAGE.md](docs/BOOTSTRAP_USAGE.md) - Guía completa del sistema de bootstrap
 

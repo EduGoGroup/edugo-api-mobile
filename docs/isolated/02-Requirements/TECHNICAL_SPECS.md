@@ -165,7 +165,7 @@ CREATE TABLE assessment (
     max_attempts INTEGER DEFAULT NULL, -- NULL = ilimitado (Post-MVP)
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     CONSTRAINT unique_material_assessment UNIQUE (material_id)
 );
 
@@ -185,7 +185,7 @@ CREATE TABLE assessment_attempt (
     started_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     CHECK (completed_at >= started_at)
 );
 
@@ -203,7 +203,7 @@ CREATE TABLE assessment_attempt_answer (
     selected_option VARCHAR(10) NOT NULL, -- 'a', 'b', 'c', 'd'
     is_correct BOOLEAN NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     PRIMARY KEY (attempt_id, question_id)
 );
 
@@ -321,12 +321,12 @@ db.material_assessment.createIndex({ "created_at": -1 });
 func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
     materialID := c.Param("id")
     userID := c.GetString("user_id") // De JWT middleware
-    
+
     assessment, err := h.service.GetAssessmentForStudent(c.Request.Context(), materialID, userID)
     if err != nil {
         // Handle error
     }
-    
+
     c.JSON(200, assessment)
 }
 
@@ -466,14 +466,14 @@ func AuthMiddleware() gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         claims, err := ValidateJWT(token)
         if err != nil {
             c.JSON(401, gin.H{"error": "invalid token"})
             c.Abort()
             return
         }
-        
+
         c.Set("user_id", claims.UserID)
         c.Set("role", claims.Role)
         c.Next()
@@ -506,13 +506,13 @@ func (s *AssessmentService) GetAssessment(ctx context.Context, materialID string
     if err != nil {
         return nil, err
     }
-    
+
     // ⚠️ CRÍTICO: Sanitizar
     for i := range questions {
         questions[i].CorrectAnswer = ""      // ❌ Remover
         questions[i].Feedback = nil          // ❌ Remover
     }
-    
+
     return toDTO(questions), nil
 }
 
@@ -555,14 +555,14 @@ func (s *AssessmentService) CreateAttempt(ctx context.Context, req CreateAttempt
         "student_id", req.StudentID,
         "assessment_id", req.AssessmentID,
         "total_answers", len(req.Answers))
-    
+
     // Business logic
-    
+
     logger.Info("Assessment attempt created",
         "attempt_id", attemptID,
         "score", score,
         "duration_ms", elapsed.Milliseconds())
-    
+
     return nil
 }
 ```
@@ -579,7 +579,7 @@ var (
         },
         []string{"status"},
     )
-    
+
     attemptScore = prometheus.NewHistogram(
         prometheus.HistogramOpts{
             Name: "assessment_attempt_score",
@@ -596,13 +596,13 @@ var (
 func HealthCheck(c *gin.Context) {
     dbStatus := checkPostgres()
     mongoStatus := checkMongoDB()
-    
+
     healthy := dbStatus && mongoStatus
     statusCode := 200
     if !healthy {
         statusCode = 503
     }
-    
+
     c.JSON(statusCode, gin.H{
         "status": map[bool]string{true: "healthy", false: "unhealthy"}[healthy],
         "postgres": dbStatus,
@@ -636,7 +636,7 @@ func TestAttempt_CalculateScore(t *testing.T) {
             {QuestionID: "q2", SelectedOption: "b", IsCorrect: false},
         },
     }
-    
+
     score := attempt.CalculateScore()
     assert.Equal(t, 50, score)
 }
@@ -650,15 +650,15 @@ func TestAssessmentRepository_Create(t *testing.T) {
     ctx := context.Background()
     container, db := setupTestDB(t)
     defer container.Terminate(ctx)
-    
+
     repo := postgres.NewAssessmentRepository(db)
-    
+
     // Test
     assessment := &entities.Assessment{
         MaterialID: uuid.New(),
         Title: "Test Assessment",
     }
-    
+
     err := repo.Create(ctx, assessment)
     assert.NoError(t, err)
     assert.NotNil(t, assessment.ID)
@@ -671,19 +671,19 @@ func TestAssessmentRepository_Create(t *testing.T) {
 func TestFullAssessmentFlow(t *testing.T) {
     // 1. Setup test server
     router := setupTestRouter()
-    
+
     // 2. Obtener assessment
     resp := httptest.NewRecorder()
     req, _ := http.NewRequest("GET", "/v1/materials/uuid-1/assessment", nil)
     router.ServeHTTP(resp, req)
     assert.Equal(t, 200, resp.Code)
-    
+
     // 3. Crear intento
     body := `{"answers": [...], "time_spent_seconds": 120}`
     req, _ = http.NewRequest("POST", "/v1/materials/uuid-1/assessment/attempts", strings.NewReader(body))
     router.ServeHTTP(resp, req)
     assert.Equal(t, 201, resp.Code)
-    
+
     // 4. Consultar resultados
     // ...
 }
@@ -708,11 +708,11 @@ require (
     go.mongodb.org/mongo-driver v1.13.0
     gorm.io/gorm v1.25.5
     gorm.io/driver/postgres v1.5.4
-    
+
     // Testing
     github.com/stretchr/testify v1.8.4
     github.com/testcontainers/testcontainers-go v0.26.0
-    
+
     // Shared
     github.com/edugogroup/edugo-shared v0.6.2
 )

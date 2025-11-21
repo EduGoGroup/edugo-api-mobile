@@ -244,7 +244,7 @@ func (s *MaterialCreationService) CreateMaterial(ctx context.Context, material *
     if err := s.materialWriter.Create(ctx, material); err != nil {
         return err
     }
-    
+
     // Publicar evento
     return s.publisher.Publish("material.created", material)
 }
@@ -298,11 +298,11 @@ func (s *StatsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsResp
     // Ejecutar queries en paralelo
     var wg sync.WaitGroup
     var mu sync.Mutex
-    
+
     stats := &dto.GlobalStatsResponse{}
-    
+
     wg.Add(3)
-    
+
     // Material stats
     go func() {
         defer wg.Done()
@@ -311,7 +311,7 @@ func (s *StatsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsResp
         stats.TotalMaterials = count
         mu.Unlock()
     }()
-    
+
     // Progress stats
     go func() {
         defer wg.Done()
@@ -320,7 +320,7 @@ func (s *StatsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsResp
         stats.ActiveUsers = count
         mu.Unlock()
     }()
-    
+
     // Assessment stats
     go func() {
         defer wg.Done()
@@ -329,7 +329,7 @@ func (s *StatsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsResp
         stats.CompletedAssessments = count
         mu.Unlock()
     }()
-    
+
     wg.Wait()
     return stats, nil
 }
@@ -372,12 +372,12 @@ func (m *MockUserReader) FindByEmail(ctx context.Context, email valueobject.Emai
 func TestUserProfileService_GetProfile(t *testing.T) {
     mockReader := new(MockUserReader)
     service := NewUserProfileService(mockReader)
-    
+
     expectedUser := &entity.User{ID: testID, Email: "test@example.com"}
     mockReader.On("FindByID", mock.Anything, testID).Return(expectedUser, nil)
-    
+
     user, err := service.GetProfile(context.Background(), testID)
-    
+
     require.NoError(t, err)
     assert.Equal(t, expectedUser, user)
     mockReader.AssertExpectations(t)
@@ -398,7 +398,7 @@ func TestUserProfileService_GetProfile(t *testing.T) {
    ```go
    // ✅ BIEN
    func NewSearchService(reader MaterialReader) *SearchService
-   
+
    // ❌ MAL (si solo necesitas leer)
    func NewSearchService(repo MaterialRepository) *SearchService
    ```
@@ -437,7 +437,7 @@ func TestUserProfileService_GetProfile(t *testing.T) {
        progressRepo  ProgressRepository  // Todo
        assessmentRepo AssessmentRepository // Todo
    }
-   
+
    // ✅ BIEN (específico)
    type StatsService struct {
        materialStats   MaterialStats

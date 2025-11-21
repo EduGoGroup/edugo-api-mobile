@@ -65,12 +65,12 @@ import "github.com/EduGoGroup/edugo-infrastructure/schemas"
 
 func PublishMaterialEvent(material Material) error {
     event := buildEvent(material)
-    
+
     // Validar contra schema (cuando validator.go esté implementado)
     if err := schemas.Validate("material.uploaded", event); err != nil {
         return fmt.Errorf("invalid event: %w", err)
     }
-    
+
     return publisher.Publish("material-events", "material.uploaded", event)
 }
 ```
@@ -230,7 +230,7 @@ func GetEvaluation(c *gin.Context) {
         c.JSON(401, gin.H{"error": "Unauthorized"})
         return
     }
-    
+
     userID := claims.UserID
     schoolID := claims.SchoolID
 }
@@ -406,7 +406,7 @@ func InitPostgres() error {
         os.Getenv("DB_PASSWORD"),
         os.Getenv("DB_NAME"),
     )
-    
+
     return database.Init(dsn)
 }
 ```
@@ -482,7 +482,7 @@ import (
 func InitMongoDB() error {
     mongoURI := os.Getenv("MONGO_URI")
     mongoDB := os.Getenv("MONGO_DB_NAME")
-    
+
     return database.InitMongo(mongoURI, mongoDB)
 }
 
@@ -553,9 +553,9 @@ type GenerateQuizRequest struct {
 
 func PublishGenerateQuiz(req GenerateQuizRequest) error {
     publisher := messaging.NewPublisher()
-    
+
     payload, _ := json.Marshal(req)
-    
+
     return publisher.Publish(
         "assessment.requests",        // exchange
         "worker.assessment.requests", // routing key
@@ -568,22 +568,22 @@ func PublishGenerateQuiz(req GenerateQuizRequest) error {
 ```go
 func ConsumeAssessmentResponses(ctx context.Context) {
     subscriber := messaging.NewSubscriber()
-    
+
     messages := subscriber.Subscribe(
         "assessment.responses",
         "api-mobile.assessment.responses",
     )
-    
+
     for {
         select {
         case msg := <-messages:
             var response AssessmentResponse
             json.Unmarshal(msg.Body, &response)
-            
+
             // Procesar respuesta del Worker
             SaveGeneratedAssessment(response)
             msg.Ack(false)
-            
+
         case <-ctx.Done():
             return
         }
@@ -671,24 +671,24 @@ RABBITMQ_RETRY_DELAY=5s
 func HandleAssessmentResponse(msg []byte) error {
     var response WorkerResponse
     json.Unmarshal(msg, &response)
-    
+
     if response.Status == "error" {
         // Log error, notificar usuario
         logger.Error("Worker error", map[string]interface{}{
             "request_id": response.RequestID,
             "error": response.ErrorMessage,
         })
-        
+
         // Actualizar request status en BD
         UpdateGenerationRequest(response.RequestID, "failed")
         return nil
     }
-    
+
     // Guardar preguntas en PostgreSQL
     for _, q := range response.Questions {
         SaveQuestion(response.EvaluationID, q)
     }
-    
+
     // Marcar como completado
     UpdateGenerationRequest(response.RequestID, "completed")
     return nil
@@ -740,11 +740,11 @@ func GetTeacher(teacherID int) (*models.Teacher, error) {
         R().
         SetResult(&models.Teacher{}).
         Get("/api/v1/teachers/" + string(teacherID))
-    
+
     if err != nil {
         return nil, err
     }
-    
+
     return resp.Result().(*models.Teacher), nil
 }
 ```

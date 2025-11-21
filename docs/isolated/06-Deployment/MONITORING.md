@@ -60,7 +60,7 @@ var (
         },
         []string{"assessment_id", "passed"},
     )
-    
+
     AttemptDuration = promauto.NewHistogramVec(
         prometheus.HistogramOpts{
             Name: "assessment_duration_seconds",
@@ -69,7 +69,7 @@ var (
         },
         []string{"assessment_id"},
     )
-    
+
     HTTPRequestDuration = promauto.NewHistogramVec(
         prometheus.HistogramOpts{
             Name: "http_request_duration_seconds",
@@ -104,13 +104,13 @@ groups:
         for: 5m
         annotations:
           summary: "Error rate >5% en API Mobile"
-      
+
       - alert: HighLatency
         expr: histogram_quantile(0.95, http_request_duration_seconds) > 2
         for: 5m
         annotations:
           summary: "Latencia p95 >2s"
-      
+
       - alert: DatabaseConnectionPoolExhausted
         expr: db_connections_active / db_connections_max > 0.9
         for: 2m

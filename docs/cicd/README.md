@@ -156,7 +156,7 @@ Características especiales:
 
 #### 5. **sync-main-to-dev.yml** - Sincronización automática
 ```yaml
-Trigger: 
+Trigger:
   - Push a main
   - Tag v*
 Jobs: 1
@@ -194,7 +194,7 @@ Paralelismo: ❌ No
 20 errores errcheck:
   - defer stmt.Close() sin verificar error
   - defer resp.Body.Close() sin verificar error
-  
+
 3 errores govet:
   - Build tags obsoletos (// +build en lugar de //go:build)
 ```
@@ -654,4 +654,3 @@ Los sprints se asignan según las **necesidades específicas** de cada proyecto,
 - **Sprint 4:** Optimización global (TODOS los proyectos)
 
 **Este diseño es intencional** para evitar trabajo innecesario en cada proyecto.
-

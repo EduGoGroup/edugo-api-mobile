@@ -125,7 +125,7 @@ Infrastructure:
 - Función `upsert_user_progress()`
 - Lógica de actualización de progreso
 
-**Acción:** 
+**Acción:**
 1. Eliminar archivo local
 2. **VERIFICAR** si `material_progress` existe en infrastructure
 3. Si NO existe, crear PR en infrastructure para agregarlo (es tabla compartida)

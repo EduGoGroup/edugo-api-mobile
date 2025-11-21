@@ -24,9 +24,9 @@ type RepositoryContainer struct {
 	AnswerRepo       repositories.AnswerRepository
 
 	// MongoDB Repositories
-	SummaryRepository         repository.SummaryRepository
-	AssessmentRepository      repository.AssessmentRepository // Legacy
-	AssessmentDocumentRepo    mongoRepo.AssessmentDocumentRepository
+	SummaryRepository      repository.SummaryRepository
+	AssessmentRepository   repository.AssessmentRepository // Legacy
+	AssessmentDocumentRepo mongoRepo.AssessmentDocumentRepository
 }
 
 // NewRepositoryContainer crea y configura todos los repositorios
@@ -51,8 +51,8 @@ func NewRepositoryContainer(infra *InfrastructureContainer) *RepositoryContainer
 		AnswerRepo:       postgresRepo.NewPostgresAnswerRepository(infra.DB),
 
 		// MongoDB repositories
-		SummaryRepository:     mongoRepo.NewMongoSummaryRepository(infra.MongoDB),
-		AssessmentRepository:  mongoRepo.NewMongoAssessmentRepository(infra.MongoDB), // Legacy
+		SummaryRepository:      mongoRepo.NewMongoSummaryRepository(infra.MongoDB),
+		AssessmentRepository:   mongoRepo.NewMongoAssessmentRepository(infra.MongoDB), // Legacy
 		AssessmentDocumentRepo: mongoRepo.NewMongoAssessmentDocumentRepository(infra.MongoDB),
 	}
 }

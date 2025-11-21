@@ -41,7 +41,7 @@ DECLARE
     uuid_bytes BYTEA;
 BEGIN
     unix_ts_ms := (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::BIGINT;
-    uuid_bytes := E'\\\\x' || 
+    uuid_bytes := E'\\\\x' ||
                   lpad(to_hex((unix_ts_ms >> 32)::INT), 8, '0') ||
                   lpad(to_hex((unix_ts_ms & 4294967295)::INT), 8, '0') ||
                   encode(gen_random_bytes(8), 'hex');
@@ -66,9 +66,9 @@ psql -U postgres -d edugo_test -c "\d materials"
 
 # Verificar columnas requeridas
 psql -U postgres -d edugo_test -c "
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'materials' 
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'materials'
     AND column_name IN ('id', 'title', 'processing_status');
 "
 
@@ -105,9 +105,9 @@ psql -U postgres -d edugo_test -c "\d users"
 
 # Verificar columnas requeridas
 psql -U postgres -d edugo_test -c "
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = 'users' 
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = 'users'
     AND column_name IN ('id', 'email', 'role');
 "
 
@@ -231,9 +231,9 @@ La migración `06_assessments.sql` debe ejecutarse **después** de:
 ```bash
 # Verificar migraciones ejecutadas (PostgreSQL 15+ con pg_stat_statements)
 psql -U postgres -d edugo_test -c "
-    SELECT schemaname, tablename, tableowner 
-    FROM pg_tables 
-    WHERE schemaname = 'public' 
+    SELECT schemaname, tablename, tableowner
+    FROM pg_tables
+    WHERE schemaname = 'public'
     ORDER BY tablename;
 "
 
@@ -259,18 +259,18 @@ DECLARE
     has_gen_uuid_v7 BOOLEAN;
 BEGIN
     RAISE NOTICE '=== VERIFICANDO DEPENDENCIAS SPRINT 01 ===';
-    
+
     -- 1. Verificar función gen_uuid_v7()
     SELECT EXISTS (
         SELECT 1 FROM pg_proc WHERE proname = 'gen_uuid_v7'
     ) INTO has_gen_uuid_v7;
-    
+
     IF NOT has_gen_uuid_v7 THEN
         RAISE EXCEPTION '❌ FALTA: Función gen_uuid_v7() no encontrada';
     ELSE
         RAISE NOTICE '✅ OK: Función gen_uuid_v7() existe';
     END IF;
-    
+
     -- 2. Verificar tabla materials
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'materials') THEN
         RAISE EXCEPTION '❌ FALTA: Tabla materials no existe';
@@ -278,7 +278,7 @@ BEGIN
         SELECT COUNT(*) INTO materials_count FROM materials;
         RAISE NOTICE '✅ OK: Tabla materials existe (% filas)', materials_count;
     END IF;
-    
+
     -- 3. Verificar tabla users
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'users') THEN
         RAISE EXCEPTION '❌ FALTA: Tabla users no existe';
@@ -286,14 +286,14 @@ BEGIN
         SELECT COUNT(*) INTO users_count FROM users WHERE role = 'student';
         RAISE NOTICE '✅ OK: Tabla users existe (% estudiantes)', users_count;
     END IF;
-    
+
     -- 4. Verificar versión PostgreSQL
     IF (SELECT current_setting('server_version_num')::INTEGER) < 150000 THEN
         RAISE WARNING '⚠️  PostgreSQL < 15 detectado. Recomendado: 15+';
     ELSE
         RAISE NOTICE '✅ OK: PostgreSQL 15+ detectado';
     END IF;
-    
+
     RAISE NOTICE '=== TODAS LAS DEPENDENCIAS SATISFECHAS ===';
 END $$;
 ```
@@ -337,7 +337,7 @@ pg_dump -U postgres -d edugo_prod > backup_pre_sprint01_$(date +%Y%m%d_%H%M%S).s
 **Solución:** Crear tabla users (ver sección "Tabla: users")
 
 ### Error: "permiso denegado para crear tabla"
-**Solución:** 
+**Solución:**
 ```bash
 # Otorgar permisos al usuario
 psql -U postgres -d edugo_test -c "GRANT CREATE ON SCHEMA public TO tu_usuario;"

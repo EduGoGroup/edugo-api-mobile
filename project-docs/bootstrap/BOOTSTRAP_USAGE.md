@@ -74,7 +74,7 @@ type BootstrapOptions struct {
     MongoDB          *mongo.Database
     RabbitMQPublisher rabbitmq.Publisher
     S3Client         s3.S3Storage
-    
+
     // Configuración de recursos opcionales
     OptionalResources map[string]bool
 }
@@ -90,33 +90,33 @@ package main
 import (
     "context"
     "log"
-    
+
     "github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
     "github.com/EduGoGroup/edugo-api-mobile/internal/config"
 )
 
 func main() {
     ctx := context.Background()
-    
+
     // 1. Cargar configuración
     cfg, err := config.Load()
     if err != nil {
         log.Fatalf("Failed to load config: %v", err)
     }
-    
+
     // 2. Crear bootstrapper
     b := bootstrap.New(cfg)
-    
+
     // 3. Inicializar infraestructura
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatalf("Failed to initialize infrastructure: %v", err)
     }
     defer cleanup()
-    
+
     // 4. Usar recursos
     resources.Logger.Info("Application started")
-    
+
     // Tu código aquí...
 }
 ```
@@ -199,18 +199,18 @@ b := bootstrap.New(cfg,
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Marcar RabbitMQ como opcional
     b := bootstrap.New(cfg,
         bootstrap.WithOptionalResource("rabbitmq"),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // resources.RabbitMQPublisher será un NoopPublisher
     // Las llamadas a Publish() no harán nada pero no fallarán
     resources.RabbitMQPublisher.Publish(ctx, "events", "test", []byte("data"))
@@ -347,14 +347,14 @@ b := bootstrap.New(cfg,
 func TestMaterialService(t *testing.T) {
     ctx := context.Background()
     cfg := testConfig()
-    
+
     // Setup mocks
     mockLogger := logger.NewNoopLogger()
     mockDB := setupMockDB(t)
     mockMongoDB := setupMockMongoDB(t)
     mockPublisher := &MockPublisher{}
     mockS3 := &MockS3Storage{GeneratedURLs: make(map[string]string)}
-    
+
     // Bootstrap con mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -363,19 +363,19 @@ func TestMaterialService(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Crear servicio
     service := service.NewMaterialService(resources)
-    
+
     // Test
     material, err := service.CreateMaterial(ctx, &dto.CreateMaterialRequest{
         Title: "Test Material",
     })
-    
+
     // Assertions
     assert.NoError(t, err)
     assert.NotNil(t, material)
@@ -461,11 +461,11 @@ b := bootstrap.New(cfg,
 b := bootstrap.New(cfg,
     // Inyectar logger custom
     bootstrap.WithLogger(customLogger),
-    
+
     // Marcar recursos como opcionales
     bootstrap.WithOptionalResource("rabbitmq"),
     bootstrap.WithOptionalResource("s3"),
-    
+
     // Inyectar mock de PostgreSQL
     bootstrap.WithPostgreSQL(mockDB),
 )
@@ -476,7 +476,7 @@ b := bootstrap.New(cfg,
 ```go
 func createBootstrapper(cfg *config.Config, env string) *bootstrap.Bootstrapper {
     var opts []bootstrap.BootstrapOption
-    
+
     if env == "development" {
         // En desarrollo, RabbitMQ y S3 son opcionales
         opts = append(opts,
@@ -484,7 +484,7 @@ func createBootstrapper(cfg *config.Config, env string) *bootstrap.Bootstrapper 
             bootstrap.WithOptionalResource("s3"),
         )
     }
-    
+
     if env == "test" {
         // En tests, usar mocks
         opts = append(opts,
@@ -493,7 +493,7 @@ func createBootstrapper(cfg *config.Config, env string) *bootstrap.Bootstrapper 
             bootstrap.WithMongoDB(testMongoDB),
         )
     }
-    
+
     return bootstrap.New(cfg, opts...)
 }
 ```
@@ -509,7 +509,7 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to load config: %v", err)
     }
-    
+
     // Bootstrap con todos los recursos requeridos
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -517,13 +517,13 @@ func main() {
         log.Fatalf("Failed to initialize infrastructure: %v", err)
     }
     defer cleanup()
-    
+
     // Crear container
     container := container.NewContainer(resources)
-    
+
     // Setup router
     router := router.SetupRouter(container)
-    
+
     // Iniciar servidor
     resources.Logger.Info("Starting server", zap.Int("port", cfg.Server.Port))
     if err := router.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
@@ -538,19 +538,19 @@ func main() {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap con recursos opcionales para desarrollo
     b := bootstrap.New(cfg,
         bootstrap.WithOptionalResource("rabbitmq"),
         bootstrap.WithOptionalResource("s3"),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // La app funciona sin RabbitMQ ni S3
     container := container.NewContainer(resources)
     router := router.SetupRouter(container)
@@ -568,12 +568,12 @@ func TestAuthService(t *testing.T) {
             JWTSecret: "test-secret",
         },
     }
-    
+
     // Mocks
     mockLogger := logger.NewNoopLogger()
     mockDB := setupMockDB(t)
     mockMongoDB := setupMockMongoDB(t)
-    
+
     // Bootstrap con mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -582,15 +582,15 @@ func TestAuthService(t *testing.T) {
         bootstrap.WithRabbitMQ(noop.NewNoopPublisher(mockLogger)),
         bootstrap.WithS3Client(noop.NewNoopS3Storage(mockLogger)),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Test service
     authService := service.NewAuthService(resources)
     token, err := authService.Login(ctx, "user@example.com", "password")
-    
+
     assert.NoError(t, err)
     assert.NotEmpty(t, token)
 }
@@ -603,25 +603,25 @@ func TestIntegrationMaterialFlow(t *testing.T) {
     if testing.Short() {
         t.Skip("Skipping integration test")
     }
-    
+
     ctx := context.Background()
     cfg := loadIntegrationTestConfig()
-    
+
     // Bootstrap con recursos reales (testcontainers)
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Test flujo completo
     container := container.NewContainer(resources)
-    
+
     // 1. Crear material
     material, err := container.MaterialService.CreateMaterial(ctx, &dto.CreateMaterialRequest{
         Title: "Integration Test Material",
     })
     require.NoError(t, err)
-    
+
     // 2. Verificar en base de datos
     var count int
     err = resources.PostgreSQL.QueryRowContext(ctx,

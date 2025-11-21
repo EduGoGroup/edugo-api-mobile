@@ -31,7 +31,7 @@ Esta carpeta contiene TODO lo necesario para implementar el sistema de evaluacio
 1. **Assessments (Cuestionarios)**
    - Obtener quiz generado por IA
    - Metadata de evaluación (título, # preguntas, umbral)
-   
+
 2. **Attempts (Intentos)**
    - Crear intento de evaluación
    - Enviar respuestas

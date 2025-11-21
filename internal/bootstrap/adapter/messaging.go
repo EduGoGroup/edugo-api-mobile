@@ -87,7 +87,7 @@ func (a *MessagePublisherAdapter) Close() error {
 	}
 
 	a.logger.Info("closing RabbitMQ channel")
-	
+
 	err := a.channel.Close()
 	if err != nil {
 		a.logger.Error("failed to close RabbitMQ channel", "error", err)

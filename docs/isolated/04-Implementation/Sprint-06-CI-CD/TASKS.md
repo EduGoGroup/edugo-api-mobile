@@ -28,7 +28,7 @@ jobs:
   test:
     name: Tests
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -43,29 +43,29 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       mongodb:
         image: mongo:7-alpine
         ports:
           - 27017:27017
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-      
+
       - name: Install dependencies
         run: go mod download
-      
+
       - name: Run migrations
         run: |
           psql -h localhost -U postgres -d edugo_test < scripts/postgresql/06_assessments.sql
         env:
           PGPASSWORD: postgres
-      
+
       - name: Run tests
         run: go test ./... -v -cover -coverprofile=coverage.out
         env:
@@ -75,12 +75,12 @@ jobs:
           DB_PASSWORD: postgres
           DB_NAME: edugo_test
           MONGO_URI: mongodb://localhost:27017
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.out
-  
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -93,7 +93,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-  
+
   build:
     name: Build
     runs-on: ubuntu-latest

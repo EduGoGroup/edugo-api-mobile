@@ -50,7 +50,7 @@ Simplify and improve the configuration management system for EduGo API Mobile by
   - Missing required ENV vars fail validation
   - Default values applied correctly
   - Precedence order works as expected
-  
+
 - **Validator Tests** (9 tests):
   - Valid configuration passes
   - Missing secrets detected

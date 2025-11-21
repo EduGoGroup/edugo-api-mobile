@@ -79,7 +79,7 @@ scripts/postgresql/
 006_create_assessments.up.sql     # Quizzes (ref MongoDB)
 ```
 
-**Recomendación:** 
+**Recomendación:**
 - Eliminar `01_create_schema.sql`, `02_seed_data.sql`, `03_refresh_tokens.sql`, `04_material_versions.sql`, `05_indexes_materials.sql`
 - Revisar si `04_login_attempts.sql` y `05_user_progress_upsert.sql` deben ir a infrastructure
 
@@ -274,7 +274,7 @@ func TestUserRepository(t *testing.T) {
     db := database.NewTestPostgres(t,
         database.WithMigrations(), // Ejecuta migraciones de infrastructure
     )
-    
+
     repo := NewUserRepository(db)
     // ... tests
 }

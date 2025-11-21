@@ -672,4 +672,3 @@ Una vez alcanzadas las metas:
 
 **Última actualización**: 9 de noviembre de 2025  
 **Próxima revisión**: 16 de noviembre de 2025 (fin de Semana 1)
-

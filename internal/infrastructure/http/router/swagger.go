@@ -83,7 +83,7 @@ const swaggerTemplate = `
             // Detectar el host dinámicamente desde la URL del navegador
             const dynamicHost = window.location.host;
             const protocol = window.location.protocol;
-            
+
             console.log('Swagger UI - Detected host:', dynamicHost);
             console.log('Swagger UI - Protocol:', protocol);
 

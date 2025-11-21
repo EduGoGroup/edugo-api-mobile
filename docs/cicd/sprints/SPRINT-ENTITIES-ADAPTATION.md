@@ -254,7 +254,7 @@ ls -la mongodb/entities/
 git tag | grep entities
 ```
 
-**Criterio de éxito:** 
+**Criterio de éxito:**
 - Existen 14 archivos en `postgres/entities/`
 - Existen tags `postgres/entities/v0.1.0` y `mongodb/entities/v0.1.0`
 

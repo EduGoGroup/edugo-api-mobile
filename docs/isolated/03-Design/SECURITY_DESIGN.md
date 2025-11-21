@@ -96,7 +96,7 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         // 2. Validar formato "Bearer <token>"
         parts := strings.Split(authHeader, " ")
         if len(parts) != 2 || parts[0] != "Bearer" {
@@ -104,9 +104,9 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         tokenString := parts[1]
-        
+
         // 3. Validar firma y expiración
         token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
             // Verificar algoritmo
@@ -115,13 +115,13 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
             }
             return []byte(secretKey), nil
         })
-        
+
         if err != nil || !token.Valid {
             c.JSON(401, gin.H{"error": "invalid or expired token"})
             c.Abort()
             return
         }
-        
+
         // 4. Extraer claims
         claims, ok := token.Claims.(jwt.MapClaims)
         if !ok {
@@ -129,12 +129,12 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         // 5. Guardar en contexto
         c.Set("user_id", claims["sub"].(string))
         c.Set("role", claims["role"].(string))
         c.Set("email", claims["email"].(string))
-        
+
         c.Next()
     }
 }
@@ -179,21 +179,21 @@ const (
 func RequireRole(allowedRoles ...string) gin.HandlerFunc {
     return func(c *gin.Context) {
         userRole := c.GetString("role")
-        
+
         for _, allowedRole := range allowedRoles {
             if userRole == allowedRole {
                 c.Next()
                 return
             }
         }
-        
+
         c.JSON(403, gin.H{"error": "forbidden", "message": "insufficient permissions"})
         c.Abort()
     }
 }
 
 // Uso en routes
-router.POST("/attempts/:id", 
+router.POST("/attempts/:id",
     AuthMiddleware(secretKey),
     RequireRole(RoleStudent, RoleTeacher),
     handler.CreateAttempt)
@@ -205,20 +205,20 @@ router.POST("/attempts/:id",
 func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
     attemptID := c.Param("id")
     userID := c.GetString("user_id")
-    
+
     // 1. Obtener intento
     attempt, err := h.service.GetAttempt(c.Request.Context(), attemptID)
     if err != nil {
         c.JSON(404, gin.H{"error": "not_found"})
         return
     }
-    
+
     // 2. ⚠️ CRÍTICO: Verificar que el usuario es el propietario
     if attempt.StudentID != userID {
         c.JSON(403, gin.H{"error": "forbidden", "message": "access denied"})
         return
     }
-    
+
     // 3. Retornar resultados
     c.JSON(200, attempt)
 }
@@ -235,7 +235,7 @@ func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
 // ⚠️ NUNCA hacer esto
 func GetAssessment(c *gin.Context) {
     questions, _ := questionRepo.FindAll()
-    
+
     // ❌ Enviando respuestas correctas al cliente
     c.JSON(200, questions) // Incluye correct_answer
 }
@@ -250,7 +250,7 @@ func (s *AssessmentService) GetAssessmentForStudent(ctx context.Context, materia
     if err != nil {
         return nil, err
     }
-    
+
     // 2. ⚠️ CRÍTICO: Sanitizar
     sanitizedQuestions := make([]QuestionDTO, len(questions))
     for i, q := range questions {
@@ -262,7 +262,7 @@ func (s *AssessmentService) GetAssessmentForStudent(ctx context.Context, materia
             // ❌ NO incluir: CorrectAnswer, Feedback
         }
     }
-    
+
     return &AssessmentDTO{Questions: sanitizedQuestions}, nil
 }
 ```
@@ -274,25 +274,25 @@ func TestAssessment_NeverExposeCorrectAnswers(t *testing.T) {
     handler := setupTestHandler()
     router := gin.Default()
     router.GET("/assessment/:id", handler.GetAssessment)
-    
+
     // Request
     req := httptest.NewRequest("GET", "/assessment/uuid-1", nil)
     req.Header.Set("Authorization", "Bearer "+validToken)
     resp := httptest.NewRecorder()
     router.ServeHTTP(resp, req)
-    
+
     // Assert
     var result map[string]interface{}
     json.Unmarshal(resp.Body.Bytes(), &result)
-    
+
     questions := result["questions"].([]interface{})
     for _, q := range questions {
         question := q.(map[string]interface{})
-        
+
         // ⚠️ CRÍTICO: Verificar que NO existen estos campos
         _, hasCorrectAnswer := question["correct_answer"]
         _, hasFeedback := question["feedback"]
-        
+
         assert.False(t, hasCorrectAnswer, "correct_answer must not be exposed")
         assert.False(t, hasFeedback, "feedback must not be exposed")
     }
@@ -333,7 +333,7 @@ func (s *ScoringService) ScoreAttempt(ctx context.Context, answers []Answer) (in
     if err != nil {
         return 0, err
     }
-    
+
     // 2. Calcular puntaje en servidor
     correctCount := 0
     for _, answer := range answers {
@@ -342,7 +342,7 @@ func (s *ScoringService) ScoreAttempt(ctx context.Context, answers []Answer) (in
             correctCount++
         }
     }
-    
+
     score := (correctCount * 100) / len(answers)
     return score, nil
 }
@@ -356,7 +356,7 @@ func (s *ScoringService) ScoreAttempt(ctx context.Context, answers []Answer) (in
 // Detectar patrones anormales
 func (s *ScoringService) DetectSuspiciousAttempt(attempt *Attempt) []string {
     warnings := []string{}
-    
+
     // 1. Tiempo sospechosamente corto (<5 seg por pregunta)
     minTime := attempt.TotalQuestions * 5
     if attempt.TimeSpentSeconds < minTime {
@@ -366,15 +366,15 @@ func (s *ScoringService) DetectSuspiciousAttempt(attempt *Attempt) []string {
             "time_spent", attempt.TimeSpentSeconds,
             "min_expected", minTime)
     }
-    
+
     // 2. Puntaje perfecto en primer intento (puede ser legítimo, pero revisar)
     if attempt.Score == 100 && attempt.AttemptNumber == 1 {
         warnings = append(warnings, "perfect_first_attempt")
     }
-    
+
     // 3. Patrones de respuesta (Post-MVP: ML para detectar)
     // Ej: Todas las respuestas son "a", "b", "c", "d", "a" (patrón)
-    
+
     return warnings
 }
 ```
@@ -400,13 +400,13 @@ type AnswerDTO struct {
 // Gin automáticamente valida
 func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
     var req CreateAttemptRequest
-    
+
     // Validación automática
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(400, gin.H{"error": "validation_error", "message": err.Error()})
         return
     }
-    
+
     // Continuar con lógica
 }
 ```
@@ -426,13 +426,13 @@ func ValidateUUID(id string) error {
 // Uso
 func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
     attemptID := c.Param("id")
-    
+
     // ⚠️ CRÍTICO: Validar antes de query
     if err := ValidateUUID(attemptID); err != nil {
         c.JSON(400, gin.H{"error": "validation_error", "message": "invalid attempt_id"})
         return
     }
-    
+
     // Continuar...
 }
 ```
@@ -443,12 +443,12 @@ func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
 // ✅ CORRECTO: Usar parámetros preparados
 func (r *AttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*Attempt, error) {
     var attempt Attempt
-    
+
     // GORM previene SQL injection automáticamente
     err := r.db.WithContext(ctx).
         Where("id = ?", id).  // ✅ Parametrizado
         First(&attempt).Error
-    
+
     return &attempt, err
 }
 
@@ -471,18 +471,18 @@ func FindByIDUnsafe(id string) (*Attempt, error) {
 server {
     listen 443 ssl http2;
     server_name api.edugo.com;
-    
+
     # Certificado SSL
     ssl_certificate /etc/letsencrypt/live/api.edugo.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.edugo.com/privkey.pem;
-    
+
     # TLS 1.3 únicamente
     ssl_protocols TLSv1.3;
     ssl_ciphers 'TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384';
-    
+
     # HSTS
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    
+
     location / {
         proxy_pass http://api-mobile:8080;
     }
@@ -505,7 +505,7 @@ VALUES (
 );
 
 -- Desencriptar en query
-SELECT 
+SELECT
     student_id,
     pgp_sym_decrypt(note::bytea, 'encryption-key') as note
 FROM student_notes;
@@ -529,7 +529,7 @@ import "github.com/joho/godotenv"
 
 func LoadConfig() (*Config, error) {
     godotenv.Load() // Cargar .env
-    
+
     return &Config{
         JWTSecretKey: os.Getenv("JWT_SECRET_KEY"),
         DatabaseURL:  os.Getenv("DATABASE_URL"),
@@ -554,10 +554,10 @@ func RateLimitMiddleware() gin.HandlerFunc {
         Period: 1 * time.Minute,
         Limit:  100, // 100 req/min
     }
-    
+
     store := memory.NewStore()
     instance := limiter.New(store, rate)
-    
+
     return limitergin.NewMiddleware(instance)
 }
 
@@ -572,22 +572,22 @@ router.Use(RateLimitMiddleware())
 func RoleBasedRateLimiter() gin.HandlerFunc {
     return func(c *gin.Context) {
         role := c.GetString("role")
-        
+
         limits := map[string]int{
             "student": 100,  // 100 req/min
             "teacher": 200,
             "admin":   500,
         }
-        
+
         limit, exists := limits[role]
         if !exists {
             limit = 50 // Default
         }
-        
+
         // Verificar límite (implementación simplificada)
         key := fmt.Sprintf("ratelimit:%s:%s", role, c.GetString("user_id"))
         count := incrementCounter(key, 60) // 60 segundos
-        
+
         if count > limit {
             c.Header("X-RateLimit-Limit", strconv.Itoa(limit))
             c.Header("X-RateLimit-Remaining", "0")
@@ -599,7 +599,7 @@ func RoleBasedRateLimiter() gin.HandlerFunc {
             c.Abort()
             return
         }
-        
+
         c.Header("X-RateLimit-Limit", strconv.Itoa(limit))
         c.Header("X-RateLimit-Remaining", strconv.Itoa(limit-count))
         c.Next()
@@ -619,17 +619,17 @@ import "github.com/edugogroup/edugo-shared/pkg/logger"
 func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
     userID := c.GetString("user_id")
     materialID := c.Param("id")
-    
+
     // Log inicio de operación
     logger.Info("Creating assessment attempt",
         "user_id", userID,
         "material_id", materialID,
         "ip", c.ClientIP(),
         "user_agent", c.Request.UserAgent())
-    
+
     // Business logic
     attempt, err := h.service.CreateAttempt(...)
-    
+
     if err != nil {
         // Log error
         logger.Error("Failed to create attempt",
@@ -638,13 +638,13 @@ func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
         c.JSON(500, gin.H{"error": "internal_server_error"})
         return
     }
-    
+
     // Log éxito
     logger.Info("Assessment attempt created successfully",
         "user_id", userID,
         "attempt_id", attempt.ID,
         "score", attempt.Score)
-    
+
     c.JSON(201, attempt)
 }
 ```
@@ -658,11 +658,11 @@ func LogSecurityEvent(eventType string, details map[string]interface{}) {
         "event_type", eventType,
         "timestamp", time.Now().UTC(),
     )
-    
+
     for k, v := range details {
         entry = entry.With(k, v)
     }
-    
+
     entry.Warn("Security event")
 }
 
@@ -740,22 +740,22 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
         // Prevenir clickjacking
         c.Header("X-Frame-Options", "DENY")
-        
+
         // Prevenir MIME sniffing
         c.Header("X-Content-Type-Options", "nosniff")
-        
+
         // Habilitar XSS protection
         c.Header("X-XSS-Protection", "1; mode=block")
-        
+
         // Content Security Policy
         c.Header("Content-Security-Policy", "default-src 'self'")
-        
+
         // Referrer Policy
         c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-        
+
         // Permissions Policy
         c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-        
+
         c.Next()
     }
 }
@@ -775,7 +775,7 @@ func CORSMiddleware() gin.HandlerFunc {
         AllowCredentials: true,
         MaxAge:           12 * time.Hour,
     }
-    
+
     return cors.New(config)
 }
 ```
@@ -811,10 +811,10 @@ func AnonymizeStudent(studentID uuid.UUID) error {
             "first_name": "Deleted",
             "last_name":  "User",
         })
-        
+
         // Mantener intentos pero desvinculados
         // (o eliminar según política de retención)
-        
+
         return nil
     })
 }
