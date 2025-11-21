@@ -155,7 +155,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding attempts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attempts []*entities.Attempt
 	for rows.Next() {
@@ -383,7 +383,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding attempts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attempts []*entities.Attempt
 	for rows.Next() {
@@ -448,7 +448,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 				&isCorrect, &timeSpentSecs, &answerCreatedAt,
 			)
 			if err != nil {
-				answerRows.Close()
+				_ = answerRows.Close()
 				return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
 			}
 

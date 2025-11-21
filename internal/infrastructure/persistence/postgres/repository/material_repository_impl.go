@@ -136,7 +136,7 @@ func (r *postgresMaterialRepository) List(ctx context.Context, filters repositor
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var materials []*entity.Material
 	for rows.Next() {
@@ -224,7 +224,7 @@ func (r *postgresMaterialRepository) FindByIDWithVersions(ctx context.Context, i
 	if err != nil {
 		return nil, nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var (
 		material *entity.Material
