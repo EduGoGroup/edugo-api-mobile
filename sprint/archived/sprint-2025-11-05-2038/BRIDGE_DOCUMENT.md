@@ -80,7 +80,7 @@ Cuando se presente un error durante la validación de comandos:
 - ✅ Preservó integridad: BRIDGE_DOCUMENT.md + 4 carpetas (analysis/, planning/, execution/, review/)
 - ✅ Creó nueva estructura limpia `sprint/current/` con subcarpetas vacías
 
-**Conclusión**: 
+**Conclusión**:
 - Comando `/archive` funciona **perfectamente**
 - Sin errores ni problemas detectados
 - Cumple con todas las funcionalidades esperadas
@@ -138,7 +138,7 @@ Cuando se presente un error durante la validación de comandos:
 **Branch**: `fix/debug-sprint-commands`  
 **Commit**: `c712545`
 
-**Problema**: 
+**Problema**:
 - Error en CI workflow (GitHub Actions)
 - Paso "Verificar go.mod y go.sum" fallaba
 - Dependencias AWS SDK v2 marcadas como indirectas pero usadas directamente

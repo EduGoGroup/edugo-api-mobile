@@ -220,7 +220,7 @@ Workflows: 5
   - test.yml (manual)
   - manual-release.yml
   - sync-main-to-dev.yml
-  
+
 Success Rate: 90%
 Lint Errors: 23 (20 errcheck + 3 govet)
 Paralelismo: No
@@ -236,7 +236,7 @@ Coverage Threshold: 33%
 ```yaml
 Go Version: 1.25 ✅
 Workflows: 5 (mismos)
-  
+
 Success Rate: >95%
 Lint Errors: 0 ✅
 Paralelismo: Sí ✅
@@ -256,7 +256,7 @@ Workflows: 5 → 4 (usando reusables)
   - pr-to-main.yml (llamando reusable)
   - manual-release.yml (personalizado)
   - sync-main-to-dev.yml (llamando reusable)
-  
+
 Duplicación: -60% en código
 Mantenibilidad: +80%
 Reusabilidad: Base para api-admin y worker
@@ -452,4 +452,3 @@ Sprint 5+ (todos)
 - 🤖 **Clasificación Copilot:** Manejo inteligente de comentarios
 
 **Ver:** [SPRINT-TRACKING.md](docs/SPRINT-TRACKING.md) para comenzar.
-

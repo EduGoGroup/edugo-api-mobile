@@ -246,7 +246,7 @@ context deadline exceeded)
 
 **Advertencia recurrente**:
 ```
-⚠️  Warning: RabbitMQ topology setup failed (non-critical): 
+⚠️  Warning: RabbitMQ topology setup failed (non-critical):
 failed to connect to RabbitMQ: Exception (403) Reason: "username or password not allowed"
 ```
 
@@ -282,7 +282,7 @@ failed to connect to RabbitMQ: Exception (403) Reason: "username or password not
 
 **Advertencia recurrente**:
 ```
-Warning: Failed to create unique index on assessment_results: 
+Warning: Failed to create unique index on assessment_results:
 multi-key map passed in for ordered parameter keys
 ```
 
@@ -318,28 +318,28 @@ var (
 
 func SetupSharedContainers(t *testing.T) (*Resources, error) {
     var err error
-    
+
     setupOnce.Do(func() {
         // Crear contenedores UNA SOLA VEZ
         sharedPostgres, err = createPostgresContainer()
         if err != nil {
             return
         }
-        
+
         sharedMongoDB, err = createMongoDBContainer()
         if err != nil {
             return
         }
-        
+
         sharedRabbitMQ, err = createRabbitMQContainer()
         if err != nil {
             return
         }
     })
-    
+
     // Limpiar datos entre tests (TRUNCATE, no DROP)
     cleanDatabases(t, sharedPostgres, sharedMongoDB)
-    
+
     return &Resources{
         PostgreSQL: sharedPostgres,
         MongoDB:    sharedMongoDB,
@@ -385,7 +385,7 @@ rabbitContainer, err := testcontainers.GenericContainer(ctx, testcontainers.Gene
 func connectWithRetry(connStr string, maxRetries int) (*sql.DB, error) {
     var db *sql.DB
     var err error
-    
+
     for i := 0; i < maxRetries; i++ {
         db, err = sql.Open("postgres", connStr)
         if err == nil {
@@ -394,10 +394,10 @@ func connectWithRetry(connStr string, maxRetries int) (*sql.DB, error) {
                 return db, nil
             }
         }
-        
+
         time.Sleep(time.Second * time.Duration(i+1))
     }
-    
+
     return nil, fmt.Errorf("failed after %d retries: %w", maxRetries, err)
 }
 ```
@@ -436,12 +436,12 @@ Image: "rabbitmq:3.12-alpine"  // Sin management plugin
 func TestSomething(t *testing.T) {
     resources, err := SetupSharedContainers(t)
     require.NoError(t, err)
-    
+
     // Usar t.Cleanup() en lugar de defer
     t.Cleanup(func() {
         cleanDatabases(t, resources.PostgreSQL, resources.MongoDB)
     })
-    
+
     // ... test code
 }
 ```
@@ -459,7 +459,7 @@ func TestSomething(t *testing.T) {
 ```go
 func TestAuthFlow_LoginSuccess(t *testing.T) {
     t.Parallel()  // Ejecutar en paralelo
-    
+
     // ... test code
 }
 ```
@@ -603,4 +603,3 @@ func TestAuthFlow_LoginSuccess(t *testing.T) {
 
 **Última actualización**: 9 de noviembre de 2025  
 **Próxima revisión**: Después de implementar Prioridad 1
-

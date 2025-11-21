@@ -23,7 +23,7 @@
    • Código duplicado: Eliminado completamente (~800 líneas) ✅
    • Tests de integración: 21 tests completos (100% flujos críticos) ✅
    • Documentación: README_TESTS.md (540 líneas) + docs exhaustivas ✅
-   
+
 🟡 Áreas de Mejora Menores (NO BLOQUEANTES):
    • Cobertura total: 25.5% (por código legacy - mejora gradual)
    • ISP en repositorios: 70% (mejora opcional)

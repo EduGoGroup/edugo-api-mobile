@@ -330,7 +330,7 @@ echo "📝 Paso 3: Actualizar Dockerfile"
 if [ -f "Dockerfile" ]; then
   sed -i '' 's/golang:1\.24\.10-alpine/golang:1.25-alpine/g' Dockerfile
   sed -i '' 's/golang:1\.24-alpine/golang:1.25-alpine/g' Dockerfile
-  
+
   if ! grep -q "golang:1.25-alpine" Dockerfile; then
     echo "❌ Fallo al actualizar Dockerfile"
     exit 1
@@ -940,10 +940,10 @@ INTERVAL=30
 while [ $ELAPSED -lt $MAX_WAIT ]; do
   sleep $INTERVAL
   ELAPSED=$((ELAPSED + INTERVAL))
-  
+
   # Obtener status de checks
   CHECKS=$(gh pr checks $PR_NUMBER 2>&1)
-  
+
   # Verificar si todos pasaron
   if echo "$CHECKS" | grep -q "All checks have passed"; then
     echo ""
@@ -959,7 +959,7 @@ while [ $ELAPSED -lt $MAX_WAIT ]; do
     echo "   3. Continuar con Tarea 2.5 (Paralelismo)"
     exit 0
   fi
-  
+
   # Verificar si alguno falló
   if echo "$CHECKS" | grep -q "fail"; then
     echo ""
@@ -976,7 +976,7 @@ while [ $ELAPSED -lt $MAX_WAIT ]; do
     echo "   3. Ver Solución de Problemas en SPRINT-2-TASKS.md"
     exit 1
   fi
-  
+
   # Mostrar progreso
   echo "[$ELAPSED/$MAX_WAIT seg] CI en progreso..."
   echo "$CHECKS" | head -n 5
@@ -1096,7 +1096,7 @@ gh run view --log-failed | grep "lint"
 # Posibles causas:
 # 1. golangci-lint no compatible con Go 1.25
 #    Solución: Actualizar golangci-lint en workflow
-#    
+#  
 #    .github/workflows/pr-to-dev.yml:
 #    - uses: golangci/golangci-lint-action@v6
 #      with:
@@ -1114,7 +1114,7 @@ gh run view --log-failed | grep -A 20 "test"
 # Posibles causas:
 # 1. Tests de integración fallan (testcontainers)
 #    Solución: Verificar configuración de Docker en GitHub Actions
-#    
+#  
 #    El workflow debe tener:
 #    services:
 #      docker:
@@ -1137,13 +1137,13 @@ gh run view --log-failed | grep -A 50 "docker build"
 # Posibles causas:
 # 1. golang:1.25-alpine no existe
 #    Verificar: https://hub.docker.com/_/golang/tags?name=1.25
-#    
+#  
 #    Si no existe, usar:
 #    FROM golang:1.25.0-alpine  # Con patch version específico
 
 # 2. Dependencias faltantes en Alpine
 #    Solución: Agregar build dependencies
-#    
+#  
 #    Dockerfile:
 #    RUN apk add --no-cache git gcc musl-dev
 
@@ -1157,14 +1157,14 @@ gh run view --log-failed | grep -A 50 "docker build"
 # Posibles causas:
 # 1. Tests de integración muy lentos
 #    Solución: Optimizar tests o aumentar timeout en workflow
-#    
+#  
 #    workflow:
 #    - name: Run tests
 #      run: go test -timeout=10m ./...
 
 # 2. Docker build muy lento
 #    Solución: Agregar cache layers
-#    
+#  
 #    - uses: docker/build-push-action@v5
 #      with:
 #        cache-from: type=gha
@@ -1347,13 +1347,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true  # ← Cache de dependencias Go
-      
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -1365,19 +1365,19 @@ jobs:
     # needs: [lint]  ← REMOVIDO - ahora en paralelo
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true  # ← Cache
-      
+
       - name: Download dependencies
         run: go mod download
-      
+
       - name: Run tests
         run: go test -v -coverprofile=coverage.out ./...
-      
+
       - name: Check coverage
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
@@ -1387,7 +1387,7 @@ jobs:
             exit 1
           fi
           echo "✅ Coverage OK: $COVERAGE%"
-      
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
@@ -1399,9 +1399,9 @@ jobs:
     # needs: [test]  ← REMOVIDO - ahora en paralelo
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: docker/setup-buildx-action@v3
-      
+
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -1444,13 +1444,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-      
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -1461,19 +1461,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-      
+
       - name: Download dependencies
         run: go mod download
-      
+
       - name: Run tests
         run: go test -v -coverprofile=coverage.out ./...
-      
+
       - name: Check coverage
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
@@ -1483,7 +1483,7 @@ jobs:
             exit 1
           fi
           echo "✅ Coverage OK: $COVERAGE%"
-      
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
@@ -1494,9 +1494,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: docker/setup-buildx-action@v3
-      
+
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -1651,7 +1651,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     # Sin "needs"
-  
+
   test:
     runs-on: ubuntu-latest
     # Sin "needs"
@@ -1806,4 +1806,3 @@ Porcentaje: ~33% del sprint documentado en ultra-detalle
 **Versión:** 1.0 - Tareas 2.1-2.5  
 **Estado:** Listo para Ejecución  
 **Proyecto:** edugo-api-mobile (PILOTO)
-

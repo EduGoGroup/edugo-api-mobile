@@ -415,4 +415,3 @@ docker exec -it <container_id> /bin/sh
 ---
 
 **Última actualización**: 9 de noviembre de 2025
-

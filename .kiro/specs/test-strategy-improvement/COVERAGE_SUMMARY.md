@@ -104,7 +104,7 @@
 5. Mejorar tests de servicios existentes
 6. Tests adicionales para handlers
 
-**Resultado esperado**: 
+**Resultado esperado**:
 - Servicios: 70%+
 - Dominio: 80%+
 - Handlers: 65%+

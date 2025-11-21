@@ -404,7 +404,7 @@ Ahora que la infraestructura está limpia y centralizada, podemos proceder con e
 
 ## 🎉 Conclusión
 
-**Sprint-00 COMPLETADO EXITOSAMENTE** 
+**Sprint-00 COMPLETADO EXITOSAMENTE**
 
 El proyecto `edugo-api-mobile` ahora está modernizado con:
 - Dependencias actualizadas (v0.7.0)

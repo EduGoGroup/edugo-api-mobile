@@ -18,10 +18,10 @@ This document describes the configuration system for the EduGo API Mobile applic
    # Database credentials
    DATABASE_POSTGRES_PASSWORD=your-local-password
    DATABASE_MONGODB_URI=mongodb://user:pass@localhost:27017/edugo?authSource=admin
-   
+
    # Messaging
    MESSAGING_RABBITMQ_URL=amqp://user:pass@localhost:5672/
-   
+
    # Storage
    STORAGE_S3_ACCESS_KEY_ID=your-aws-key
    STORAGE_S3_SECRET_ACCESS_KEY=your-aws-secret

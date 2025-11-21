@@ -26,13 +26,13 @@ Crear la entity Assessment que representa una evaluación asociada a un material
 2. Implementar struct Assessment con todos los campos del schema PostgreSQL:
    ```go
    package entities
-   
+
    import (
        "errors"
        "time"
        "github.com/google/uuid"
    )
-   
+
    // Assessment representa una evaluación de un material educativo
    // Esta entity corresponde a la tabla `assessment` en PostgreSQL
    type Assessment struct {
@@ -47,7 +47,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        CreatedAt          time.Time
        UpdatedAt          time.Time
    }
-   
+
    // NewAssessment crea una nueva evaluación con validaciones
    // Este constructor aplica fail-fast: si alguna validación falla, retorna error inmediatamente
    func NewAssessment(
@@ -61,27 +61,27 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        if materialID == uuid.Nil {
            return nil, ErrInvalidMaterialID
        }
-       
+
        // Validar MongoDB document ID (24 caracteres hexadecimales)
        if len(mongoDocID) != 24 {
            return nil, ErrInvalidMongoDocumentID
        }
-       
+
        // Validar que el título no esté vacío
        if title == "" {
            return nil, ErrEmptyTitle
        }
-       
+
        // Validar total de preguntas (1-100 según schema PostgreSQL)
        if totalQuestions < 1 || totalQuestions > 100 {
            return nil, ErrInvalidTotalQuestions
        }
-       
+
        // Validar umbral de aprobación (0-100)
        if passThreshold < 0 || passThreshold > 100 {
            return nil, ErrInvalidPassThreshold
        }
-       
+
        now := time.Now().UTC()
        return &Assessment{
            ID:                 uuid.New(),
@@ -96,7 +96,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            UpdatedAt:          now,
        }, nil
    }
-   
+
    // Validate verifica que la evaluación sea válida en su estado actual
    func (a *Assessment) Validate() error {
        if a.ID == uuid.Nil {
@@ -125,7 +125,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        }
        return nil
    }
-   
+
    // CanAttempt verifica si un estudiante puede hacer otro intento
    // Regla de negocio: si MaxAttempts es nil, intentos ilimitados
    func (a *Assessment) CanAttempt(attemptCount int) bool {
@@ -134,12 +134,12 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        }
        return attemptCount < *a.MaxAttempts
    }
-   
+
    // IsTimeLimited indica si la evaluación tiene límite de tiempo
    func (a *Assessment) IsTimeLimited() bool {
        return a.TimeLimitMinutes != nil && *a.TimeLimitMinutes > 0
    }
-   
+
    // SetMaxAttempts establece el máximo de intentos permitidos
    // Esta es una business rule: mínimo 1 intento debe permitirse
    func (a *Assessment) SetMaxAttempts(max int) error {
@@ -150,7 +150,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        a.UpdatedAt = time.Now().UTC()
        return nil
    }
-   
+
    // SetTimeLimit establece el límite de tiempo en minutos
    // Business rule: entre 1 y 180 minutos (3 horas)
    func (a *Assessment) SetTimeLimit(minutes int) error {
@@ -161,13 +161,13 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        a.UpdatedAt = time.Now().UTC()
        return nil
    }
-   
+
    // RemoveMaxAttempts quita el límite de intentos (ilimitados)
    func (a *Assessment) RemoveMaxAttempts() {
        a.MaxAttempts = nil
        a.UpdatedAt = time.Now().UTC()
    }
-   
+
    // RemoveTimeLimit quita el límite de tiempo
    func (a *Assessment) RemoveTimeLimit() {
        a.TimeLimitMinutes = nil
@@ -178,9 +178,9 @@ Crear la entity Assessment que representa una evaluación asociada a un material
 3. Crear errores de dominio en `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/errors/errors.go`:
    ```go
    package errors
-   
+
    import "errors"
-   
+
    // Assessment errors
    var (
        ErrInvalidAssessmentID      = errors.New("domain: invalid assessment ID")
@@ -192,7 +192,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        ErrInvalidMaxAttempts       = errors.New("domain: max attempts must be at least 1")
        ErrInvalidTimeLimit         = errors.New("domain: time limit must be between 1 and 180 minutes")
    )
-   
+
    // Attempt errors
    var (
        ErrInvalidAttemptID         = errors.New("domain: invalid attempt ID")
@@ -204,7 +204,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        ErrAttemptAlreadyCompleted  = errors.New("domain: attempt already completed, cannot modify")
        ErrNoAnswersProvided        = errors.New("domain: at least one answer must be provided")
    )
-   
+
    // Answer errors
    var (
        ErrInvalidAnswerID          = errors.New("domain: invalid answer ID")
@@ -216,26 +216,26 @@ Crear la entity Assessment que representa una evaluación asociada a un material
 4. Crear tests unitarios en `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/entities/assessment_test.go`:
    ```go
    package entities_test
-   
+
    import (
        "testing"
        "time"
-       
+
        "github.com/google/uuid"
        "github.com/stretchr/testify/assert"
        "github.com/stretchr/testify/require"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        domainErrors "edugo-api-mobile/internal/domain/errors"
    )
-   
+
    func TestNewAssessment_Success(t *testing.T) {
        materialID := uuid.New()
        mongoDocID := "507f1f77bcf86cd799439011"
        title := "Cuestionario: Introducción a Pascal"
        totalQuestions := 5
        passThreshold := 70
-       
+
        assessment, err := entities.NewAssessment(
            materialID,
            mongoDocID,
@@ -243,10 +243,10 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            totalQuestions,
            passThreshold,
        )
-       
+
        require.NoError(t, err)
        require.NotNil(t, assessment)
-       
+
        assert.NotEqual(t, uuid.Nil, assessment.ID)
        assert.Equal(t, materialID, assessment.MaterialID)
        assert.Equal(t, mongoDocID, assessment.MongoDocumentID)
@@ -258,7 +258,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
        assert.False(t, assessment.CreatedAt.IsZero())
        assert.False(t, assessment.UpdatedAt.IsZero())
    }
-   
+
    func TestNewAssessment_InvalidMaterialID(t *testing.T) {
        _, err := entities.NewAssessment(
            uuid.Nil,
@@ -267,10 +267,10 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrInvalidMaterialID)
    }
-   
+
    func TestNewAssessment_InvalidMongoDocumentID(t *testing.T) {
        testCases := []struct {
            name       string
@@ -281,7 +281,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            {"too long", "507f1f77bcf86cd799439011EXTRA"},
            {"wrong length", "507f1f77bcf86cd79943901"},
        }
-       
+
        for _, tc := range testCases {
            t.Run(tc.name, func(t *testing.T) {
                _, err := entities.NewAssessment(
@@ -291,12 +291,12 @@ Crear la entity Assessment que representa una evaluación asociada a un material
                    5,
                    70,
                )
-               
+
                assert.ErrorIs(t, err, domainErrors.ErrInvalidMongoDocumentID)
            })
        }
    }
-   
+
    func TestNewAssessment_EmptyTitle(t *testing.T) {
        _, err := entities.NewAssessment(
            uuid.New(),
@@ -305,10 +305,10 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrEmptyTitle)
    }
-   
+
    func TestNewAssessment_InvalidTotalQuestions(t *testing.T) {
        testCases := []struct {
            name           string
@@ -319,7 +319,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            {"too many questions", 101},
            {"way too many", 1000},
        }
-       
+
        for _, tc := range testCases {
            t.Run(tc.name, func(t *testing.T) {
                _, err := entities.NewAssessment(
@@ -329,12 +329,12 @@ Crear la entity Assessment que representa una evaluación asociada a un material
                    tc.totalQuestions,
                    70,
                )
-               
+
                assert.ErrorIs(t, err, domainErrors.ErrInvalidTotalQuestions)
            })
        }
    }
-   
+
    func TestNewAssessment_InvalidPassThreshold(t *testing.T) {
        testCases := []struct {
            name          string
@@ -344,7 +344,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            {"above 100", 101},
            {"way above 100", 150},
        }
-       
+
        for _, tc := range testCases {
            t.Run(tc.name, func(t *testing.T) {
                _, err := entities.NewAssessment(
@@ -354,12 +354,12 @@ Crear la entity Assessment que representa una evaluación asociada a un material
                    5,
                    tc.passThreshold,
                )
-               
+
                assert.ErrorIs(t, err, domainErrors.ErrInvalidPassThreshold)
            })
        }
    }
-   
+
    func TestAssessment_Validate_Success(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -368,11 +368,11 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        err := assessment.Validate()
        assert.NoError(t, err)
    }
-   
+
    func TestAssessment_CanAttempt_Unlimited(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -381,14 +381,14 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        // Sin límite de intentos (MaxAttempts = nil)
        assert.True(t, assessment.CanAttempt(0))
        assert.True(t, assessment.CanAttempt(10))
        assert.True(t, assessment.CanAttempt(100))
        assert.True(t, assessment.CanAttempt(1000))
    }
-   
+
    func TestAssessment_CanAttempt_WithLimit(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -397,18 +397,18 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        // Establecer límite de 3 intentos
        err := assessment.SetMaxAttempts(3)
        require.NoError(t, err)
-       
+
        assert.True(t, assessment.CanAttempt(0), "should allow attempt 1")
        assert.True(t, assessment.CanAttempt(1), "should allow attempt 2")
        assert.True(t, assessment.CanAttempt(2), "should allow attempt 3")
        assert.False(t, assessment.CanAttempt(3), "should NOT allow attempt 4")
        assert.False(t, assessment.CanAttempt(4), "should NOT allow attempt 5")
    }
-   
+
    func TestAssessment_SetMaxAttempts_Success(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -417,18 +417,18 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        oldUpdatedAt := assessment.UpdatedAt
        time.Sleep(10 * time.Millisecond)
-       
+
        err := assessment.SetMaxAttempts(5)
-       
+
        assert.NoError(t, err)
        assert.NotNil(t, assessment.MaxAttempts)
        assert.Equal(t, 5, *assessment.MaxAttempts)
        assert.True(t, assessment.UpdatedAt.After(oldUpdatedAt), "UpdatedAt should be updated")
    }
-   
+
    func TestAssessment_SetMaxAttempts_Invalid(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -437,15 +437,15 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        testCases := []int{0, -1, -10}
-       
+
        for _, maxAttempts := range testCases {
            err := assessment.SetMaxAttempts(maxAttempts)
            assert.ErrorIs(t, err, domainErrors.ErrInvalidMaxAttempts)
        }
    }
-   
+
    func TestAssessment_RemoveMaxAttempts(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -454,19 +454,19 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        // Primero establecer límite
        assessment.SetMaxAttempts(3)
        assert.NotNil(t, assessment.MaxAttempts)
-       
+
        // Luego quitar límite
        assessment.RemoveMaxAttempts()
        assert.Nil(t, assessment.MaxAttempts)
-       
+
        // Ahora debería permitir intentos ilimitados
        assert.True(t, assessment.CanAttempt(100))
    }
-   
+
    func TestAssessment_IsTimeLimited(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -475,19 +475,19 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        // Sin límite de tiempo
        assert.False(t, assessment.IsTimeLimited())
-       
+
        // Con límite de tiempo
        assessment.SetTimeLimit(30)
        assert.True(t, assessment.IsTimeLimited())
-       
+
        // Quitar límite
        assessment.RemoveTimeLimit()
        assert.False(t, assessment.IsTimeLimited())
    }
-   
+
    func TestAssessment_SetTimeLimit_Success(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -496,9 +496,9 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        testCases := []int{1, 15, 30, 60, 120, 180}
-       
+
        for _, minutes := range testCases {
            err := assessment.SetTimeLimit(minutes)
            assert.NoError(t, err)
@@ -506,7 +506,7 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            assert.Equal(t, minutes, *assessment.TimeLimitMinutes)
        }
    }
-   
+
    func TestAssessment_SetTimeLimit_Invalid(t *testing.T) {
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -515,9 +515,9 @@ Crear la entity Assessment que representa una evaluación asociada a un material
            5,
            70,
        )
-       
+
        testCases := []int{0, -1, 181, 200, 1000}
-       
+
        for _, minutes := range testCases {
            err := assessment.SetTimeLimit(minutes)
            assert.ErrorIs(t, err, domainErrors.ErrInvalidTimeLimit)
@@ -591,12 +591,12 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
 2. Implementar struct Attempt INMUTABLE:
    ```go
    package entities
-   
+
    import (
        "time"
        "github.com/google/uuid"
    )
-   
+
    // Attempt representa un intento de un estudiante en una evaluación
    // Esta entity es INMUTABLE: una vez creada, no se puede modificar
    // Corresponde a la tabla `assessment_attempt` en PostgreSQL
@@ -613,7 +613,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        Answers             []*Answer // Respuestas del intento
        IdempotencyKey      *string // Para prevenir duplicados (Post-MVP)
    }
-   
+
    // NewAttempt crea un nuevo intento COMPLETO
    // Business rule: un intento se crea YA COMPLETADO, no hay estado "en progreso"
    func NewAttempt(
@@ -627,29 +627,29 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        if assessmentID == uuid.Nil {
            return nil, ErrInvalidAssessmentID
        }
-       
+
        if studentID == uuid.Nil {
            return nil, ErrInvalidStudentID
        }
-       
+
        if len(answers) == 0 {
            return nil, ErrNoAnswersProvided
        }
-       
+
        if startedAt.IsZero() {
            return nil, ErrInvalidStartTime
        }
-       
+
        if completedAt.IsZero() || !completedAt.After(startedAt) {
            return nil, ErrInvalidEndTime
        }
-       
+
        // Calcular tiempo gastado
        timeSpent := int(completedAt.Sub(startedAt).Seconds())
        if timeSpent <= 0 || timeSpent > 7200 { // Máximo 2 horas
            return nil, ErrInvalidTimeSpent
        }
-       
+
        // Calcular score basándose en respuestas correctas
        correctAnswers := 0
        for _, answer := range answers {
@@ -657,10 +657,10 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
                correctAnswers++
            }
        }
-       
+
        totalQuestions := len(answers)
        score := (correctAnswers * 100) / totalQuestions
-       
+
        return &Attempt{
            ID:               uuid.New(),
            AssessmentID:     assessmentID,
@@ -675,7 +675,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            IdempotencyKey:   nil,
        }, nil
    }
-   
+
    // NewAttemptWithIdempotency crea intento con clave de idempotencia (Post-MVP)
    func NewAttemptWithIdempotency(
        assessmentID uuid.UUID,
@@ -689,16 +689,16 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        if err != nil {
            return nil, err
        }
-       
+
        attempt.IdempotencyKey = &idempotencyKey
        return attempt, nil
    }
-   
+
    // IsPassed indica si el intento aprobó la evaluación
    func (a *Attempt) IsPassed(passThreshold int) bool {
        return a.Score >= passThreshold
    }
-   
+
    // GetCorrectAnswersCount retorna la cantidad de respuestas correctas
    func (a *Attempt) GetCorrectAnswersCount() int {
        count := 0
@@ -709,22 +709,22 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        }
        return count
    }
-   
+
    // GetIncorrectAnswersCount retorna la cantidad de respuestas incorrectas
    func (a *Attempt) GetIncorrectAnswersCount() int {
        return len(a.Answers) - a.GetCorrectAnswersCount()
    }
-   
+
    // GetTotalQuestions retorna el total de preguntas respondidas
    func (a *Attempt) GetTotalQuestions() int {
        return len(a.Answers)
    }
-   
+
    // GetAccuracyPercentage retorna el porcentaje de precisión (alias de Score)
    func (a *Attempt) GetAccuracyPercentage() int {
        return a.Score
    }
-   
+
    // GetAverageTimePerQuestion retorna el tiempo promedio por pregunta en segundos
    func (a *Attempt) GetAverageTimePerQuestion() int {
        if len(a.Answers) == 0 {
@@ -732,7 +732,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        }
        return a.TimeSpentSeconds / len(a.Answers)
    }
-   
+
    // Validate verifica la integridad del intento
    func (a *Attempt) Validate() error {
        if a.ID == uuid.Nil {
@@ -759,14 +759,14 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        if len(a.Answers) == 0 {
            return ErrNoAnswersProvided
        }
-       
+
        // Verificar que el score calculado coincide
        correctCount := a.GetCorrectAnswersCount()
        expectedScore := (correctCount * 100) / len(a.Answers)
        if a.Score != expectedScore {
            return errors.New("domain: score mismatch with answers")
        }
-       
+
        return nil
    }
    ```
@@ -774,23 +774,23 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
 3. Crear tests en `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/entities/attempt_test.go`:
    ```go
    package entities_test
-   
+
    import (
        "testing"
        "time"
-       
+
        "github.com/google/uuid"
        "github.com/stretchr/testify/assert"
        "github.com/stretchr/testify/require"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        domainErrors "edugo-api-mobile/internal/domain/errors"
    )
-   
+
    func TestNewAttempt_Success(t *testing.T) {
        assessmentID := uuid.New()
        studentID := uuid.New()
-       
+
        // Crear 5 respuestas: 3 correctas, 2 incorrectas (60%)
        answers := []*entities.Answer{
            {ID: uuid.New(), QuestionID: "q1", SelectedAnswerID: "a1", IsCorrect: true, TimeSpentSeconds: 30},
@@ -799,15 +799,15 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            {ID: uuid.New(), QuestionID: "q4", SelectedAnswerID: "a4", IsCorrect: false, TimeSpentSeconds: 50},
            {ID: uuid.New(), QuestionID: "q5", SelectedAnswerID: "a5", IsCorrect: true, TimeSpentSeconds: 40},
        }
-       
+
        startedAt := time.Now().Add(-5 * time.Minute)
        completedAt := time.Now()
-       
+
        attempt, err := entities.NewAttempt(assessmentID, studentID, answers, startedAt, completedAt)
-       
+
        require.NoError(t, err)
        require.NotNil(t, attempt)
-       
+
        assert.NotEqual(t, uuid.Nil, attempt.ID)
        assert.Equal(t, assessmentID, attempt.AssessmentID)
        assert.Equal(t, studentID, attempt.StudentID)
@@ -816,7 +816,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
        assert.Equal(t, 5, len(attempt.Answers))
        assert.True(t, attempt.TimeSpentSeconds > 0)
    }
-   
+
    func TestNewAttempt_ScoreCalculation(t *testing.T) {
        testCases := []struct {
            name          string
@@ -833,7 +833,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            {"100% - single question", 1, 1, 100},
            {"75% - 3 of 4", 3, 4, 75},
        }
-       
+
        for _, tc := range testCases {
            t.Run(tc.name, func(t *testing.T) {
                answers := make([]*entities.Answer, tc.totalQuestions)
@@ -847,21 +847,21 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
                        TimeSpentSeconds:  30,
                    }
                }
-               
+
                startedAt := time.Now().Add(-3 * time.Minute)
                completedAt := time.Now()
-               
+
                attempt, err := entities.NewAttempt(uuid.New(), uuid.New(), answers, startedAt, completedAt)
-               
+
                require.NoError(t, err)
                assert.Equal(t, tc.expectedScore, attempt.Score)
            })
        }
    }
-   
+
    func TestNewAttempt_InvalidAssessmentID(t *testing.T) {
        answers := []*entities.Answer{{ID: uuid.New(), QuestionID: "q1", IsCorrect: true}}
-       
+
        _, err := entities.NewAttempt(
            uuid.Nil,
            uuid.New(),
@@ -869,13 +869,13 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            time.Now().Add(-1*time.Minute),
            time.Now(),
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrInvalidAssessmentID)
    }
-   
+
    func TestNewAttempt_InvalidStudentID(t *testing.T) {
        answers := []*entities.Answer{{ID: uuid.New(), QuestionID: "q1", IsCorrect: true}}
-       
+
        _, err := entities.NewAttempt(
            uuid.New(),
            uuid.Nil,
@@ -883,10 +883,10 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            time.Now().Add(-1*time.Minute),
            time.Now(),
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrInvalidStudentID)
    }
-   
+
    func TestNewAttempt_NoAnswers(t *testing.T) {
        _, err := entities.NewAttempt(
            uuid.New(),
@@ -895,14 +895,14 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            time.Now().Add(-1*time.Minute),
            time.Now(),
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrNoAnswersProvided)
    }
-   
+
    func TestNewAttempt_InvalidEndTime(t *testing.T) {
        answers := []*entities.Answer{{ID: uuid.New(), QuestionID: "q1", IsCorrect: true}}
        now := time.Now()
-       
+
        // CompletedAt antes de StartedAt
        _, err := entities.NewAttempt(
            uuid.New(),
@@ -911,10 +911,10 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            now,
            now.Add(-1*time.Minute), // Completado ANTES de empezar
        )
-       
+
        assert.ErrorIs(t, err, domainErrors.ErrInvalidEndTime)
    }
-   
+
    func TestAttempt_IsPassed(t *testing.T) {
        testCases := []struct {
            name          string
@@ -928,13 +928,13 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            {"100% with 70% threshold - pass", 100, 70, true},
            {"0% - fail", 0, 70, false},
        }
-       
+
        for _, tc := range testCases {
            t.Run(tc.name, func(t *testing.T) {
                // Crear intento con score específico
                totalQuestions := 10
                correctCount := (tc.score * totalQuestions) / 100
-               
+
                answers := make([]*entities.Answer, totalQuestions)
                for i := 0; i < totalQuestions; i++ {
                    answers[i] = &entities.Answer{
@@ -944,7 +944,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
                        TimeSpentSeconds:  30,
                    }
                }
-               
+
                attempt, _ := entities.NewAttempt(
                    uuid.New(),
                    uuid.New(),
@@ -952,12 +952,12 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
                    time.Now().Add(-5*time.Minute),
                    time.Now(),
                )
-               
+
                assert.Equal(t, tc.shouldPass, attempt.IsPassed(tc.passThreshold))
            })
        }
    }
-   
+
    func TestAttempt_GetCorrectAnswersCount(t *testing.T) {
        answers := []*entities.Answer{
            {ID: uuid.New(), QuestionID: "q1", IsCorrect: true},
@@ -965,7 +965,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            {ID: uuid.New(), QuestionID: "q3", IsCorrect: true},
            {ID: uuid.New(), QuestionID: "q4", IsCorrect: true},
        }
-       
+
        attempt, _ := entities.NewAttempt(
            uuid.New(),
            uuid.New(),
@@ -973,22 +973,22 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            time.Now().Add(-2*time.Minute),
            time.Now(),
        )
-       
+
        assert.Equal(t, 3, attempt.GetCorrectAnswersCount())
        assert.Equal(t, 1, attempt.GetIncorrectAnswersCount())
        assert.Equal(t, 4, attempt.GetTotalQuestions())
    }
-   
+
    func TestAttempt_GetAverageTimePerQuestion(t *testing.T) {
        answers := []*entities.Answer{
            {ID: uuid.New(), QuestionID: "q1", IsCorrect: true, TimeSpentSeconds: 30},
            {ID: uuid.New(), QuestionID: "q2", IsCorrect: true, TimeSpentSeconds: 60},
            {ID: uuid.New(), QuestionID: "q3", IsCorrect: true, TimeSpentSeconds: 90},
        }
-       
+
        startedAt := time.Now().Add(-3 * time.Minute)
        completedAt := time.Now()
-       
+
        attempt, _ := entities.NewAttempt(
            uuid.New(),
            uuid.New(),
@@ -996,17 +996,17 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            startedAt,
            completedAt,
        )
-       
+
        avgTime := attempt.GetAverageTimePerQuestion()
        assert.True(t, avgTime > 0)
        assert.True(t, avgTime <= 180) // ~180 segundos / 3 preguntas = ~60 seg promedio
    }
-   
+
    func TestAttempt_Validate_Success(t *testing.T) {
        answers := []*entities.Answer{
            {ID: uuid.New(), QuestionID: "q1", IsCorrect: true, TimeSpentSeconds: 60},
        }
-       
+
        attempt, _ := entities.NewAttempt(
            uuid.New(),
            uuid.New(),
@@ -1014,7 +1014,7 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
            time.Now().Add(-2*time.Minute),
            time.Now(),
        )
-       
+
        err := attempt.Validate()
        assert.NoError(t, err)
    }
@@ -1067,12 +1067,12 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
 2. Implementar struct Answer:
    ```go
    package entities
-   
+
    import (
        "time"
        "github.com/google/uuid"
    )
-   
+
    // Answer representa una respuesta individual a una pregunta en un intento
    // Corresponde a la tabla `assessment_attempt_answer` en PostgreSQL
    type Answer struct {
@@ -1084,7 +1084,7 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
        TimeSpentSeconds    int
        CreatedAt           time.Time
    }
-   
+
    // NewAnswer crea una nueva respuesta
    func NewAnswer(
        attemptID uuid.UUID,
@@ -1096,19 +1096,19 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
        if attemptID == uuid.Nil {
            return nil, ErrInvalidAttemptID
        }
-       
+
        if questionID == "" {
            return nil, ErrInvalidQuestionID
        }
-       
+
        if selectedAnswerID == "" {
            return nil, ErrInvalidSelectedAnswerID
        }
-       
+
        if timeSpent < 0 {
            return nil, ErrInvalidTimeSpent
        }
-       
+
        return &Answer{
            ID:                uuid.New(),
            AttemptID:         attemptID,
@@ -1119,7 +1119,7 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
            CreatedAt:         time.Now().UTC(),
        }, nil
    }
-   
+
    // Validate verifica la validez de la respuesta
    func (a *Answer) Validate() error {
        if a.ID == uuid.Nil {
@@ -1144,30 +1144,30 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
 3. Tests en `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/entities/answer_test.go`:
    ```go
    package entities_test
-   
+
    import (
        "testing"
-       
+
        "github.com/google/uuid"
        "github.com/stretchr/testify/assert"
        "github.com/stretchr/testify/require"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        domainErrors "edugo-api-mobile/internal/domain/errors"
    )
-   
+
    func TestNewAnswer_Success(t *testing.T) {
        attemptID := uuid.New()
        questionID := "q1"
        selectedAnswerID := "a2"
        isCorrect := true
        timeSpent := 45
-       
+
        answer, err := entities.NewAnswer(attemptID, questionID, selectedAnswerID, isCorrect, timeSpent)
-       
+
        require.NoError(t, err)
        require.NotNil(t, answer)
-       
+
        assert.NotEqual(t, uuid.Nil, answer.ID)
        assert.Equal(t, attemptID, answer.AttemptID)
        assert.Equal(t, questionID, answer.QuestionID)
@@ -1175,27 +1175,27 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
        assert.Equal(t, isCorrect, answer.IsCorrect)
        assert.Equal(t, timeSpent, answer.TimeSpentSeconds)
    }
-   
+
    func TestNewAnswer_InvalidAttemptID(t *testing.T) {
        _, err := entities.NewAnswer(uuid.Nil, "q1", "a1", true, 30)
        assert.ErrorIs(t, err, domainErrors.ErrInvalidAttemptID)
    }
-   
+
    func TestNewAnswer_InvalidQuestionID(t *testing.T) {
        _, err := entities.NewAnswer(uuid.New(), "", "a1", true, 30)
        assert.ErrorIs(t, err, domainErrors.ErrInvalidQuestionID)
    }
-   
+
    func TestNewAnswer_InvalidSelectedAnswerID(t *testing.T) {
        _, err := entities.NewAnswer(uuid.New(), "q1", "", true, 30)
        assert.ErrorIs(t, err, domainErrors.ErrInvalidSelectedAnswerID)
    }
-   
+
    func TestNewAnswer_NegativeTimeSpent(t *testing.T) {
        _, err := entities.NewAnswer(uuid.New(), "q1", "a1", true, -10)
        assert.ErrorIs(t, err, domainErrors.ErrInvalidTimeSpent)
    }
-   
+
    func TestAnswer_Validate_Success(t *testing.T) {
        answer, _ := entities.NewAnswer(uuid.New(), "q1", "a1", true, 30)
        err := answer.Validate()
@@ -1241,14 +1241,14 @@ Crear value objects para encapsular valores primitivos con validaciones. En DDD,
 1. Crear `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/valueobjects/score.go`:
    ```go
    package valueobjects
-   
+
    import "fmt"
-   
+
    // Score representa un puntaje de 0 a 100
    type Score struct {
        value int
    }
-   
+
    // NewScore crea un Score válido
    func NewScore(value int) (Score, error) {
        if value < 0 || value > 100 {
@@ -1256,29 +1256,29 @@ Crear value objects para encapsular valores primitivos con validaciones. En DDD,
        }
        return Score{value: value}, nil
    }
-   
+
    // Value retorna el valor del score
    func (s Score) Value() int {
        return s.value
    }
-   
+
    // IsPassing verifica si el score aprueba con un threshold
    func (s Score) IsPassing(threshold int) bool {
        return s.value >= threshold
    }
-   
+
    // IsFailin
 
 g verifica si el score reprueba
    func (s Score) IsFailing(threshold int) bool {
        return !s.IsPassing(threshold)
    }
-   
+
    // String implementa Stringer
    func (s Score) String() string {
        return fmt.Sprintf("%d%%", s.value)
    }
-   
+
    // Equals compara dos scores
    func (s Score) Equals(other Score) bool {
        return s.value == other.value
@@ -1326,24 +1326,24 @@ Crear interfaces de repositorios en la capa de dominio. Estas interfaces definen
 1. Crear `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/repositories/assessment_repository.go`:
    ```go
    package repositories
-   
+
    import (
        "context"
        "github.com/google/uuid"
        "edugo-api-mobile/internal/domain/entities"
    )
-   
+
    // AssessmentRepository define el contrato para persistencia de evaluaciones
    type AssessmentRepository interface {
        // FindByID busca una evaluación por ID
        FindByID(ctx context.Context, id uuid.UUID) (*entities.Assessment, error)
-       
+
        // FindByMaterialID busca una evaluación por material ID
        FindByMaterialID(ctx context.Context, materialID uuid.UUID) (*entities.Assessment, error)
-       
+
        // Save guarda una evaluación (INSERT o UPDATE)
        Save(ctx context.Context, assessment *entities.Assessment) error
-       
+
        // Delete elimina una evaluación
        Delete(ctx context.Context, id uuid.UUID) error
    }
@@ -1352,27 +1352,27 @@ Crear interfaces de repositorios en la capa de dominio. Estas interfaces definen
 2. Crear `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/internal/domain/repositories/attempt_repository.go`:
    ```go
    package repositories
-   
+
    import (
        "context"
        "github.com/google/uuid"
        "edugo-api-mobile/internal/domain/entities"
    )
-   
+
    // AttemptRepository define el contrato para persistencia de intentos
    type AttemptRepository interface {
        // FindByID busca un intento por ID
        FindByID(ctx context.Context, id uuid.UUID) (*entities.Attempt, error)
-       
+
        // FindByStudentAndAssessment busca intentos de un estudiante en una evaluación
        FindByStudentAndAssessment(ctx context.Context, studentID, assessmentID uuid.UUID) ([]*entities.Attempt, error)
-       
+
        // Save guarda un intento (solo INSERT, no UPDATE - inmutable)
        Save(ctx context.Context, attempt *entities.Attempt) error
-       
+
        // CountByStudentAndAssessment cuenta intentos de un estudiante
        CountByStudentAndAssessment(ctx context.Context, studentID, assessmentID uuid.UUID) (int, error)
-       
+
        // FindByStudent busca todos los intentos de un estudiante (historial)
        FindByStudent(ctx context.Context, studentID uuid.UUID, limit, offset int) ([]*entities.Attempt, error)
    }

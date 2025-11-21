@@ -23,29 +23,29 @@ flowchart TB
         H1[Material Handler]
         H2[Assessment Handler]
     end
-    
+
     subgraph "Application Layer"
         S1[Material Service]
         S2[Assessment Service]
         S3[Progress Service]
         S4[Stats Service]
     end
-    
+
     subgraph "Infrastructure Layer - Nuevos Componentes"
         MSG[RabbitMQ Publisher]
         S3C[AWS S3 Client]
-        
+
         subgraph "Persistence"
             PG[PostgreSQL]
             MG[MongoDB]
         end
     end
-    
+
     subgraph "External Systems"
         RMQ[RabbitMQ Server]
         AWS[AWS S3 Bucket]
     end
-    
+
     H1 --> S1
     H2 --> S2
     S1 --> MSG
@@ -56,10 +56,10 @@ flowchart TB
     S3 --> PG
     S4 --> PG
     S4 --> MG
-    
+
     MSG --> RMQ
     S3C --> AWS
-    
+
     style MSG fill:#ffeb3b
     style S3C fill:#ffeb3b
     style PG fill:#4caf50
@@ -71,7 +71,7 @@ flowchart TB
 ### 1. RabbitMQ Publisher (NUEVO)
 - **Responsabilidad**: Publicar eventos de dominio a colas de mensajes
 - **Tecnologías**: RabbitMQ client Go (amqp091-go)
-- **Interacciones**: 
+- **Interacciones**:
   - Material Service → publish `material_uploaded`
   - Assessment Service → publish `assessment_attempt_recorded`
 - **Ubicación**: `internal/infrastructure/messaging/rabbitmq/publisher.go`
@@ -85,7 +85,7 @@ flowchart TB
 ### 2. AWS S3 Client (NUEVO)
 - **Responsabilidad**: Generar URLs firmadas para subida directa de archivos
 - **Tecnologías**: AWS SDK for Go v2
-- **Interacciones**: 
+- **Interacciones**:
   - Material Service → solicita presigned URL
   - Frontend (indirecto) → usa URL para upload
 - **Ubicación**: `internal/infrastructure/storage/s3/client.go`
@@ -98,7 +98,7 @@ flowchart TB
 ### 3. Queries Complejas en Repositorios (ACTUALIZACIÓN)
 - **Responsabilidad**: Implementar consultas avanzadas en PostgreSQL y MongoDB
 - **Tecnologías**: SQL avanzado (JOINs, CTEs, UPSERT) + MongoDB aggregation pipeline
-- **Interacciones**: 
+- **Interacciones**:
   - Servicios → repositorios → bases de datos
 - **Ubicación**: Repositorios existentes en `internal/infrastructure/persistence/`
 
@@ -180,7 +180,7 @@ flowchart TB
   rabbitmq:
     url: "amqp://user:password@host:5672/"
     exchange: "edugo_events"
-  
+
   s3:
     region: "us-east-1"
     bucket: "edugo-materials"
@@ -190,50 +190,50 @@ flowchart TB
 ## Consideraciones No Funcionales
 
 ### Escalabilidad
-- **RabbitMQ**: 
+- **RabbitMQ**:
   - Mensajes persistentes (survive broker restart)
   - Publisher confirms para garantizar entrega
   - Conexión pool para múltiples go-routines
-- **S3**: 
+- **S3**:
   - Upload directo reduce carga del backend
   - Presigned URLs permiten escalado horizontal sin estado compartido
-- **Queries**: 
+- **Queries**:
   - Índices optimizados en PostgreSQL
   - Projection en MongoDB para reducir transferencia de datos
 
 ### Seguridad
-- **RabbitMQ**: 
+- **RabbitMQ**:
   - Credenciales en variables de entorno
   - Conexión TLS en producción
-- **S3**: 
+- **S3**:
   - Presigned URLs con tiempo de expiración corto (15 min)
   - IAM roles para permisos granulares
   - Bucket policies para restringir acceso
-- **Queries**: 
+- **Queries**:
   - Prepared statements para prevenir SQL injection
   - Sanitización de inputs en servicios
 
 ### Performance
-- **RabbitMQ**: 
+- **RabbitMQ**:
   - Publicación asíncrona (no bloquea request HTTP)
   - Batch publishing para múltiples eventos
-- **S3**: 
+- **S3**:
   - URLs generadas on-demand (no pre-generadas)
   - Caché de cliente S3 para reutilización de conexiones
-- **Queries**: 
+- **Queries**:
   - CTEs para queries legibles y optimizadas
   - Aggregation pipeline en MongoDB con límites
 
 ### Mantenibilidad
-- **RabbitMQ**: 
+- **RabbitMQ**:
   - Centralizador de eventos en `events.go`
   - Tipos de eventos bien definidos
   - Logging de eventos publicados
-- **S3**: 
+- **S3**:
   - Cliente S3 encapsulado
   - Configuración centralizada
   - Fácil cambio a otro storage provider (interfaz)
-- **Queries**: 
+- **Queries**:
   - Queries en métodos de repositorio
   - Tests de integración para validar queries
   - Comentarios en SQL/aggregations complejas
@@ -248,7 +248,7 @@ sequenceDiagram
     participant S3 as S3 Client
     participant MQ as RabbitMQ Publisher
     participant DB as PostgreSQL
-    
+
     FE->>H: POST /materials (metadata)
     H->>S: CreateMaterial(dto)
     S->>S3: GeneratePresignedURL(fileName)
@@ -332,15 +332,15 @@ require (
 ## Plan de Testing
 
 ### Tests Unitarios (por componente)
-- **RabbitMQ Publisher**: 
+- **RabbitMQ Publisher**:
   - Mock de conexión RabbitMQ
   - Validar payload JSON
   - Verificar declaración de exchanges
-- **S3 Client**: 
+- **S3 Client**:
   - Mock de AWS SDK
   - Validar formato de presigned URLs
   - Verificar expiración de URLs
-- **Queries Complejas**: 
+- **Queries Complejas**:
   - Tests de integración con Testcontainers
   - Validar resultados de queries
   - Verificar performance de índices

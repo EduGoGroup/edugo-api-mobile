@@ -64,12 +64,12 @@ La suite `IntegrationTestSuite` expone:
 ```go
 type IntegrationTestSuite struct {
     suite.Suite
-    
+
     // Contenedores Docker
     PostgresContainer *postgres.PostgresContainer
     MongoContainer    *mongodb.MongoDBContainer
     RabbitContainer   *rabbitmq.RabbitMQContainer
-    
+
     // Conexiones listas para usar
     PostgresDB *sql.DB          // PostgreSQL con migraciones y seeds
     MongoDB    *mongo.Database  // MongoDB listo
@@ -104,14 +104,14 @@ TearDownSuite() - UNA VEZ después de todos los tests
 ```go
 func (s *MySuite) TestPostgresQuery() {
     ctx := context.Background()
-    
+
     // Los datos de seeds ya están cargados
     var email string
-    err := s.PostgresDB.QueryRowContext(ctx, 
-        "SELECT email FROM users WHERE role = $1 LIMIT 1", 
+    err := s.PostgresDB.QueryRowContext(ctx,
+        "SELECT email FROM users WHERE role = $1 LIMIT 1",
         "student",
     ).Scan(&email)
-    
+
     s.NoError(err)
     s.NotEmpty(email)
 }
@@ -122,21 +122,21 @@ func (s *MySuite) TestPostgresQuery() {
 ```go
 func (s *MySuite) TestRabbitMQPublish() {
     ctx := context.Background()
-    
+
     // Obtener URL de RabbitMQ
     rabbitURL, err := s.RabbitContainer.AmqpURL(ctx)
     s.NoError(err)
-    
+
     // Conectar y usar
     conn, err := amqp.Dial(rabbitURL)
     s.NoError(err)
     defer conn.Close()
-    
+
     ch, err := conn.Channel()
     s.NoError(err)
-    
+
     // Publicar mensaje
-    err = ch.Publish("exchange", "routing.key", false, false, 
+    err = ch.Publish("exchange", "routing.key", false, false,
         amqp.Publishing{
             Body: []byte(`{"event": "test"}`),
         },

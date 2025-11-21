@@ -136,16 +136,16 @@ SetupRouter()
 func main() {
     // Cargar config
     // Inicializar logger
-    
+
     // ❌ Lógica de PostgreSQL inline (30 líneas)
     db, err := sql.Open(...)
     db.SetMaxOpenConns(...)
     // ...
-    
+
     // ❌ Lógica de MongoDB inline (25 líneas)
     client, err := mongo.Connect(...)
     // ...
-    
+
     // ❌ Configuración de rutas inline (80 líneas)
     r := gin.Default()
     r.Use(corsMiddleware()) // ❌ Función inline
@@ -153,7 +153,7 @@ func main() {
     v1 := r.Group("/v1")
     v1.POST("/auth/login", ...)
     // ... 50 líneas más de rutas
-    
+
     // Iniciar servidor
 }
 ```
@@ -164,18 +164,18 @@ func main() {
 func main() {
     // Cargar config
     // Inicializar logger
-    
+
     // ✅ Delegar a módulos especializados
     db, err := database.InitPostgreSQL(ctx, cfg, logger)
     mongoDB, err := database.InitMongoDB(ctx, cfg, logger)
-    
+
     // ✅ Container DI
     c := container.NewContainer(db, mongoDB, jwtSecret, logger)
-    
+
     // ✅ Router centralizado
     healthHandler := handler.NewHealthHandler(db, mongoDB)
     r := router.SetupRouter(c, healthHandler)
-    
+
     // Iniciar servidor
     startServer(r, cfg, logger)
 }

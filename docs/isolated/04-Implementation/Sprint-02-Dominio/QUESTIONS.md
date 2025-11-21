@@ -12,7 +12,7 @@
   - Permite nil checks (verificar si entity existe)
   - Más idiomático en Go para tipos complejos
   - Facilita implementación de repositorios (retornar nil cuando no existe)
-  
+
 - **Contras:**
   - Posible nil pointer dereference si no se valida
   - Más cuidado con mutabilidad no deseada
@@ -23,7 +23,7 @@
   - No hay nil pointer dereference
   - Inmutabilidad por defecto (copias automáticas)
   - Más seguro en concurrencia
-  
+
 - **Contras:**
   - Copias costosas en memoria para structs grandes
   - No se puede representar "entity no existe" sin usar Optional pattern
@@ -32,7 +32,7 @@
 
 **Decisión por Defecto:** **Opción A - Usar Pointers**
 
-**Justificación:** 
+**Justificación:**
 - Es el patrón estándar en Go para entities y agregados en DDD
 - Los repositorios Go retornan (*Entity, error) convencionalmente
 - Permite mutaciones controladas donde tiene sentido (ej: SetMaxAttempts)
@@ -76,7 +76,7 @@ func (a Assessment) CanAttempt(count int) bool {
   - Más fácil de testear (test unitario de entity)
   - Lógica de negocio cerca de los datos
   - Previene "Anemic Domain Model" anti-pattern
-  
+
 - **Contras:**
   - Entities pueden volverse grandes
   - Algunas reglas requieren múltiples entities (van a services)
@@ -85,7 +85,7 @@ func (a Assessment) CanAttempt(count int) bool {
 - **Pros:**
   - Entities más simples (solo getters/setters)
   - Lógica centralizada en services
-  
+
 - **Contras:**
   - Anti-pattern "Anemic Domain Model"
   - Lógica dispersa, difícil de encontrar
@@ -127,7 +127,7 @@ func NewAttempt(..., answers []*Answer) (*Attempt, error) {
         }
     }
     score := (correctCount * 100) / len(answers)
-    
+
     return &Attempt{Score: score, ...}, nil
 }
 
@@ -157,7 +157,7 @@ func (s *AssessmentService) CanStudentAttempt(assessment *Assessment, attemptCou
   - Type-safe (no confundir segundos con milisegundos)
   - Soporte de timezone
   - Mejor legibilidad en código
-  
+
 - **Contras:**
   - Ligeramente más bytes en memoria que int64
   - Requiere parsing para JSON (pero automático con encoding/json)
@@ -167,7 +167,7 @@ func (s *AssessmentService) CanStudentAttempt(assessment *Assessment, attemptCou
   - Más compacto en memoria (8 bytes vs ~24 bytes de time.Time)
   - Más simple en JSON (solo número)
   - Fácil de comparar (< > ==)
-  
+
 - **Contras:**
   - No type-safe (fácil confundir segundos/milisegundos)
   - Sin soporte de timezone
@@ -222,7 +222,7 @@ now := time.Now()         // ⚠️ EVITAR (timezone local)
   - Fail-fast: errores detectados inmediatamente
   - No necesitas recordar llamar Validate()
   - Menos código boilerplate
-  
+
 - **Contras:**
   - Constructor puede volverse largo si hay muchas validaciones
   - No se puede crear entity "draft" para modificar después
@@ -232,7 +232,7 @@ now := time.Now()         // ⚠️ EVITAR (timezone local)
   - Constructor más simple
   - Flexibilidad para crear entity en estado inválido temporalmente
   - Útil para ORMs que crean entities vacías
-  
+
 - **Contras:**
   - Fácil olvidar llamar Validate()
   - Posibles entities inválidas en el sistema
@@ -258,7 +258,7 @@ func NewAssessment(materialID uuid.UUID, title string, totalQuestions int, ...) 
     if totalQuestions < 1 || totalQuestions > 100 {
         return nil, ErrInvalidTotalQuestions
     }
-    
+
     // Solo crear si validaciones pasan
     return &Assessment{
         MaterialID:     materialID,
@@ -302,12 +302,12 @@ if err := assessment.Validate(); err != nil { // ✅ Validar después de deseria
 
 **Opciones:**
 
-### 1. **Opción A: Custom Error Types (structs que implementan error)** 
+### 1. **Opción A: Custom Error Types (structs que implementan error)**
 - **Pros:**
   - Pueden contener contexto adicional (campos, valores)
   - Type assertions para manejar específicamente
   - Más información para debugging
-  
+
 - **Contras:**
   - Más código (definir struct para cada error)
   - Overkill para errores simples de validación
@@ -319,7 +319,7 @@ if err := assessment.Validate(); err != nil { // ✅ Validar después de deseria
   - Suficiente para la mayoría de casos
   - Comparable con errors.Is()
   - Menos código boilerplate
-  
+
 - **Contras:**
   - No puede contener datos adicionales
   - Solo mensaje de error
@@ -402,7 +402,7 @@ func (e *ValidationError) Error() string {
   - Mejor para auditoría (datos históricos no cambian)
   - Thread-safe por diseño
   - Alineado con event sourcing
-  
+
 - **Contras:**
   - No se puede "corregir" un intento si hay error
   - Requiere crear nuevo intento para cualquier cambio
@@ -411,7 +411,7 @@ func (e *ValidationError) Error() string {
 - **Pros:**
   - Flexibilidad para correcciones
   - Menos registros en BD (actualizar existente vs crear nuevo)
-  
+
 - **Contras:**
   - Riesgo de modificación fraudulenta
   - Pérdida de información histórica
@@ -439,7 +439,7 @@ type Attempt struct {
 func NewAttempt(..., answers []*Answer) (*Attempt, error) {
     // Calcular score aquí (no después)
     score := calculateScore(answers)
-    
+
     return &Attempt{
         Score:   score,
         Answers: answers,

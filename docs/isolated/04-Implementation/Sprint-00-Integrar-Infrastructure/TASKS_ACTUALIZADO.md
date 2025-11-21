@@ -225,7 +225,7 @@ package messaging
 
 import (
     "fmt"
-    
+
     "github.com/EduGoGroup/edugo-infrastructure/messaging"
 )
 
@@ -260,7 +260,7 @@ func (p *Publisher) PublishMaterialUploaded(ctx context.Context, event MaterialU
     if err := ValidateEvent(event, "material-uploaded-v1"); err != nil {
         return fmt.Errorf("evento inválido: %w", err)
     }
-    
+
     // Publicar...
     return p.channel.PublishWithContext(ctx, ...)
 }
@@ -329,7 +329,7 @@ Actualizar tests de integración para usar testcontainers con migraciones:
 func TestUserRepository_Integration(t *testing.T) {
     db := setupTestDB(t) // Custom setup
     defer db.Close()
-    
+
     // ... tests
 }
 
@@ -340,7 +340,7 @@ func TestUserRepository_Integration(t *testing.T) {
     db := database.NewTestPostgres(t,
         database.WithMigrations(), // Aplica migraciones de infrastructure
     )
-    
+
     // ... tests
     // Cleanup automático
 }

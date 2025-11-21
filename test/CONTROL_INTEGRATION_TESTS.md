@@ -117,7 +117,7 @@ fi
 | CI (GitHub Actions) | `CI=true` | **CORREN** |
 | CI con `SKIP_INTEGRATION_TESTS=true` | ❌ | **SKIP** |
 
-**Filosofía**: 
+**Filosofía**:
 - **Local**: Skip por defecto (habilitar explícitamente)
 - **CI**: Corre por defecto (deshabilitar solo si es necesario)
 
@@ -135,7 +135,7 @@ import "testing"
 func TestAuthFlow(t *testing.T) {
     // ✅ SIEMPRE incluir esto al inicio
     SkipIfIntegrationTestsDisabled(t)
-    
+
     // Si llegamos aquí, tests están habilitados
     // ... tu código de test
 }

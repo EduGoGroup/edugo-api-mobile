@@ -338,4 +338,3 @@ De **7 minutos 18 segundos** a **1 minuto 21 segundos**
 
 **Última actualización**: 9 de noviembre de 2025  
 **Implementado por**: Optimización de Tests - Tarea 20.1
-

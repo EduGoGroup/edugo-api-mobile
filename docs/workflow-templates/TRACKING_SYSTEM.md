@@ -23,21 +23,21 @@ Este documento define el sistema de tracking que permite a una IA ejecutar los s
 function iniciarSesion() {
     // 1. Leer estado actual
     const progress = leerArchivo("PROGRESS.json");
-    
+
     // 2. Identificar punto de continuación
     const sprintActual = progress.summary.current_sprint;
     const tareaActual = progress.summary.current_task;
-    
+
     // 3. Cargar contexto
     const sprint = cargarSprint(sprintActual);
     const tarea = sprint.tasks[tareaActual];
-    
+
     // 4. Verificar dependencias
     if (tarea.blocked) {
         reportarBloqueado(tarea.blocker_reason);
         return;
     }
-    
+
     // 5. Continuar ejecución
     ejecutarTarea(sprintActual, tareaActual);
 }
@@ -115,7 +115,7 @@ RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     echo "Intento $((RETRY_COUNT + 1))/$MAX_RETRIES..."
-    
+
     # Ejecutar tarea
     if ejecutar_tarea; then
         echo "✅ Tarea completada exitosamente"
@@ -124,7 +124,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     else
         echo "❌ Tarea falló"
         RETRY_COUNT=$((RETRY_COUNT + 1))
-        
+
         if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
             echo "⏳ Esperando 10 segundos antes de reintentar..."
             sleep 10
@@ -361,7 +361,7 @@ case $FUNCTION in
        .summary.current_task = $task' \
       PROGRESS.json > temp.json && mv temp.json PROGRESS.json
     ;;
-    
+
   complete_task)
     jq --arg sprint "$SPRINT" --arg task "$TASK" \
       '.sprints[$sprint].tasks[$task].status = "completed" |
@@ -369,7 +369,7 @@ case $FUNCTION in
        .summary.completed_tasks += 1' \
       PROGRESS.json > temp.json && mv temp.json PROGRESS.json
     ;;
-    
+
   fail_task)
     jq --arg sprint "$SPRINT" --arg task "$TASK" --arg reason "$VALUE" \
       '.sprints[$sprint].tasks[$task].status = "failed" |
@@ -463,19 +463,19 @@ if [ "$TASK_STATUS" == "in_progress" ]; then
     echo "  1) Re-ejecutar tarea desde el inicio"
     echo "  2) Continuar desde último punto (solo si idempotente)"
     echo "  3) Marcar como failed y continuar"
-    
+
     # Por defecto: Re-ejecutar
     echo "📝 Re-ejecutando $CURRENT_TASK..."
     # Resetear status
     jq ".sprints[\"$CURRENT_SPRINT\"].tasks[\"$CURRENT_TASK\"].status = \"pending\"" PROGRESS.json > temp.json && mv temp.json PROGRESS.json
-    
+
 elif [ "$TASK_STATUS" == "failed" ]; then
     echo "❌ Tarea previamente falló"
     FAILURE_REASON=$(jq -r ".sprints[\"$CURRENT_SPRINT\"].tasks[\"$CURRENT_TASK\"].failure_reason" PROGRESS.json)
     echo "  Razón: $FAILURE_REASON"
     echo "  Resolver el issue antes de continuar"
     exit 1
-    
+
 elif [ "$TASK_STATUS" == "completed" ]; then
     echo "✅ Tarea completada. Proceder a siguiente."
     # Encontrar siguiente tarea

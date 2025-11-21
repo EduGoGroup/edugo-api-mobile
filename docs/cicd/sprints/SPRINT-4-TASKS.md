@@ -331,37 +331,37 @@ on:
         required: false
         type: string
         default: '1.25'
-      
+
       coverage-threshold:
         description: 'Minimum coverage percentage'
         required: false
         type: number
         default: 33
-      
+
       enable-docker-build:
         description: 'Enable Docker build validation'
         required: false
         type: boolean
         default: true
-      
+
       enable-security-scan:
         description: 'Enable security scan (Gosec)'
         required: false
         type: boolean
         default: false
-      
+
       docker-platforms:
         description: 'Docker platforms to build'
         required: false
         type: string
         default: 'linux/amd64'
-      
+
       working-directory:
         description: 'Working directory for commands'
         required: false
         type: string
         default: '.'
-    
+
     secrets:
       GITHUB_TOKEN:
         required: false
@@ -370,17 +370,17 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
           cache: true
-      
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -391,38 +391,38 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
           cache: true
-      
+
       - name: Download dependencies
         working-directory: ${{ inputs.working-directory }}
         run: go mod download
-      
+
       - name: Run tests
         working-directory: ${{ inputs.working-directory }}
         run: go test -v -race -coverprofile=coverage.out ./...
-      
+
       - name: Check coverage
         working-directory: ${{ inputs.working-directory }}
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
           echo "Coverage: $COVERAGE%"
           echo "Threshold: ${{ inputs.coverage-threshold }}%"
-          
+
           if [ $(echo "$COVERAGE < ${{ inputs.coverage-threshold }}" | bc) -eq 1 ]; then
             echo "❌ Coverage $COVERAGE% is below threshold ${{ inputs.coverage-threshold }}%"
             exit 1
           fi
           echo "✅ Coverage OK: $COVERAGE%"
-      
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -433,22 +433,22 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: ${{ inputs.enable-security-scan }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
           cache: true
-      
+
       - name: Run Gosec
         uses: securego/gosec@master
         with:
           args: '-no-fail -fmt sarif -out results.sarif ${{ inputs.working-directory }}/...'
-      
+
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -458,14 +458,14 @@ jobs:
     name: Build Docker
     runs-on: ubuntu-latest
     if: ${{ inputs.enable-docker-build }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -706,19 +706,19 @@ on:
         required: false
         type: string
         default: 'main'
-      
+
       target-branch:
         description: 'Target branch to sync to'
         required: false
         type: string
         default: 'dev'
-      
+
       create-target-if-missing:
         description: 'Create target branch if it does not exist'
         required: false
         type: boolean
         default: true
-    
+
     secrets:
       GITHUB_TOKEN:
         required: false
@@ -727,19 +727,19 @@ jobs:
   sync:
     name: Sync ${{ inputs.source-branch }} → ${{ inputs.target-branch }}
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN || github.token }}
-      
+
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
+
       - name: Check if target branch exists
         id: check-branch
         run: |
@@ -750,7 +750,7 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "⚠️  Branch ${{ inputs.target-branch }} does not exist"
           fi
-      
+
       - name: Create target branch if missing
         if: steps.check-branch.outputs.exists == 'false' && inputs.create-target-if-missing
         run: |
@@ -758,15 +758,15 @@ jobs:
           git checkout -b ${{ inputs.target-branch }} origin/${{ inputs.source-branch }}
           git push origin ${{ inputs.target-branch }}
           echo "✅ Branch ${{ inputs.target-branch }} created"
-      
+
       - name: Sync branches
         if: steps.check-branch.outputs.exists == 'true' || inputs.create-target-if-missing
         run: |
           echo "Syncing ${{ inputs.source-branch }} → ${{ inputs.target-branch }}..."
-          
+
           git checkout ${{ inputs.target-branch }}
           git pull origin ${{ inputs.target-branch }}
-          
+
           # Intentar merge
           if git merge --no-edit origin/${{ inputs.source-branch }}; then
             echo "✅ Merge successful"
@@ -775,7 +775,7 @@ jobs:
           else
             echo "❌ Merge conflict detected"
             git merge --abort
-            
+
             echo "## ⚠️ Sync Failed - Manual Resolution Required" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Sync from \`${{ inputs.source-branch }}\` to \`${{ inputs.target-branch }}\` failed due to merge conflicts." >> $GITHUB_STEP_SUMMARY
@@ -791,10 +791,10 @@ jobs:
             echo "git commit -m 'chore: resolve merge conflicts from ${{ inputs.source-branch }}'" >> $GITHUB_STEP_SUMMARY
             echo "git push origin ${{ inputs.target-branch }}" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            
+
             exit 1
           fi
-      
+
       - name: Summary
         if: success()
         run: |

@@ -81,12 +81,12 @@ import (
 
 func Load() (*Config, error) {
     v := viper.New()
-    
+
     // 1. Configurar Viper
     v.SetConfigType("yaml")
     v.AddConfigPath("./config")
     v.AddConfigPath("../config")
-    
+
     // 2. Cargar archivo base
     v.SetConfigName("config")
     if err := v.ReadInConfig(); err != nil {
@@ -94,13 +94,13 @@ func Load() (*Config, error) {
             return nil, fmt.Errorf("error reading base config: %w", err)
         }
     }
-    
+
     // 3. Merge archivo específico del ambiente
     env := os.Getenv("APP_ENV")
     if env == "" {
         env = "local"
     }
-    
+
     v.SetConfigName(fmt.Sprintf("config-%s", env))
     if err := v.MergeInConfig(); err != nil {
         if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -108,22 +108,22 @@ func Load() (*Config, error) {
         }
     }
 
-    
+
     // 4. ENV vars (precedencia automática)
     v.AutomaticEnv()
     v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-    
+
     // 5. Unmarshal
     var cfg Config
     if err := v.Unmarshal(&cfg); err != nil {
         return nil, fmt.Errorf("error unmarshaling config: %w", err)
     }
-    
+
     // 6. Validar
     if err := Validate(&cfg); err != nil {
         return nil, fmt.Errorf("config validation failed: %w", err)
     }
-    
+
     return &cfg, nil
 }
 ```
@@ -229,7 +229,7 @@ import (
 
 func Validate(cfg *Config) error {
     var errors []string
-    
+
     // Validar secretos requeridos
     if cfg.Database.Postgres.Password == "" {
         errors = append(errors, "DATABASE_POSTGRES_PASSWORD is required")
@@ -246,7 +246,7 @@ func Validate(cfg *Config) error {
     if cfg.Storage.S3.SecretAccessKey == "" {
         errors = append(errors, "STORAGE_S3_SECRET_ACCESS_KEY is required")
     }
-    
+
     // Validar valores públicos
     if cfg.Server.Port <= 0 || cfg.Server.Port > 65535 {
         errors = append(errors, "server.port must be between 1 and 65535")
@@ -254,12 +254,12 @@ func Validate(cfg *Config) error {
     if cfg.Database.Postgres.MaxConnections <= 0 {
         errors = append(errors, "database.postgres.max_connections must be positive")
     }
-    
+
     if len(errors) > 0 {
-        return fmt.Errorf("configuration validation failed:\n  - %s", 
+        return fmt.Errorf("configuration validation failed:\n  - %s",
             strings.Join(errors, "\n  - "))
     }
-    
+
     return nil
 }
 ```
@@ -281,11 +281,11 @@ func main() {
         Use:   "configctl",
         Short: "Configuration management tool for EduGo API",
     }
-    
+
     rootCmd.AddCommand(addCmd())
     rootCmd.AddCommand(validateCmd())
     rootCmd.AddCommand(generateDocsCmd())
-    
+
     if err := rootCmd.Execute(); err != nil {
         fmt.Fprintln(os.Stderr, err)
         os.Exit(1)
@@ -311,16 +311,16 @@ func addCmd() *cobra.Command {
         defaultVal string
         description string
     )
-    
+
     cmd := &cobra.Command{
         Use:   "add [hierarchy.path] [name]",
         Short: "Add a new configuration variable",
         Long: `Add a new configuration variable to the system.
-        
+
 Examples:
   # Add a public config variable
   configctl add database.postgres.pool_size --type int --default 10 --desc "Connection pool size"
-  
+
   # Add a secret variable
   configctl add auth.jwt.secret --type string --secret --desc "JWT signing secret"
 `,
@@ -330,13 +330,13 @@ Examples:
             return addVariable(path, varType, isSecret, defaultVal, description)
         },
     }
-    
+
     cmd.Flags().StringVar(&varType, "type", "string", "Variable type (string, int, bool, duration)")
     cmd.Flags().BoolVar(&isSecret, "secret", false, "Mark as secret (ENV only)")
     cmd.Flags().StringVar(&defaultVal, "default", "", "Default value")
     cmd.Flags().StringVar(&description, "desc", "", "Description")
     cmd.MarkFlagRequired("desc")
-    
+
     return cmd
 }
 
@@ -345,12 +345,12 @@ func addVariable(path, varType string, isSecret bool, defaultVal, description st
     if err := validatePath(path); err != nil {
         return err
     }
-    
+
     // 2. Actualizar config.go (agregar campo al struct)
     if err := updateConfigStruct(path, varType, description); err != nil {
         return fmt.Errorf("failed to update config.go: %w", err)
     }
-    
+
     // 3. Si es secreto, actualizar .env.example
     if isSecret {
         if err := updateEnvExample(path, description); err != nil {
@@ -365,14 +365,14 @@ func addVariable(path, varType string, isSecret bool, defaultVal, description st
         }
         fmt.Printf("✓ Added public variable to YAML files\n")
     }
-    
+
     // 5. Actualizar validator.go si es requerido
     if isSecret {
         if err := updateValidator(path); err != nil {
             return fmt.Errorf("failed to update validator: %w", err)
         }
     }
-    
+
     fmt.Println("\n✓ Configuration variable added successfully!")
     fmt.Println("\nNext steps:")
     if isSecret {
@@ -382,7 +382,7 @@ func addVariable(path, varType string, isSecret bool, defaultVal, description st
         fmt.Println("  1. Review the default values in config-*.yaml files")
         fmt.Println("  2. Adjust per-environment values as needed")
     }
-    
+
     return nil
 }
 ```
@@ -680,12 +680,12 @@ func LoadFromAWS(secretName string) (*Config, error) {
     if err != nil {
         return nil, err
     }
-    
+
     // 2. Setear como ENV vars
     for key, value := range secret {
         os.Setenv(key, value)
     }
-    
+
     // 3. Cargar configuración normalmente
     return Load()
 }

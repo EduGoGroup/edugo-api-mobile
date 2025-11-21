@@ -57,22 +57,22 @@ gh pr edit 123 --add-label "skip-integration"
 testing:
   # Global ON/OFF
   enabled: true
-  
+
   # Por tipo de test
   unit_tests:
     enabled: true
     timeout: 5m
-    
+
   integration_tests:
     enabled: false  # ← Deshabilitado por defecto en desarrollo
     timeout: 15m
     require_docker: true
-    
+
   coverage:
     enabled: true
     threshold: 60
     fail_on_decrease: true  # ← Fallar si cobertura baja
-    
+
   # Por branch
   branches:
     main:
@@ -128,34 +128,34 @@ jobs:
   unit-tests:
     name: Tests Unitarios
     runs-on: ubuntu-latest
-    
+
     # Skip si tiene label o input manual
     if: |
       (env.ENABLE_TESTS == 'true') &&
       (!contains(github.event.pull_request.labels.*.name, 'skip-tests')) &&
       (github.event.inputs.skip_tests != 'true')
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25.3'
           cache: true
-      
+
       - name: Configurar acceso a repos privados
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
         env:
           GOPRIVATE: github.com/EduGoGroup/*
-      
+
       - name: Descargar dependencias
         run: go mod download
-      
+
       - name: Ejecutar tests unitarios
         run: make test-unit
         timeout-minutes: 5
-      
+
       - name: Resumen
         run: echo "✅ Tests unitarios pasaron correctamente"
 ```
@@ -193,28 +193,28 @@ jobs:
   coverage:
     name: Verificar Cobertura
     runs-on: ubuntu-latest
-    
+
     if: |
       (env.ENABLE_COVERAGE_CHECK == 'true') &&
       (!contains(github.event.pull_request.labels.*.name, 'skip-coverage'))
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25.3'
           cache: true
-      
+
       - name: Configurar acceso a repos privados
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
         env:
           GOPRIVATE: github.com/EduGoGroup/*
-      
+
       - name: Generar reporte de cobertura
         run: make coverage-report
-      
+
       - name: Verificar umbral
         if: github.event.inputs.fail_on_low_coverage != 'false'
         run: |
@@ -224,13 +224,13 @@ jobs:
             echo "💡 Agrega label 'skip-coverage' al PR si es temporal"
             exit 1
           }
-      
+
       - name: Upload reporte
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
-      
+
       - name: Comentar en PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -238,20 +238,20 @@ jobs:
           script: |
             const fs = require('fs');
             const { execSync } = require('child_process');
-            
+
             const coverage = execSync('go tool cover -func=coverage/coverage-filtered.out | grep total').toString();
             const match = coverage.match(/(\d+\.\d+)%/);
             const percentage = match ? match[1] : 'N/A';
-            
+
             const body = `## 📊 Reporte de Cobertura
-            
+
 **Cobertura total:** ${percentage}%
 **Umbral mínimo:** ${{ env.COVERAGE_THRESHOLD }}%
-            
+
 ${percentage >= ${{ env.COVERAGE_THRESHOLD }} ? '✅ Cobertura aprobada' : '⚠️ Cobertura por debajo del umbral'}
 
 [Ver reporte completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
-            
+
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -291,32 +291,32 @@ jobs:
   integration-tests:
     name: Tests de Integración
     runs-on: ubuntu-latest
-    
+
     # Solo si:
     # - Se ejecuta manual Y enable_tests=true
     # - O el PR tiene label 'run-integration-tests'
     if: |
       (github.event_name == 'workflow_dispatch' && github.event.inputs.enable_tests == 'true') ||
       (contains(github.event.pull_request.labels.*.name, 'run-integration-tests'))
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25.3'
           cache: true
-      
+
       - name: Configurar acceso a repos privados
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
         env:
           GOPRIVATE: github.com/EduGoGroup/*
-      
+
       - name: Ejecutar tests de integración
         run: RUN_INTEGRATION_TESTS=true make test-integration
         timeout-minutes: 15
-      
+
       - name: Resumen
         run: echo "✅ Tests de integración completados"
 ```
@@ -453,20 +453,20 @@ Crear archivo `.github/testing-config.yml`:
 testing:
   # 🌐 Control Global
   enabled: true  # ← false para deshabilitar TODO
-  
+
   # 🧪 Tests Unitarios
   unit_tests:
     enabled: true
     timeout_minutes: 5
     fail_on_error: true
-    
+
   # 🐳 Tests de Integración
   integration_tests:
     enabled: false  # ← false por defecto (solo manual)
     timeout_minutes: 15
     fail_on_error: true
     require_label: "run-integration-tests"  # ← Requiere label en PR
-    
+
   # 📊 Cobertura
   coverage:
     enabled: true
@@ -474,23 +474,23 @@ testing:
     fail_below_threshold: true  # ← false para solo advertir
     upload_to_codecov: true
     comment_on_pr: true
-    
+
   # 🏷️ Control por Branch
   branch_rules:
     main:
       require_unit_tests: true
       require_coverage_check: true
       min_coverage: 60
-      
+
     dev:
       require_unit_tests: true
       require_coverage_check: false  # ← Más permisivo
       min_coverage: 50
-      
+
     feature:
       require_unit_tests: false  # ← No bloquea features
       require_coverage_check: false
-      
+
   # 🏃 Performance
   optimization:
     cache_dependencies: true
@@ -522,18 +522,18 @@ testing:
 1. git checkout -b feature/nueva-funcionalidad
 2. Desarrollo local + tests locales
 3. git push origin feature/nueva-funcionalidad
-   
+
    ✅ NO ejecuta workflows (ahorra minutos)
-   
+
 4. gh pr create --base dev
-   
+
    ✅ test-unit-quick.yml ejecuta (3-5 min)
    ✅ test-coverage-check.yml ejecuta (4-6 min)
    ❌ test-integration NO ejecuta (deshabilitado)
-   
+
    Si necesitas integración:
    gh pr edit --add-label "run-integration-tests"
-   
+
 5. Merge a dev
    ✅ ci.yml ejecuta validación
    ✅ sync actualiza main si corresponde
@@ -543,17 +543,17 @@ testing:
 
 ```
 1. gh pr create --base main --head dev --title "Release v0.1.7"
-   
+
    ✅ test-unit-quick.yml ejecuta
    ✅ test-coverage-check.yml ejecuta (threshold 60%)
    ✅ test-integration ejecuta SI tiene label
-   
+
 2. Aprobar y mergear
-   
+
 3. Crear tag (dispara release.yml)
    git tag v0.1.7
    git push origin v0.1.7
-   
+
    ✅ release.yml build Docker + GitHub Release
    ✅ sync-main-to-dev-ff.yml sincroniza
 ```

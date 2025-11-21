@@ -587,14 +587,14 @@ func (se *ScoringEngine) CalculateScore(eval *Evaluation, answers map[int64]stri
         Percentage:  0,
         AnswerDetails: make([]AnswerDetail, 0),
     }
-    
+
     // 1. Iterar cada pregunta
     // 2. Obtener respuesta del estudiante
     // 3. Comparar con respuesta correcta
     // 4. Sumar puntos si es correcta
     // 5. Calcular total y porcentaje
     // 6. Determinar si aprobó
-    
+
     return score, nil
 }
 ```
@@ -744,18 +744,18 @@ Response: 200 OK
 ```go
 func (es *EvaluationService) ConsumeWorkerResponses(ctx context.Context) error {
     subscriber := messaging.NewSubscriber()
-    
+
     messages := subscriber.Subscribe(
         "assessment.responses",
         "api-mobile.assessment.responses",
     )
-    
+
     for {
         select {
         case msg := <-messages:
             var response WorkerResponse
             json.Unmarshal(msg.Body, &response)
-            
+
             if response.Status == "error" {
                 es.logger.Error("Worker error", map[string]interface{}{
                     "request_id": response.RequestID,
@@ -767,19 +767,19 @@ func (es *EvaluationService) ConsumeWorkerResponses(ctx context.Context) error {
                 for _, q := range response.Questions {
                     es.repo.CreateQuestion(ctx, q)
                 }
-                
+
                 // Actualizar evaluation status
                 es.repo.Update(ctx, &Evaluation{
                     ID: response.EvaluationID,
                     Status: "published",
                 })
-                
+
                 // Marcar request como completado
                 es.UpdateGenerationRequest(response.RequestID, "completed")
             }
-            
+
             msg.Ack(false)
-            
+
         case <-ctx.Done():
             return nil
         }
@@ -797,7 +797,7 @@ func (es *EvaluationService) RequestQuizGeneration(ctx context.Context, req Gene
         Status: "generating",
     }
     es.repo.Create(ctx, eval)
-    
+
     // 2. Guardar request de generación
     genReq := &GenerationRequest{
         ID: uuid.New().String(),
@@ -805,7 +805,7 @@ func (es *EvaluationService) RequestQuizGeneration(ctx context.Context, req Gene
         Status: "pending",
     }
     es.repo.SaveGenerationRequest(genReq)
-    
+
     // 3. Publicar a RabbitMQ
     publisher := messaging.NewPublisher()
     payload, _ := json.Marshal(map[string]interface{}{
@@ -814,13 +814,13 @@ func (es *EvaluationService) RequestQuizGeneration(ctx context.Context, req Gene
         "material_id": req.MaterialID,
         "config": req,
     })
-    
+
     publisher.Publish(
         "assessment.requests",
         "worker.assessment.requests",
         payload,
     )
-    
+
     // 4. Retornar request_id para polling
     return nil
 }
@@ -830,9 +830,9 @@ func (es *EvaluationService) RequestQuizGeneration(ctx context.Context, req Gene
 ```go
 func (es *EvaluationService) PublishEvaluationEvent(ctx context.Context, event *EvaluationEvent) error {
     publisher := messaging.NewPublisher()
-    
+
     payload, _ := json.Marshal(event)
-    
+
     return publisher.Publish(
         "evaluation.events",
         "evaluation."+event.Type,

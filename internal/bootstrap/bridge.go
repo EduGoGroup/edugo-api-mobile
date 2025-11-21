@@ -9,8 +9,8 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	sharedBootstrap "github.com/EduGoGroup/edugo-shared/bootstrap"
 	"github.com/EduGoGroup/edugo-shared/lifecycle"
-	"gorm.io/gorm/logger"
 	sharedLogger "github.com/EduGoGroup/edugo-shared/logger"
+	"gorm.io/gorm/logger"
 )
 
 // bridgeToSharedBootstrap es el puente entre shared/bootstrap y la API de api-mobile

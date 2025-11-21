@@ -339,7 +339,7 @@ sequenceDiagram
     Server->>Server: Setup routes
     Server->>Server: Register /swagger/*any
     Note over Server: Server running on :PORT
-    
+
     UI->>Server: GET /swagger/index.html
     Server-->>UI: HTML + JavaScript
     UI->>UI: Detect window.location.host

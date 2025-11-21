@@ -84,14 +84,14 @@ make test-all
    # Database
    DATABASE_POSTGRES_PASSWORD=your-password
    DATABASE_MONGODB_URI=mongodb://user:pass@localhost:27017/edugo?authSource=admin
-   
+
    # Messaging
    MESSAGING_RABBITMQ_URL=amqp://user:pass@localhost:5672/
-   
+
    # Storage
    STORAGE_S3_ACCESS_KEY_ID=your-aws-key
    STORAGE_S3_SECRET_ACCESS_KEY=your-aws-secret
-   
+
    # Application
    APP_ENV=local
    ```
@@ -206,7 +206,7 @@ import "github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
 
 func TestMyFeature(t *testing.T) {
     cfg := testConfig()
-    
+
     // Inyectar mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -215,11 +215,11 @@ func TestMyFeature(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(context.Background())
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Usar resources en tus tests
     container := container.NewContainer(resources)
     // ...
@@ -655,37 +655,37 @@ Si estás actualizando código existente que inicializaba recursos de infraestru
 // cmd/main.go - Código antiguo
 func main() {
     cfg, _ := config.Load()
-    
+
     // Inicialización manual de cada recurso
     log := logger.NewZapLogger(cfg.Logger.Level, cfg.Logger.Format)
-    
+
     pgDB, err := database.InitPostgreSQL(ctx, cfg, log)
     if err != nil {
         log.Fatal("Failed to connect to PostgreSQL", zap.Error(err))
     }
     defer pgDB.Close()
-    
+
     mongoDB, err := database.InitMongoDB(ctx, cfg, log)
     if err != nil {
         log.Fatal("Failed to connect to MongoDB", zap.Error(err))
     }
-    
+
     publisher, err := rabbitmq.NewRabbitMQPublisher(cfg.Messaging.RabbitMQ.URL, "events", log)
     if err != nil {
         log.Warn("Failed to connect to RabbitMQ", zap.Error(err))
         // Continuar sin publisher...
     }
     defer publisher.Close()
-    
+
     s3Client, err := s3.NewS3Client(ctx, cfg.Storage.S3, log)
     if err != nil {
         log.Warn("Failed to initialize S3", zap.Error(err))
         // Continuar sin S3...
     }
-    
+
     // Crear container
     c := container.NewContainer(log, pgDB, mongoDB, publisher, s3Client, cfg.Auth.JWTSecret)
-    
+
     // Setup router y servidor
     r := router.SetupRouter(c)
     r.Run(fmt.Sprintf(":%d", cfg.Server.Port))
@@ -699,7 +699,7 @@ func main() {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap inicializa todos los recursos
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -707,10 +707,10 @@ func main() {
         log.Fatal("Failed to initialize infrastructure", zap.Error(err))
     }
     defer cleanup()
-    
+
     // Crear container con recursos
     c := container.NewContainer(resources)
-    
+
     // Setup router y servidor
     r := router.SetupRouter(c)
     r.Run(fmt.Sprintf(":%d", cfg.Server.Port))

@@ -198,25 +198,25 @@ docker-compose ps rabbitmq
 2. Contenido:
    ```markdown
    # Error: [Descripción breve]
-   
+
    **Fecha:** YYYY-MM-DD HH:MM
    **Tarea:** XX
    **Fase:** 2
-   
+
    ## Síntoma
    [Qué falló]
-   
+
    ## Causa Raíz
    [Por qué falló]
-   
+
    ## Intentos de Solución
    1. Intento 1: [descripción] → [resultado]
    2. Intento 2: [descripción] → [resultado]
    ...
-   
+
    ## Solución Final
    [Qué funcionó]
-   
+
    ## Aprendizaje
    [Qué aprendimos]
    ```
@@ -289,26 +289,26 @@ gh pr create \
 # Esperar y monitorear
 for i in {1..5}; do
   echo "Minuto $i de 5..."
-  
+
   # Obtener estado del PR
   gh pr status
-  
+
   # Verificar checks
   gh pr checks
-  
+
   # Si todos pasaron, salir del loop
   if gh pr checks | grep -q "All checks have passed"; then
     echo "✅ Todos los checks pasaron en minuto $i"
     break
   fi
-  
+
   # Si aún hay checks corriendo
   if [ $i -eq 5 ]; then
     echo "⚠️ Checks aún corriendo después de 5 minutos"
     echo "DETENER e informar al usuario"
     exit 1
   fi
-  
+
   sleep 60
 done
 ```
@@ -374,30 +374,30 @@ gh run list --branch dev --limit 5
 # Esperar hasta 5 minutos
 for i in {1..5}; do
   echo "Post-merge minuto $i de 5..."
-  
+
   # Ver estado del último run
   gh run view --log-failed
-  
+
   # Si completó exitosamente
   if gh run list --branch dev --limit 1 | grep -q "completed.*success"; then
     echo "✅ CI/CD post-merge exitoso en minuto $i"
     break
   fi
-  
+
   # Si falla
   if gh run list --branch dev --limit 1 | grep -q "completed.*failure"; then
     echo "❌ CI/CD post-merge falló"
     echo "DETENER e informar al usuario"
     exit 1
   fi
-  
+
   # Si aún corriendo después de 5 min
   if [ $i -eq 5 ]; then
     echo "⚠️ CI/CD aún corriendo después de 5 minutos post-merge"
     echo "DETENER e informar al usuario"
     exit 1
   fi
-  
+
   sleep 60
 done
 ```
@@ -458,7 +458,7 @@ else
   echo "⚠️ main y dev NO están sincronizados"
   echo "main: $MAIN_SHA"
   echo "dev: $DEV_SHA"
-  
+
   # Fast-forward dev a main
   git merge main --ff-only
   git push origin dev

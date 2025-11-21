@@ -195,7 +195,7 @@ func TestPostgresQueue_Enqueue_Integration(t *testing.T) {
             return nil
         },
     }
-    
+
     queue := NewPostgresQueue(mockDB)
     // ... test con mock
 }
@@ -218,21 +218,21 @@ func TestPostgresQueue_Enqueue_Integration(t *testing.T) {
     })
     require.NoError(t, err)
     defer pgContainer.Terminate(ctx)
-    
+
     // Obtener DSN
     host, _ := pgContainer.Host(ctx)
     port, _ := pgContainer.MappedPort(ctx, "5432")
     dsn := fmt.Sprintf("postgres://postgres:test123@%s:%s/baileys_test?sslmode=disable", host, port.Port())
-    
+
     // Conectar a DB real
     db, err := sql.Open("postgres", dsn)
     require.NoError(t, err)
     defer db.Close()
-    
+
     // Crear schema
     _, err = db.Exec(`CREATE TABLE IF NOT EXISTS messages (...)`)
     require.NoError(t, err)
-    
+
     // Test real
     queue := NewPostgresQueue(db)
     err = queue.Enqueue(ctx, &Message{...})
@@ -545,7 +545,7 @@ ERROR_COUNTS=()
 while true; do
   CURRENT_TIME=$(date +%s)
   ELAPSED=$((CURRENT_TIME - START_TIME))
-  
+
   if [ $ELAPSED -gt $MAX_WAIT ]; then
     echo "❌ TIMEOUT: CI/CD no completó en 5 minutos"
     echo "Estado actual:"
@@ -554,32 +554,32 @@ while true; do
     echo "ACCIÓN REQUERIDA: Revisar CI/CD manualmente"
     exit 1
   fi
-  
+
   # Obtener estado de checks
   CHECKS_STATUS=$(gh pr checks --json state,name,conclusion)
-  
+
   # Verificar si todos completaron
   IN_PROGRESS=$(echo "$CHECKS_STATUS" | jq '[.[] | select(.state=="IN_PROGRESS")] | length')
-  
+
   if [ "$IN_PROGRESS" -eq 0 ]; then
     # Todos los checks terminaron
     FAILED=$(echo "$CHECKS_STATUS" | jq '[.[] | select(.conclusion=="FAILURE")] | length')
-    
+
     if [ "$FAILED" -eq 0 ]; then
       echo "✅ CI/CD completado exitosamente"
       break
     else
       echo "❌ CI/CD falló. Revisando errores..."
-      
+
       # Obtener detalles de errores
       gh run view --log | grep -E "(ERROR|FAIL)" | tail -20
-      
+
       # Analizar error
       ERROR_MSG=$(gh run view --log | grep -E "(ERROR|FAIL)" | tail -1)
-      
+
       # Contar ocurrencias de este error
       ERROR_HASH=$(echo "$ERROR_MSG" | md5sum | cut -d' ' -f1)
-      
+
       # Buscar si error ya ocurrió
       ERROR_COUNT=1
       for err in "${ERROR_COUNTS[@]}"; do
@@ -587,7 +587,7 @@ while true; do
           ERROR_COUNT=$((ERROR_COUNT + 1))
         fi
       done
-      
+
       if [ $ERROR_COUNT -gt 3 ]; then
         echo "❌ ERROR REPETIDO 3 VECES"
         echo "Error: $ERROR_MSG"
@@ -595,17 +595,17 @@ while true; do
         echo "ACCIÓN REQUERIDA: Error no se puede resolver automáticamente"
         exit 1
       fi
-      
+
       # Agregar error al tracking
       ERROR_COUNTS+=("$ERROR_HASH")
-      
+
       # Intentar corregir (implementar lógica de corrección)
       echo "Intentando corregir (intento $ERROR_COUNT/3)..."
       # [Lógica de corrección según tipo de error]
-      
+
       # Push de corrección
       git push origin HEAD
-      
+
       # Reiniciar timer
       START_TIME=$(date +%s)
     fi
@@ -613,7 +613,7 @@ while true; do
     echo "⏳ CI/CD en progreso... ($ELAPSED/$MAX_WAIT segundos)"
     echo "Checks en progreso: $IN_PROGRESS"
   fi
-  
+
   sleep $CHECK_INTERVAL
 done
 ```
@@ -639,24 +639,24 @@ for comment in $(echo "$COPILOT_COMMENTS" | jq -c '.[]'); do
   BODY=$(echo "$comment" | jq -r '.body')
   FILE=$(echo "$comment" | jq -r '.path')
   LINE=$(echo "$comment" | jq -r '.line')
-  
+
   echo "Comentario en $FILE:$LINE"
   echo "$BODY"
   echo ""
-  
+
   # Análisis de procedencia
   if [[ "$BODY" =~ "complexity" ]] && [[ -f ".golangci.yml" ]]; then
     echo "✅ PROCEDENTE: Reducir complejidad"
     # [Implementar corrección]
-    
+
   elif [[ "$BODY" =~ "error handling" ]]; then
     echo "✅ PROCEDENTE: Mejorar manejo de errores"
     # [Implementar corrección]
-    
+
   elif [[ "$BODY" =~ "rename variable" ]]; then
     echo "⚠️  NO PROCEDENTE: Cambio cosmético, crear deuda técnica"
     # Agregar a informe de comentarios no atendidos
-    
+
   else
     echo "❓ REQUIERE ANÁLISIS: Evaluar caso por caso"
   fi
@@ -871,7 +871,7 @@ git push origin dev
   "version": "2.0.0",
   "current_sprint": "Sprint-02-CICD",
   "last_updated": "2025-11-16T10:45:00Z",
-  
+
   "sprints": [
     {
       "id": "Sprint-01-Refactorizacion",
@@ -906,7 +906,7 @@ git push origin dev
       "priority": 2
     }
   ],
-  
+
   "statistics": {
     "total_sprints": 6,
     "completed_sprints": 1,
@@ -1054,7 +1054,7 @@ TU MISIÓN (EJECUCIÓN DESATENDIDA):
    - Tiempo máximo: 5 minutos
    - Revisar cada: 1 minuto
    - Si pasan 5 min y CI/CD no termina: DETENER e INFORMAR
-   
+
    while true:
      - gh pr checks
      - Si todos completados:
@@ -1211,7 +1211,7 @@ ERROR_TRACKING = {}
 
 while elapsed < MAX_WAIT:
   checks = get_pr_checks()
-  
+
   if all_completed(checks):
     if all_passed(checks):
       return SUCCESS
@@ -1219,21 +1219,21 @@ while elapsed < MAX_WAIT:
       errors = get_failed_checks()
       for error in errors:
         error_hash = md5(error.message)
-        
+
         if ERROR_TRACKING[error_hash] >= 3:
           STOP_AND_INFORM("Error repetido 3 veces", error)
-        
+
         attempt_fix(error)
         ERROR_TRACKING[error_hash] += 1
-        
+
         push_fix()
         elapsed = 0  # Reset timer
         break
-  
+
   else:
     if elapsed >= MAX_WAIT:
       STOP_AND_INFORM("Timeout CI/CD", get_checks_status())
-    
+
     wait(CHECK_INTERVAL)
     elapsed += CHECK_INTERVAL
 

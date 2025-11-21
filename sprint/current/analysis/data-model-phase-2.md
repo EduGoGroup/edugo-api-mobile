@@ -21,7 +21,7 @@ erDiagram
     MATERIALS ||--o{ USER_PROGRESS : "tracked in"
     USERS ||--o{ REFRESH_TOKENS : has
     USERS ||--o{ LOGIN_ATTEMPTS : has
-    
+
     MATERIALS {
         uuid id PK
         varchar title
@@ -30,7 +30,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     MATERIAL_VERSIONS {
         uuid id PK
         uuid material_id FK
@@ -39,7 +39,7 @@ erDiagram
         varchar changelog
         timestamp created_at
     }
-    
+
     USERS {
         uuid id PK
         varchar username UK
@@ -48,7 +48,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     USER_PROGRESS {
         uuid id PK
         uuid user_id FK
@@ -58,7 +58,7 @@ erDiagram
         timestamp last_accessed_at
         timestamp completed_at
     }
-    
+
     REFRESH_TOKENS {
         uuid id PK
         uuid user_id FK
@@ -67,7 +67,7 @@ erDiagram
         boolean revoked
         timestamp created_at
     }
-    
+
     LOGIN_ATTEMPTS {
         uuid id PK
         uuid user_id FK
@@ -134,7 +134,7 @@ erDiagram
 ```sql
 -- CTE para obtener materiales con metadatos agregados
 WITH material_stats AS (
-    SELECT 
+    SELECT
         m.id,
         m.title,
         m.description,
@@ -147,7 +147,7 @@ WITH material_stats AS (
     LEFT JOIN material_versions mv ON m.id = mv.material_id
     GROUP BY m.id
 )
-SELECT 
+SELECT
     ms.*,
     json_agg(
         json_build_object(
@@ -160,7 +160,7 @@ SELECT
     ) as versions
 FROM material_stats ms
 LEFT JOIN material_versions mv ON ms.id = mv.material_id
-GROUP BY ms.id, ms.title, ms.description, ms.content_type, 
+GROUP BY ms.id, ms.title, ms.description, ms.content_type,
          ms.created_at, ms.updated_at, ms.version_count, ms.latest_version
 ORDER BY ms.updated_at DESC;
 ```
@@ -189,7 +189,7 @@ CREATE INDEX idx_materials_updated_at ON materials(updated_at DESC);
       _id: ObjectId("attempt_id")
     }
   },
-  
+
   // Stage 2: Lookup del assessment original
   {
     $lookup: {
@@ -199,12 +199,12 @@ CREATE INDEX idx_materials_updated_at ON materials(updated_at DESC);
       as: "assessment"
     }
   },
-  
+
   // Stage 3: Unwind assessment
   {
     $unwind: "$assessment"
   },
-  
+
   // Stage 4: Proyección con cálculos
   {
     $project: {
@@ -274,7 +274,7 @@ VALUES (
     $1,  -- user_id
     $2,  -- material_id
     $3,  -- progress_percentage
-    CASE 
+    CASE
         WHEN $3 >= 100 THEN 'completed'
         WHEN $3 > 0 THEN 'in_progress'
         ELSE 'not_started'
@@ -285,23 +285,23 @@ VALUES (
 ON CONFLICT (user_id, material_id)
 DO UPDATE SET
     progress_percentage = GREATEST(user_progress.progress_percentage, EXCLUDED.progress_percentage),
-    status = CASE 
+    status = CASE
         WHEN EXCLUDED.progress_percentage >= 100 THEN 'completed'
         WHEN EXCLUDED.progress_percentage > 0 THEN 'in_progress'
         ELSE user_progress.status
     END,
     last_accessed_at = NOW(),
-    completed_at = CASE 
-        WHEN EXCLUDED.progress_percentage >= 100 AND user_progress.completed_at IS NULL 
-        THEN NOW() 
-        ELSE user_progress.completed_at 
+    completed_at = CASE
+        WHEN EXCLUDED.progress_percentage >= 100 AND user_progress.completed_at IS NULL
+        THEN NOW()
+        ELSE user_progress.completed_at
     END
 RETURNING *;
 ```
 
 **Índice UNIQUE requerido**:
 ```sql
-CREATE UNIQUE INDEX idx_user_progress_user_material 
+CREATE UNIQUE INDEX idx_user_progress_user_material
 ON user_progress(user_id, material_id);
 ```
 
@@ -326,7 +326,7 @@ ON user_progress(user_id, material_id);
       user_id: "uuid-string"
     }
   },
-  
+
   // Stage 2: Lookup de assessments
   {
     $lookup: {
@@ -336,12 +336,12 @@ ON user_progress(user_id, material_id);
       as: "assessment"
     }
   },
-  
+
   // Stage 3: Unwind
   {
     $unwind: "$assessment"
   },
-  
+
   // Stage 4: Agrupar y calcular estadísticas
   {
     $group: {
@@ -363,7 +363,7 @@ ON user_progress(user_id, material_id);
       }
     }
   },
-  
+
   // Stage 5: Proyección final
   {
     $project: {
@@ -417,15 +417,15 @@ db.assessments.createIndex({ _id: 1 });
 **Índices compuestos**:
 ```sql
 -- Para queries de progreso por usuario
-CREATE INDEX idx_user_progress_user_status 
+CREATE INDEX idx_user_progress_user_status
 ON user_progress(user_id, status);
 
 -- Para ordenamiento por fecha
-CREATE INDEX idx_user_progress_last_accessed 
+CREATE INDEX idx_user_progress_last_accessed
 ON user_progress(last_accessed_at DESC);
 
 -- Para JOINs eficientes
-CREATE INDEX idx_material_versions_material_id_version 
+CREATE INDEX idx_material_versions_material_id_version
 ON material_versions(material_id, version_number DESC);
 ```
 
@@ -441,16 +441,16 @@ VACUUM ANALYZE material_versions;
 **Índices compuestos**:
 ```javascript
 // Para queries de intentos por usuario + assessment
-db.assessment_attempts.createIndex({ 
-  user_id: 1, 
-  assessment_id: 1, 
-  submitted_at: -1 
+db.assessment_attempts.createIndex({
+  user_id: 1,
+  assessment_id: 1,
+  submitted_at: -1
 });
 
 // Para agregaciones
-db.assessment_attempts.createIndex({ 
-  user_id: 1, 
-  percentage: -1 
+db.assessment_attempts.createIndex({
+  user_id: 1,
+  percentage: -1
 });
 ```
 
@@ -475,7 +475,7 @@ func TestMaterialRepository_GetMaterialsWithVersions(t *testing.T) {
     // Setup: Testcontainer PostgreSQL
     // Seed: 2 materiales, cada uno con 3 versiones
     // Execute: GetMaterialsWithVersions()
-    // Assert: 
+    // Assert:
     //   - 2 materiales retornados
     //   - Cada material tiene array de 3 versiones
     //   - Versiones ordenadas DESC por version_number
@@ -485,7 +485,7 @@ func TestProgressRepository_UpdateProgress_Insert(t *testing.T) {
     // Setup: Testcontainer PostgreSQL
     // Seed: Usuario sin progreso en material X
     // Execute: UpdateProgress(userID, materialX, 50%)
-    // Assert: 
+    // Assert:
     //   - Registro creado
     //   - status = "in_progress"
     //   - completed_at = NULL
@@ -495,7 +495,7 @@ func TestProgressRepository_UpdateProgress_UpdateWithHigherProgress(t *testing.T
     // Setup: Testcontainer PostgreSQL
     // Seed: Usuario con 50% en material X
     // Execute: UpdateProgress(userID, materialX, 75%)
-    // Assert: 
+    // Assert:
     //   - progress_percentage = 75
     //   - last_accessed_at actualizado
 }
@@ -504,7 +504,7 @@ func TestProgressRepository_UpdateProgress_IgnoreLowerProgress(t *testing.T) {
     // Setup: Testcontainer PostgreSQL
     // Seed: Usuario con 75% en material X
     // Execute: UpdateProgress(userID, materialX, 50%)
-    // Assert: 
+    // Assert:
     //   - progress_percentage sigue siendo 75 (GREATEST)
 }
 ```
@@ -515,7 +515,7 @@ func TestAssessmentRepository_CalculateScoreWithFeedback(t *testing.T) {
     // Setup: Testcontainer MongoDB
     // Seed: 1 assessment + 1 attempt (80% score)
     // Execute: CalculateScoreWithFeedback(attemptID)
-    // Assert: 
+    // Assert:
     //   - percentage = 80
     //   - feedback = "Buen trabajo! Sigue practicando."
 }
@@ -524,7 +524,7 @@ func TestStatsRepository_GetUserStatistics(t *testing.T) {
     // Setup: Testcontainer MongoDB
     // Seed: 5 intentos de 2 assessments diferentes
     // Execute: GetUserStatistics(userID)
-    // Assert: 
+    // Assert:
     //   - total_attempts = 5
     //   - unique_assessments_taken = 2
     //   - average_score calculado correctamente

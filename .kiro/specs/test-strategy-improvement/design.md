@@ -78,13 +78,13 @@ edugo-api-mobile/
 type TestAnalyzer interface {
     // AnalyzeStructure analiza la estructura de archivos de test
     AnalyzeStructure() (*TestStructureReport, error)
-    
+
     // CalculateCoverage calcula cobertura por paquete
     CalculateCoverage() (*CoverageReport, error)
-    
+
     // FindMissingTests identifica módulos sin tests
     FindMissingTests() ([]string, error)
-    
+
     // ValidateIntegrationTests verifica que tests de integración funcionen
     ValidateIntegrationTests() (*ValidationReport, error)
 }
@@ -175,12 +175,12 @@ type TestContainers struct {
 // Mejorar con configuración de RabbitMQ
 func SetupContainers(t *testing.T) (*TestContainers, func()) {
     // ... código existente ...
-    
+
     // NUEVO: Configurar RabbitMQ automáticamente
     if err := setupRabbitMQTopology(rabbitContainer); err != nil {
         t.Logf("Warning: RabbitMQ topology setup failed: %v", err)
     }
-    
+
     return containers, cleanup
 }
 
@@ -191,13 +191,13 @@ func setupRabbitMQTopology(container *rabbitmq.RabbitMQContainer) error {
         return err
     }
     defer conn.Close()
-    
+
     ch, err := conn.Channel()
     if err != nil {
         return err
     }
     defer ch.Close()
-    
+
     // Crear exchange
     err = ch.ExchangeDeclare(
         "edugo.events",  // name
@@ -211,14 +211,14 @@ func setupRabbitMQTopology(container *rabbitmq.RabbitMQContainer) error {
     if err != nil {
         return err
     }
-    
+
     // Crear colas necesarias
     queues := []string{
         "material.created",
         "assessment.completed",
         "progress.updated",
     }
-    
+
     for _, queueName := range queues {
         _, err = ch.QueueDeclare(
             queueName,
@@ -231,7 +231,7 @@ func setupRabbitMQTopology(container *rabbitmq.RabbitMQContainer) error {
         if err != nil {
             return err
         }
-        
+
         // Bind queue to exchange
         err = ch.QueueBind(
             queueName,
@@ -244,7 +244,7 @@ func setupRabbitMQTopology(container *rabbitmq.RabbitMQContainer) error {
             return err
         }
     }
-    
+
     return nil
 }
 ```
@@ -262,15 +262,15 @@ func setupRabbitMQTopology(container *rabbitmq.RabbitMQContainer) error {
 // MEJORAR: Agregar comentarios con valores sin encriptar
 func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
     t.Helper()
-    
+
     email = "test@edugo.com"
     password := "Test1234!"  // Contraseña sin encriptar: Test1234!
-    
+
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
     if err != nil {
         t.Fatalf("Failed to hash password: %v", err)
     }
-    
+
     query := `
         INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
         VALUES ($1, $2, 'Test', 'User', 'student', true, NOW(), NOW())
@@ -280,7 +280,7 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
     if err != nil {
         t.Fatalf("Failed to seed test user: %v", err)
     }
-    
+
     t.Logf("👤 Test user created: %s (email: %s, password: %s)", userID, email, password)
     return userID, email
 }
@@ -288,26 +288,26 @@ func SeedTestUser(t *testing.T, db *sql.DB) (userID string, email string) {
 // NUEVO: Seed múltiples usuarios con roles diferentes
 func SeedTestUsers(t *testing.T, db *sql.DB, count int, role string) []TestUser {
     t.Helper()
-    
+
     users := make([]TestUser, count)
     for i := 0; i < count; i++ {
         email := fmt.Sprintf("test%d@edugo.com", i+1)
         password := "Test1234!"
-        
+
         hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-        
+
         var userID string
         query := `
             INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
             RETURNING id
         `
-        err := db.QueryRow(query, email, string(hashedPassword), 
+        err := db.QueryRow(query, email, string(hashedPassword),
             fmt.Sprintf("Test%d", i+1), "User", role).Scan(&userID)
         if err != nil {
             t.Fatalf("Failed to seed test user %d: %v", i+1, err)
         }
-        
+
         users[i] = TestUser{
             ID:       userID,
             Email:    email,
@@ -315,7 +315,7 @@ func SeedTestUsers(t *testing.T, db *sql.DB, count int, role string) []TestUser 
             Role:     role,
         }
     }
-    
+
     t.Logf("👥 Created %d test users with role: %s", count, role)
     return users
 }
@@ -330,20 +330,20 @@ type TestUser struct {
 // NUEVO: Seed completo de escenario de prueba
 func SeedCompleteTestScenario(t *testing.T, db *sql.DB, mongodb *mongo.Database) *TestScenario {
     t.Helper()
-    
+
     // Crear usuarios
     teacher, _ := SeedTestUserWithEmail(t, db, "teacher@edugo.com")
     student1, _ := SeedTestUserWithEmail(t, db, "student1@edugo.com")
     student2, _ := SeedTestUserWithEmail(t, db, "student2@edugo.com")
-    
+
     // Crear materiales
     material1 := SeedTestMaterialWithTitle(t, db, teacher, "Introducción a Go")
     material2 := SeedTestMaterialWithTitle(t, db, teacher, "Testing en Go")
-    
+
     // Crear assessments
     assessment1 := SeedTestAssessment(t, mongodb, material1)
     assessment2 := SeedTestAssessment(t, mongodb, material2)
-    
+
     return &TestScenario{
         Teacher:     teacher,
         Students:    []string{student1, student2},
@@ -694,36 +694,36 @@ var DefaultCoverageConfig = CoverageConfig{
 // Error: Docker no disponible
 func TestIntegration_DockerNotAvailable(t *testing.T) {
     SkipIfIntegrationTestsDisabled(t)
-    
+
     if !isDockerAvailable() {
         t.Skip("Docker is not available, skipping integration test")
     }
-    
+
     // ... resto del test
 }
 
 // Error: Testcontainer falla al iniciar
 func SetupContainers(t *testing.T) (*TestContainers, func()) {
     ctx := context.Background()
-    
+
     pgContainer, err := postgres.Run(ctx, "postgres:15-alpine", ...)
     if err != nil {
         t.Fatalf("Failed to start PostgreSQL container: %v\nMake sure Docker is running", err)
     }
-    
+
     // ... resto del setup
 }
 
 // Error: Seed de datos falla
 func SeedTestUser(t *testing.T, db *sql.DB) (string, string) {
     t.Helper()
-    
+
     var userID string
     err := db.QueryRow(query, ...).Scan(&userID)
     if err != nil {
         t.Fatalf("Failed to seed test user: %v\nQuery: %s", err, query)
     }
-    
+
     return userID, email
 }
 
@@ -733,11 +733,11 @@ func CheckCoverageThreshold(coverageFile string, threshold float64) error {
     if err != nil {
         return fmt.Errorf("failed to parse coverage: %w", err)
     }
-    
+
     if coverage < threshold {
         return fmt.Errorf("coverage %.2f%% is below threshold %.2f%%", coverage, threshold)
     }
-    
+
     return nil
 }
 ```
@@ -1026,7 +1026,7 @@ hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.Defaul
            {"valid email", "test@example.com", false},
            {"invalid email", "invalid", true},
        }
-       
+
        for _, tt := range tests {
            t.Run(tt.name, func(t *testing.T) {
                t.Parallel()

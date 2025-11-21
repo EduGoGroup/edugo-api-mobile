@@ -10,7 +10,7 @@
 
 ### ⚠️ NOTA IMPORTANTE
 Los tests de repositories (14.3, 14.4) y handlers (16.1-16.3) **SÍ EXISTEN Y ESTÁN PASANDO**.
-El problema es que el comando `make coverage-report` no incluye el tag `-tags=integration`, 
+El problema es que el comando `make coverage-report` no incluye el tag `-tags=integration`,
 por lo que los tests de repositories no se ejecutan en el reporte estándar.
 
 ### Cobertura General

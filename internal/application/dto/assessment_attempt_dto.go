@@ -50,30 +50,30 @@ type UserAnswerDTO struct {
 
 // AttemptResultResponse representa el resultado de un intento
 type AttemptResultResponse struct {
-	AttemptID        uuid.UUID          `json:"attempt_id"`
-	AssessmentID     uuid.UUID          `json:"assessment_id"`
-	Score            int                `json:"score"`
-	MaxScore         int                `json:"max_score"`
-	CorrectAnswers   int                `json:"correct_answers"`
-	TotalQuestions   int                `json:"total_questions"`
-	PassThreshold    int                `json:"pass_threshold"`
-	Passed           bool               `json:"passed"`
-	TimeSpentSeconds int                `json:"time_spent_seconds"`
-	StartedAt        time.Time          `json:"started_at"`
-	CompletedAt      time.Time          `json:"completed_at"`
-	Feedback         []AnswerFeedbackDTO `json:"feedback"`
-	CanRetake        bool               `json:"can_retake"`
-	PreviousBestScore *int              `json:"previous_best_score,omitempty"`
+	AttemptID         uuid.UUID           `json:"attempt_id"`
+	AssessmentID      uuid.UUID           `json:"assessment_id"`
+	Score             int                 `json:"score"`
+	MaxScore          int                 `json:"max_score"`
+	CorrectAnswers    int                 `json:"correct_answers"`
+	TotalQuestions    int                 `json:"total_questions"`
+	PassThreshold     int                 `json:"pass_threshold"`
+	Passed            bool                `json:"passed"`
+	TimeSpentSeconds  int                 `json:"time_spent_seconds"`
+	StartedAt         time.Time           `json:"started_at"`
+	CompletedAt       time.Time           `json:"completed_at"`
+	Feedback          []AnswerFeedbackDTO `json:"feedback"`
+	CanRetake         bool                `json:"can_retake"`
+	PreviousBestScore *int                `json:"previous_best_score,omitempty"`
 }
 
 // AnswerFeedbackDTO representa el feedback de una respuesta
 type AnswerFeedbackDTO struct {
-	QuestionID    string `json:"question_id"`
-	QuestionText  string `json:"question_text"`
+	QuestionID     string `json:"question_id"`
+	QuestionText   string `json:"question_text"`
 	SelectedOption string `json:"selected_option"`
-	CorrectAnswer string `json:"correct_answer"`
-	IsCorrect     bool   `json:"is_correct"`
-	Message       string `json:"message"`
+	CorrectAnswer  string `json:"correct_answer"`
+	IsCorrect      bool   `json:"is_correct"`
+	Message        string `json:"message"`
 }
 
 // AttemptSummaryDTO representa un resumen de intento para historial

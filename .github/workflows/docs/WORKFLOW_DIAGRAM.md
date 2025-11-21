@@ -7,36 +7,36 @@ graph TD
     A[Feature Branch] -->|PR| B[dev]
     B -->|PR| C[main]
     C -->|Merge| D[Production Deploy]
-    
+
     B -->|Trigger| E[pr-to-dev.yml]
     C -->|Trigger| F[pr-to-main.yml]
-    
+
     E --> G[Unit Tests<br/>~5s]
     E --> H[Lint<br/>~30s]
     E --> I[Coverage Check<br/>~5s]
-    
+
     F --> J[Unit Tests<br/>~5s]
     F --> K[Integration Tests<br/>~1-2min]
     F --> L[Lint<br/>~30s]
     F --> M[Security Scan<br/>~30s]
     F --> N[Coverage Check<br/>~5s]
-    
+
     G --> O{All Pass?}
     H --> O
     I --> O
-    
+
     J --> P{All Pass?}
     K --> P
     L --> P
     M --> P
     N --> P
-    
+
     O -->|Yes| Q[✅ Ready to Merge to dev]
     O -->|No| R[❌ Fix Issues]
-    
+
     P -->|Yes| S[✅ Ready to Merge to main]
     P -->|No| T[❌ Fix Issues]
-    
+
     S --> D
 ```
 
@@ -261,4 +261,3 @@ feature/nueva-funcionalidad
 ---
 
 **Última actualización**: 9 de noviembre de 2025
-

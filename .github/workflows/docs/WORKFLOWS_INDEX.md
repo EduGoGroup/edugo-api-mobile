@@ -329,4 +329,3 @@ Sí, manualmente:
 
 **Mantenido por**: Equipo de DevOps  
 **Última revisión**: 9 de noviembre de 2025
-

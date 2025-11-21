@@ -16,27 +16,27 @@ func main() {
     pgDB, err := database.InitPostgreSQL(...)
     if err != nil { log.Fatal(...) }
     defer pgDB.Close()
-    
+
     mongoDB, err := database.InitMongoDB(...)
     if err != nil { log.Fatal(...) }
     defer mongoDB.Client().Disconnect(ctx)
-    
+
     publisher, err := rabbitmq.NewRabbitMQPublisher(...)
     if err != nil {
         log.Warn(...)
         publisher = rabbitmq.NewNoopPublisher(...)
     }
     defer publisher.Close()
-    
+
     s3Client, err := s3.NewS3Client(...)
     if err != nil {
         log.Warn(...)
         s3Client = s3.NewNoopS3Storage(...)
     }
-    
+
     // Crear container con 6+ parámetros
     c := container.NewContainer(log, pgDB, mongoDB, publisher, s3Client, jwtSecret)
-    
+
     // Setup router y servidor
     r := router.SetupRouter(c)
     r.Run(":8080")
@@ -57,7 +57,7 @@ func main() {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap inicializa todo
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -65,7 +65,7 @@ func main() {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // Crear container y servidor
     c := container.NewContainer(resources)
     r := router.SetupRouter(c)
@@ -289,7 +289,7 @@ package main
 import (
     "context"
     "log"
-    
+
     "github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
     "github.com/EduGoGroup/edugo-api-mobile/internal/config"
     "github.com/EduGoGroup/edugo-api-mobile/internal/container"
@@ -298,14 +298,14 @@ import (
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     c := container.NewContainer(resources)
     // ... resto de tu aplicación
 }
@@ -333,10 +333,10 @@ func TestMyFeature(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, _ := b.InitializeInfrastructure(context.Background())
     defer cleanup()
-    
+
     // Tests...
 }
 ```

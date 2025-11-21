@@ -72,11 +72,11 @@ db.Transaction(func(tx *gorm.DB) error {
 func (r *Repository) FindByID(id uuid.UUID) (*Entity, error) {
     var entity Entity
     result := db.First(&entity, id)
-    
+
     if errors.Is(result.Error, gorm.ErrRecordNotFound) {
         return nil, nil // ✅ No es error
     }
-    
+
     return &entity, result.Error
 }
 ```

@@ -33,16 +33,16 @@ func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUI
 	`
 
 	var (
-		idStr           string
-		materialIDStr   string
-		mongoDocID      string
-		title           string
-		totalQuestions  int
-		passThreshold   int
-		maxAttempts     sql.NullInt32
-		timeLimitMins   sql.NullInt32
-		createdAt       time.Time
-		updatedAt       time.Time
+		idStr          string
+		materialIDStr  string
+		mongoDocID     string
+		title          string
+		totalQuestions int
+		passThreshold  int
+		maxAttempts    sql.NullInt32
+		timeLimitMins  sql.NullInt32
+		createdAt      time.Time
+		updatedAt      time.Time
 	)
 
 	err := r.db.QueryRowContext(ctx, query, id.String()).Scan(
@@ -94,16 +94,16 @@ func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, mat
 	`
 
 	var (
-		idStr           string
-		materialIDStr   string
-		mongoDocID      string
-		title           string
-		totalQuestions  int
-		passThreshold   int
-		maxAttempts     sql.NullInt32
-		timeLimitMins   sql.NullInt32
-		createdAt       time.Time
-		updatedAt       time.Time
+		idStr          string
+		materialIDStr  string
+		mongoDocID     string
+		title          string
+		totalQuestions int
+		passThreshold  int
+		maxAttempts    sql.NullInt32
+		timeLimitMins  sql.NullInt32
+		createdAt      time.Time
+		updatedAt      time.Time
 	)
 
 	err := r.db.QueryRowContext(ctx, query, materialID.String()).Scan(

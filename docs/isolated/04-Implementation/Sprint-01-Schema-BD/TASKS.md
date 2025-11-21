@@ -24,16 +24,16 @@ Crear archivo de migración SQL que defina las 4 tablas del sistema de evaluacio
    ```
 
 2. Implementar en este orden exacto:
-   
+
    **A. Header y función UUIDv7:**
    ```sql
    -- Migration: 06_assessments.sql
    -- Description: Schema para Sistema de Evaluaciones
    -- Dependencies: 01_base_tables.sql (materials, users)
    -- Date: 2025-11-14
-   
+
    BEGIN;
-   
+
    -- Verificar que función gen_uuid_v7() existe
    DO $$
    BEGIN
@@ -56,16 +56,16 @@ Crear archivo de migración SQL que defina las 4 tablas del sistema de evaluacio
        time_limit_minutes INTEGER DEFAULT NULL,
        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-       
-       CONSTRAINT fk_assessment_material 
-           FOREIGN KEY (material_id) 
-           REFERENCES materials(id) 
+
+       CONSTRAINT fk_assessment_material
+           FOREIGN KEY (material_id)
+           REFERENCES materials(id)
            ON DELETE CASCADE,
-       
-       CONSTRAINT unique_material_assessment 
+
+       CONSTRAINT unique_material_assessment
            UNIQUE (material_id)
    );
-   
+
    COMMENT ON TABLE assessment IS 'Metadatos de evaluaciones asociadas a materiales educativos';
    COMMENT ON COLUMN assessment.mongo_document_id IS 'ObjectId del documento en MongoDB collection material_assessment';
    COMMENT ON COLUMN assessment.pass_threshold IS 'Porcentaje mínimo para aprobar (0-100)';
@@ -85,27 +85,27 @@ Crear archivo de migración SQL que defina las 4 tablas del sistema de evaluacio
        completed_at TIMESTAMP NOT NULL,
        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
        idempotency_key VARCHAR(64) DEFAULT NULL,
-       
-       CONSTRAINT fk_attempt_assessment 
-           FOREIGN KEY (assessment_id) 
-           REFERENCES assessment(id) 
+
+       CONSTRAINT fk_attempt_assessment
+           FOREIGN KEY (assessment_id)
+           REFERENCES assessment(id)
            ON DELETE CASCADE,
-       
-       CONSTRAINT fk_attempt_student 
-           FOREIGN KEY (student_id) 
-           REFERENCES users(id) 
+
+       CONSTRAINT fk_attempt_student
+           FOREIGN KEY (student_id)
+           REFERENCES users(id)
            ON DELETE CASCADE,
-       
-       CONSTRAINT check_attempt_time_logical 
+
+       CONSTRAINT check_attempt_time_logical
            CHECK (completed_at > started_at),
-       
-       CONSTRAINT check_attempt_duration 
+
+       CONSTRAINT check_attempt_duration
            CHECK (EXTRACT(EPOCH FROM (completed_at - started_at)) = time_spent_seconds),
-       
-       CONSTRAINT unique_idempotency_key 
+
+       CONSTRAINT unique_idempotency_key
            UNIQUE (idempotency_key)
    );
-   
+
    COMMENT ON TABLE assessment_attempt IS 'Intentos de estudiantes en evaluaciones (INMUTABLE)';
    COMMENT ON COLUMN assessment_attempt.time_spent_seconds IS 'Tiempo total del intento en segundos (max 2 horas)';
    COMMENT ON COLUMN assessment_attempt.idempotency_key IS 'Clave para prevenir intentos duplicados (Post-MVP)';
@@ -121,16 +121,16 @@ Crear archivo de migración SQL que defina las 4 tablas del sistema de evaluacio
        is_correct BOOLEAN NOT NULL,
        time_spent_seconds INTEGER NOT NULL CHECK (time_spent_seconds >= 0),
        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-       
-       CONSTRAINT fk_answer_attempt 
-           FOREIGN KEY (attempt_id) 
-           REFERENCES assessment_attempt(id) 
+
+       CONSTRAINT fk_answer_attempt
+           FOREIGN KEY (attempt_id)
+           REFERENCES assessment_attempt(id)
            ON DELETE CASCADE,
-       
-       CONSTRAINT unique_attempt_question 
+
+       CONSTRAINT unique_attempt_question
            UNIQUE (attempt_id, question_id)
    );
-   
+
    COMMENT ON TABLE assessment_attempt_answer IS 'Respuestas individuales de cada pregunta en un intento';
    COMMENT ON COLUMN assessment_attempt_answer.question_id IS 'ID de la pregunta en MongoDB';
    COMMENT ON COLUMN assessment_attempt_answer.selected_answer_id IS 'ID de la opción seleccionada';
@@ -146,16 +146,16 @@ Crear archivo de migración SQL que defina las 4 tablas del sistema de evaluacio
        mongo_assessment_id VARCHAR(24) DEFAULT NULL,
        link_type VARCHAR(20) NOT NULL CHECK (link_type IN ('summary', 'assessment', 'both')),
        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-       
-       CONSTRAINT fk_link_material 
-           FOREIGN KEY (material_id) 
-           REFERENCES materials(id) 
+
+       CONSTRAINT fk_link_material
+           FOREIGN KEY (material_id)
+           REFERENCES materials(id)
            ON DELETE CASCADE,
-       
-       CONSTRAINT unique_material_link 
+
+       CONSTRAINT unique_material_link
            UNIQUE (material_id, link_type)
    );
-   
+
    COMMENT ON TABLE material_summary_link IS 'Enlaces entre materiales PostgreSQL y documentos MongoDB';
    COMMENT ON COLUMN material_summary_link.link_type IS 'Tipo de enlace: summary, assessment, o both';
    ```
@@ -228,40 +228,40 @@ Crear índices B-tree y compuestos para optimizar queries frecuentes del sistema
    **Índices para tabla assessment:**
    ```sql
    -- Índices: assessment
-   CREATE INDEX IF NOT EXISTS idx_assessment_material_id 
+   CREATE INDEX IF NOT EXISTS idx_assessment_material_id
        ON assessment(material_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_assessment_mongo_document_id 
+
+   CREATE INDEX IF NOT EXISTS idx_assessment_mongo_document_id
        ON assessment(mongo_document_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_assessment_created_at 
+
+   CREATE INDEX IF NOT EXISTS idx_assessment_created_at
        ON assessment(created_at DESC);
-   
+
    COMMENT ON INDEX idx_assessment_material_id IS 'Query más frecuente: obtener assessment por material';
    ```
 
    **Índices para tabla assessment_attempt:**
    ```sql
    -- Índices: assessment_attempt
-   CREATE INDEX IF NOT EXISTS idx_attempt_assessment_id 
+   CREATE INDEX IF NOT EXISTS idx_attempt_assessment_id
        ON assessment_attempt(assessment_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_attempt_student_id 
+
+   CREATE INDEX IF NOT EXISTS idx_attempt_student_id
        ON assessment_attempt(student_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_attempt_student_assessment 
+
+   CREATE INDEX IF NOT EXISTS idx_attempt_student_assessment
        ON assessment_attempt(student_id, assessment_id, created_at DESC);
-   
-   CREATE INDEX IF NOT EXISTS idx_attempt_created_at 
+
+   CREATE INDEX IF NOT EXISTS idx_attempt_created_at
        ON assessment_attempt(created_at DESC);
-   
-   CREATE INDEX IF NOT EXISTS idx_attempt_score 
+
+   CREATE INDEX IF NOT EXISTS idx_attempt_score
        ON assessment_attempt(score);
-   
-   CREATE INDEX IF NOT EXISTS idx_attempt_idempotency_key 
-       ON assessment_attempt(idempotency_key) 
+
+   CREATE INDEX IF NOT EXISTS idx_attempt_idempotency_key
+       ON assessment_attempt(idempotency_key)
        WHERE idempotency_key IS NOT NULL;
-   
+
    COMMENT ON INDEX idx_attempt_student_assessment IS 'Historial de intentos de un estudiante en un assessment';
    COMMENT ON INDEX idx_attempt_idempotency_key IS 'Índice parcial para prevenir duplicados (Post-MVP)';
    ```
@@ -269,38 +269,38 @@ Crear índices B-tree y compuestos para optimizar queries frecuentes del sistema
    **Índices para tabla assessment_attempt_answer:**
    ```sql
    -- Índices: assessment_attempt_answer
-   CREATE INDEX IF NOT EXISTS idx_answer_attempt_id 
+   CREATE INDEX IF NOT EXISTS idx_answer_attempt_id
        ON assessment_attempt_answer(attempt_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_answer_question_id 
+
+   CREATE INDEX IF NOT EXISTS idx_answer_question_id
        ON assessment_attempt_answer(question_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_answer_is_correct 
+
+   CREATE INDEX IF NOT EXISTS idx_answer_is_correct
        ON assessment_attempt_answer(is_correct);
-   
-   CREATE INDEX IF NOT EXISTS idx_answer_attempt_question 
+
+   CREATE INDEX IF NOT EXISTS idx_answer_attempt_question
        ON assessment_attempt_answer(attempt_id, question_id);
-   
+
    COMMENT ON INDEX idx_answer_attempt_question IS 'Unique constraint enforcement + query optimization';
    ```
 
    **Índices para tabla material_summary_link:**
    ```sql
    -- Índices: material_summary_link
-   CREATE INDEX IF NOT EXISTS idx_link_material_id 
+   CREATE INDEX IF NOT EXISTS idx_link_material_id
        ON material_summary_link(material_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_link_mongo_summary_id 
+
+   CREATE INDEX IF NOT EXISTS idx_link_mongo_summary_id
        ON material_summary_link(mongo_summary_id);
-   
-   CREATE INDEX IF NOT EXISTS idx_link_type 
+
+   CREATE INDEX IF NOT EXISTS idx_link_type
        ON material_summary_link(link_type);
    ```
 
 2. Crear análisis de tamaño estimado de índices:
    ```sql
    -- Análisis de Índices (comentado)
-   -- SELECT 
+   -- SELECT
    --     schemaname,
    --     tablename,
    --     indexname,
@@ -361,9 +361,9 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
    -- Description: Datos de prueba para desarrollo y testing
    -- Dependencies: 06_assessments.sql, materials y users existentes
    -- Date: 2025-11-14
-   
+
    BEGIN;
-   
+
    -- Verificar que tablas existen
    DO $$
    BEGIN
@@ -371,13 +371,13 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
            RAISE EXCEPTION 'Tabla assessment no existe. Ejecutar 06_assessments.sql primero.';
        END IF;
    END $$;
-   
+
    -- Limpiar datos existentes (solo en dev/test)
    TRUNCATE TABLE assessment_attempt_answer CASCADE;
    TRUNCATE TABLE assessment_attempt CASCADE;
    TRUNCATE TABLE assessment CASCADE;
    TRUNCATE TABLE material_summary_link CASCADE;
-   
+
    -- Seed 1: Assessment de Material de Pascal
    INSERT INTO assessment (
        id,
@@ -402,7 +402,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        NOW() - INTERVAL '30 days',
        NOW() - INTERVAL '30 days'
    );
-   
+
    -- Seed 2: Assessment de Material de Python
    INSERT INTO assessment (
        id,
@@ -427,7 +427,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        NOW() - INTERVAL '15 days',
        NOW() - INTERVAL '15 days'
    );
-   
+
    -- Seed 3: Assessment de Material de Algoritmos
    INSERT INTO assessment (
        id,
@@ -452,7 +452,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        NOW() - INTERVAL '7 days',
        NOW() - INTERVAL '7 days'
    );
-   
+
    -- Attempts: Estudiante 1 - Pascal (3 intentos)
    INSERT INTO assessment_attempt (
        id,
@@ -464,7 +464,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        started_at,
        completed_at,
        created_at
-   ) VALUES 
+   ) VALUES
    -- Intento 1: Reprobado
    (
        '01936d9a-0000-7000-b000-000000000001',
@@ -501,7 +501,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        NOW() - INTERVAL '27 days' + INTERVAL '360 seconds',
        NOW() - INTERVAL '27 days'
    );
-   
+
    -- Answers del Intento 1 (60% - 3 de 5 correctas)
    INSERT INTO assessment_attempt_answer (
        id,
@@ -517,7 +517,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
    ('01936d9a-0000-7000-c000-000000000003', '01936d9a-0000-7000-b000-000000000001', 'q3', 'q3_opt_c', TRUE, 80, NOW() - INTERVAL '29 days'),
    ('01936d9a-0000-7000-c000-000000000004', '01936d9a-0000-7000-b000-000000000001', 'q4', 'q4_opt_a', FALSE, 100, NOW() - INTERVAL '29 days'),
    ('01936d9a-0000-7000-c000-000000000005', '01936d9a-0000-7000-b000-000000000001', 'q5', 'q5_opt_d', TRUE, 90, NOW() - INTERVAL '29 days');
-   
+
    -- Answers del Intento 2 (80% - 4 de 5 correctas)
    INSERT INTO assessment_attempt_answer (
        id,
@@ -533,7 +533,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
    ('01936d9a-0000-7000-c000-000000000008', '01936d9a-0000-7000-b000-000000000002', 'q3', 'q3_opt_c', TRUE, 100, NOW() - INTERVAL '28 days'),
    ('01936d9a-0000-7000-c000-000000000009', '01936d9a-0000-7000-b000-000000000002', 'q4', 'q4_opt_b', FALSE, 120, NOW() - INTERVAL '28 days'),
    ('01936d9a-0000-7000-c000-000000000010', '01936d9a-0000-7000-b000-000000000002', 'q5', 'q5_opt_d', TRUE, 120, NOW() - INTERVAL '28 days');
-   
+
    -- Answers del Intento 3 (100% - 5 de 5 correctas)
    INSERT INTO assessment_attempt_answer (
        id,
@@ -549,7 +549,7 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
    ('01936d9a-0000-7000-c000-000000000013', '01936d9a-0000-7000-b000-000000000003', 'q3', 'q3_opt_c', TRUE, 65, NOW() - INTERVAL '27 days'),
    ('01936d9a-0000-7000-c000-000000000014', '01936d9a-0000-7000-b000-000000000003', 'q4', 'q4_opt_c', TRUE, 80, NOW() - INTERVAL '27 days'),
    ('01936d9a-0000-7000-c000-000000000015', '01936d9a-0000-7000-b000-000000000003', 'q5', 'q5_opt_d', TRUE, 85, NOW() - INTERVAL '27 days');
-   
+
    -- Material Summary Links
    INSERT INTO material_summary_link (
        id,
@@ -567,9 +567,9 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        'both',
        NOW() - INTERVAL '30 days'
    );
-   
+
    COMMIT;
-   
+
    -- Verificación de seeds
    DO $$
    DECLARE
@@ -580,12 +580,12 @@ Crear script SQL con datos de prueba realistas para desarrollo y testing.
        SELECT COUNT(*) INTO assessment_count FROM assessment;
        SELECT COUNT(*) INTO attempt_count FROM assessment_attempt;
        SELECT COUNT(*) INTO answer_count FROM assessment_attempt_answer;
-       
+
        RAISE NOTICE 'Seeds insertados exitosamente:';
        RAISE NOTICE '  - Assessments: %', assessment_count;
        RAISE NOTICE '  - Attempts: %', attempt_count;
        RAISE NOTICE '  - Answers: %', answer_count;
-       
+
        ASSERT assessment_count >= 3, 'Se esperaban al menos 3 assessments';
        ASSERT attempt_count >= 3, 'Se esperaban al menos 3 attempts';
        ASSERT answer_count >= 15, 'Se esperaban al menos 15 answers';
@@ -613,7 +613,7 @@ psql -U postgres -d edugo_test -c "SELECT COUNT(*) as answers FROM assessment_at
 
 # Verificar scores calculados correctamente
 psql -U postgres -d edugo_test -c "
-    SELECT 
+    SELECT
         aa.attempt_id,
         COUNT(*) as total_answers,
         SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END) as correct_answers,
@@ -657,25 +657,25 @@ Crear script SQL para revertir la migración 06_assessments.sql de forma segura.
    -- Description: Revertir schema de Sistema de Evaluaciones
    -- WARNING: Esta operación elimina TODOS los datos de evaluaciones
    -- Date: 2025-11-14
-   
+
    BEGIN;
-   
+
    -- Verificar que estamos en ambiente correcto
    DO $$
    BEGIN
        IF current_database() = 'edugo_prod' THEN
            RAISE EXCEPTION 'ROLLBACK PROHIBIDO EN PRODUCCIÓN. Use migraciones controladas.';
        END IF;
-       
+
        RAISE NOTICE 'Ejecutando rollback en base de datos: %', current_database();
    END $$;
-   
+
    -- Drop tablas en orden inverso (respetando FKs)
    DROP TABLE IF EXISTS material_summary_link CASCADE;
    DROP TABLE IF EXISTS assessment_attempt_answer CASCADE;
    DROP TABLE IF EXISTS assessment_attempt CASCADE;
    DROP TABLE IF EXISTS assessment CASCADE;
-   
+
    -- Drop índices huérfanos (si existen)
    DROP INDEX IF EXISTS idx_assessment_material_id;
    DROP INDEX IF EXISTS idx_assessment_mongo_document_id;
@@ -693,9 +693,9 @@ Crear script SQL para revertir la migración 06_assessments.sql de forma segura.
    DROP INDEX IF EXISTS idx_link_material_id;
    DROP INDEX IF EXISTS idx_link_mongo_summary_id;
    DROP INDEX IF EXISTS idx_link_type;
-   
+
    COMMIT;
-   
+
    -- Verificación de rollback
    DO $$
    BEGIN
@@ -759,9 +759,9 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
    -- Tests: Integridad Referencial del Sistema de Evaluaciones
    -- Description: Suite de tests para validar constraints y FKs
    -- Date: 2025-11-14
-   
+
    BEGIN;
-   
+
    -- Setup: Crear datos de prueba
    DO $$
    DECLARE
@@ -773,52 +773,52 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
        INSERT INTO materials (id, title, content, processing_status, created_at)
        VALUES (gen_uuid_v7(), 'Test Material', 'Test content', 'completed', NOW())
        RETURNING id INTO test_material_id;
-       
+
        -- Crear usuario de prueba
        INSERT INTO users (id, email, name, role, created_at)
        VALUES (gen_uuid_v7(), 'test@test.com', 'Test User', 'student', NOW())
        RETURNING id INTO test_user_id;
-       
+
        RAISE NOTICE 'Setup completado: material_id=%, user_id=%', test_material_id, test_user_id;
    END $$;
-   
+
    -- TEST 1: FK Constraint assessment -> materials
    DO $$
    BEGIN
        BEGIN
            INSERT INTO assessment (material_id, mongo_document_id, title, total_questions)
            VALUES ('00000000-0000-0000-0000-000000000000', '507f1f77bcf86cd799439011', 'Test', 5);
-           
+
            RAISE EXCEPTION 'TEST FAILED: FK constraint assessment->materials no funcionó';
        EXCEPTION
            WHEN foreign_key_violation THEN
                RAISE NOTICE 'TEST PASSED: FK constraint assessment->materials OK';
        END;
    END $$;
-   
+
    -- TEST 2: Unique Constraint material_id en assessment
    DO $$
    DECLARE
        test_material_id UUID;
    BEGIN
        SELECT id INTO test_material_id FROM materials WHERE title = 'Test Material' LIMIT 1;
-       
+
        -- Primer insert OK
        INSERT INTO assessment (material_id, mongo_document_id, title, total_questions)
        VALUES (test_material_id, '507f1f77bcf86cd799439011', 'Test 1', 5);
-       
+
        -- Segundo insert debe fallar
        BEGIN
            INSERT INTO assessment (material_id, mongo_document_id, title, total_questions)
            VALUES (test_material_id, '507f1f77bcf86cd799439012', 'Test 2', 5);
-           
+
            RAISE EXCEPTION 'TEST FAILED: Unique constraint material_id no funcionó';
        EXCEPTION
            WHEN unique_violation THEN
                RAISE NOTICE 'TEST PASSED: Unique constraint material_id OK';
        END;
    END $$;
-   
+
    -- TEST 3: Check Constraint total_questions (1-100)
    DO $$
    DECLARE
@@ -827,19 +827,19 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
        INSERT INTO materials (id, title, content, processing_status, created_at)
        VALUES (gen_uuid_v7(), 'Test Material 2', 'Test', 'completed', NOW())
        RETURNING id INTO test_material_id;
-       
+
        -- Intentar total_questions = 0 (debe fallar)
        BEGIN
            INSERT INTO assessment (material_id, mongo_document_id, title, total_questions)
            VALUES (test_material_id, '507f1f77bcf86cd799439013', 'Test', 0);
-           
+
            RAISE EXCEPTION 'TEST FAILED: Check constraint total_questions no funcionó';
        EXCEPTION
            WHEN check_violation THEN
                RAISE NOTICE 'TEST PASSED: Check constraint total_questions OK';
        END;
    END $$;
-   
+
    -- TEST 4: Check Constraint pass_threshold (0-100)
    DO $$
    DECLARE
@@ -848,19 +848,19 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
        INSERT INTO materials (id, title, content, processing_status, created_at)
        VALUES (gen_uuid_v7(), 'Test Material 3', 'Test', 'completed', NOW())
        RETURNING id INTO test_material_id;
-       
+
        -- Intentar pass_threshold = 150 (debe fallar)
        BEGIN
            INSERT INTO assessment (material_id, mongo_document_id, title, total_questions, pass_threshold)
            VALUES (test_material_id, '507f1f77bcf86cd799439014', 'Test', 5, 150);
-           
+
            RAISE EXCEPTION 'TEST FAILED: Check constraint pass_threshold no funcionó';
        EXCEPTION
            WHEN check_violation THEN
                RAISE NOTICE 'TEST PASSED: Check constraint pass_threshold OK';
        END;
    END $$;
-   
+
    -- TEST 5: FK Constraint attempt -> assessment (ON DELETE CASCADE)
    DO $$
    DECLARE
@@ -870,30 +870,30 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
        attempt_count INTEGER;
    BEGIN
        SELECT id INTO test_user_id FROM users WHERE email = 'test@test.com' LIMIT 1;
-       
+
        INSERT INTO materials (id, title, content, processing_status, created_at)
        VALUES (gen_uuid_v7(), 'Test Material 4', 'Test', 'completed', NOW())
        RETURNING id INTO test_material_id;
-       
+
        INSERT INTO assessment (id, material_id, mongo_document_id, title, total_questions)
        VALUES (gen_uuid_v7(), test_material_id, '507f1f77bcf86cd799439015', 'Test', 5)
        RETURNING id INTO test_assessment_id;
-       
+
        INSERT INTO assessment_attempt (assessment_id, student_id, score, time_spent_seconds, started_at, completed_at)
        VALUES (test_assessment_id, test_user_id, 80, 300, NOW(), NOW() + INTERVAL '300 seconds');
-       
+
        -- Eliminar assessment debe eliminar attempt (CASCADE)
        DELETE FROM assessment WHERE id = test_assessment_id;
-       
+
        SELECT COUNT(*) INTO attempt_count FROM assessment_attempt WHERE assessment_id = test_assessment_id;
-       
+
        IF attempt_count > 0 THEN
            RAISE EXCEPTION 'TEST FAILED: ON DELETE CASCADE no funcionó';
        ELSE
            RAISE NOTICE 'TEST PASSED: ON DELETE CASCADE OK';
        END IF;
    END $$;
-   
+
    -- TEST 6: Check Constraint completed_at > started_at
    DO $$
    DECLARE
@@ -902,18 +902,18 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
    BEGIN
        SELECT id INTO test_assessment_id FROM assessment WHERE title = 'Test 1' LIMIT 1;
        SELECT id INTO test_user_id FROM users WHERE email = 'test@test.com' LIMIT 1;
-       
+
        BEGIN
            INSERT INTO assessment_attempt (assessment_id, student_id, score, time_spent_seconds, started_at, completed_at)
            VALUES (test_assessment_id, test_user_id, 80, 300, NOW(), NOW() - INTERVAL '1 hour');
-           
+
            RAISE EXCEPTION 'TEST FAILED: Check constraint completed_at > started_at no funcionó';
        EXCEPTION
            WHEN check_violation THEN
                RAISE NOTICE 'TEST PASSED: Check constraint completed_at > started_at OK';
        END;
    END $$;
-   
+
    -- TEST 7: Unique Constraint attempt_id + question_id
    DO $$
    DECLARE
@@ -923,29 +923,29 @@ Crear suite de tests SQL para validar integridad referencial, constraints y trig
    BEGIN
        SELECT id INTO test_assessment_id FROM assessment WHERE title = 'Test 1' LIMIT 1;
        SELECT id INTO test_user_id FROM users WHERE email = 'test@test.com' LIMIT 1;
-       
+
        INSERT INTO assessment_attempt (id, assessment_id, student_id, score, time_spent_seconds, started_at, completed_at)
        VALUES (gen_uuid_v7(), test_assessment_id, test_user_id, 80, 300, NOW(), NOW() + INTERVAL '300 seconds')
        RETURNING id INTO test_attempt_id;
-       
+
        -- Primer insert OK
        INSERT INTO assessment_attempt_answer (attempt_id, question_id, selected_answer_id, is_correct, time_spent_seconds)
        VALUES (test_attempt_id, 'q1', 'q1_opt_a', TRUE, 60);
-       
+
        -- Segundo insert de misma pregunta debe fallar
        BEGIN
            INSERT INTO assessment_attempt_answer (attempt_id, question_id, selected_answer_id, is_correct, time_spent_seconds)
            VALUES (test_attempt_id, 'q1', 'q1_opt_b', FALSE, 60);
-           
+
            RAISE EXCEPTION 'TEST FAILED: Unique constraint attempt_id+question_id no funcionó';
        EXCEPTION
            WHEN unique_violation THEN
                RAISE NOTICE 'TEST PASSED: Unique constraint attempt_id+question_id OK';
        END;
    END $$;
-   
+
    ROLLBACK;
-   
+
    -- Resumen
    RAISE NOTICE '=================================';
    RAISE NOTICE 'TESTS DE INTEGRIDAD COMPLETADOS';

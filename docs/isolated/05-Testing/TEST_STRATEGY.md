@@ -78,7 +78,7 @@ import (
 
 func TestExample(t *testing.T) {
     result, err := SomeFunction()
-    
+
     require.NoError(t, err) // Detiene test si falla
     assert.Equal(t, expected, result) // Continúa si falla
 }
@@ -98,12 +98,12 @@ import (
 
 func TestIntegration(t *testing.T) {
     ctx := context.Background()
-    
+
     pgContainer, _ := postgres.RunContainer(ctx,
         testcontainers.WithImage("postgres:15-alpine"),
     )
     defer pgContainer.Terminate(ctx)
-    
+
     // Tests contra PostgreSQL real
 }
 ```
@@ -144,7 +144,7 @@ go tool cover -html=coverage.out -o coverage.html
 ```go
 func TestAssessment_CanAttempt(t *testing.T) {
     assessment := &entities.Assessment{MaxAttempts: &3}
-    
+
     assert.True(t, assessment.CanAttempt(0))
     assert.True(t, assessment.CanAttempt(2))
     assert.False(t, assessment.CanAttempt(3))
@@ -168,11 +168,11 @@ func TestAssessment_CanAttempt(t *testing.T) {
 func TestAssessmentService_GetAssessment(t *testing.T) {
     mockRepo := new(MockAssessmentRepo)
     mockRepo.On("FindByMaterialID", mock.Anything).Return(assessment, nil)
-    
+
     service := NewAssessmentService(mockRepo, mockMongoRepo)
-    
+
     result, err := service.GetAssessmentByMaterialID(ctx, materialID)
-    
+
     require.NoError(t, err)
     // Verificar que correct_answer fue removido
     assert.NotContains(t, result, "correct_answer")
@@ -220,13 +220,13 @@ func TestAssessmentService_GetAssessment(t *testing.T) {
 ```go
 func TestE2E_AssessmentFlow(t *testing.T) {
     router := setupTestRouter()
-    
+
     // 1. GET assessment
     w := httptest.NewRecorder()
     req, _ := http.NewRequest("GET", "/v1/materials/"+id+"/assessment", nil)
     router.ServeHTTP(w, req)
     assert.Equal(t, 200, w.Code)
-    
+
     // 2. POST attempt
     // 3. Verify score
 }
@@ -246,13 +246,13 @@ jobs:
     steps:
       - name: Unit Tests
         run: go test ./internal/domain/... -v -cover
-      
+
       - name: Integration Tests
         run: go test ./tests/integration -v -tags=integration
-        
+
       - name: E2E Tests
         run: go test ./tests/e2e -v -tags=e2e
-      
+
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
 ```
@@ -326,7 +326,7 @@ func TestSecurity_CorrectAnswersNeverExposed(t *testing.T) {
         "GET /v1/attempts/:id/results",
         "GET /v1/users/me/attempts",
     }
-    
+
     for _, endpoint := range endpoints {
         response := callEndpoint(endpoint)
         assertNotContains(t, response, "correct_answer")

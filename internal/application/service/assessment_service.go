@@ -102,33 +102,33 @@ func (s *assessmentService) RecordAttempt(ctx context.Context, materialID string
 	// El evento assessment.generated es para cuando el WORKER genera un quiz,
 	// pero necesitamos un evento diferente para cuando un ESTUDIANTE completa un intento
 	/*
-	event := messaging.AssessmentAttemptRecordedEvent{
-		AttemptID:    attempt.ID,
-		UserID:       userID.String(),
-		AssessmentID: assessment.MaterialID.String(),
-		Score:        score,
-		SubmittedAt:  time.Now(),
-	}
+		event := messaging.AssessmentAttemptRecordedEvent{
+			AttemptID:    attempt.ID,
+			UserID:       userID.String(),
+			AssessmentID: assessment.MaterialID.String(),
+			Score:        score,
+			SubmittedAt:  time.Now(),
+		}
 
-	eventJSON, err := event.ToJSON()
-	if err != nil {
-		s.logger.Warn("failed to serialize assessment attempt recorded event",
-			zap.String("attempt_id", attempt.ID),
-			zap.Error(err),
-		)
-	} else {
-		// Publicar evento de forma asíncrona (no bloqueante)
-		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "assessment.attempt.recorded", eventJSON); err != nil {
-			s.logger.Warn("failed to publish assessment attempt recorded event",
+		eventJSON, err := event.ToJSON()
+		if err != nil {
+			s.logger.Warn("failed to serialize assessment attempt recorded event",
 				zap.String("attempt_id", attempt.ID),
 				zap.Error(err),
 			)
 		} else {
-			s.logger.Info("assessment attempt recorded event published",
-				zap.String("attempt_id", attempt.ID),
-			)
+			// Publicar evento de forma asíncrona (no bloqueante)
+			if err := s.messagePublisher.Publish(ctx, "edugo.materials", "assessment.attempt.recorded", eventJSON); err != nil {
+				s.logger.Warn("failed to publish assessment attempt recorded event",
+					zap.String("attempt_id", attempt.ID),
+					zap.Error(err),
+				)
+			} else {
+				s.logger.Info("assessment attempt recorded event published",
+					zap.String("attempt_id", attempt.ID),
+				)
+			}
 		}
-	}
 	*/
 
 	return attempt, nil
@@ -270,32 +270,32 @@ func (s *assessmentService) CalculateScore(ctx context.Context, assessmentID str
 	// 8. Publicar evento de evaluación completada (asíncrono, no bloqueante)
 	// TODO(sprint-00): Restaurar cuando se defina schema para assessment.completed
 	/*
-	event := messaging.AssessmentAttemptRecordedEvent{
-		AttemptID:    result.ID,
-		UserID:       userIDStr,
-		AssessmentID: assessmentID,
-		Score:        finalScore,
-		SubmittedAt:  time.Now(),
-	}
+		event := messaging.AssessmentAttemptRecordedEvent{
+			AttemptID:    result.ID,
+			UserID:       userIDStr,
+			AssessmentID: assessmentID,
+			Score:        finalScore,
+			SubmittedAt:  time.Now(),
+		}
 
-	eventJSON, err := event.ToJSON()
-	if err != nil {
-		s.logger.Warn("failed to serialize assessment completed event",
-			zap.String("result_id", result.ID),
-			zap.Error(err),
-		)
-	} else {
-		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "assessment.completed", eventJSON); err != nil {
-			s.logger.Warn("failed to publish assessment completed event",
+		eventJSON, err := event.ToJSON()
+		if err != nil {
+			s.logger.Warn("failed to serialize assessment completed event",
 				zap.String("result_id", result.ID),
 				zap.Error(err),
 			)
 		} else {
-			s.logger.Info("assessment completed event published",
-				zap.String("result_id", result.ID),
-			)
+			if err := s.messagePublisher.Publish(ctx, "edugo.materials", "assessment.completed", eventJSON); err != nil {
+				s.logger.Warn("failed to publish assessment completed event",
+					zap.String("result_id", result.ID),
+					zap.Error(err),
+				)
+			} else {
+				s.logger.Info("assessment completed event published",
+					zap.String("result_id", result.ID),
+				)
+			}
 		}
-	}
 	*/
 
 	return result, nil

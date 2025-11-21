@@ -91,7 +91,7 @@ curl -X GET http://localhost:8080/v1/materials/99999999-9999-9999-9999-999999999
 **Validación SQL:**
 ```sql
 -- Setup: Crear material sin assessment
-INSERT INTO materials (id, title, processing_status) 
+INSERT INTO materials (id, title, processing_status)
 VALUES ('uuid-test', 'Material Sin Assessment', 'pending');
 
 -- Test: Debe retornar 404
@@ -110,7 +110,7 @@ VALUES ('uuid-test', 'Material Sin Assessment', 'pending');
 // Test de seguridad
 func TestAssessment_NeverExposeCorrectAnswers(t *testing.T) {
     resp := getAssessment(t, validMaterialID, validToken)
-    
+
     for _, question := range resp.Questions {
         // ⚠️ CRÍTICO: Estos campos NUNCA deben estar presentes
         assert.Nil(t, question.CorrectAnswer, "correct_answer must be nil")
@@ -244,7 +244,7 @@ curl -X POST http://localhost:8080/v1/materials/uuid-1/assessment/attempts \
 ```go
 func TestScoringService_CalculateScore(t *testing.T) {
     service := NewScoringService()
-    
+
     correctAnswers := []Question{
         {ID: "q1", CorrectAnswer: "a"},
         {ID: "q2", CorrectAnswer: "b"},
@@ -252,7 +252,7 @@ func TestScoringService_CalculateScore(t *testing.T) {
         {ID: "q4", CorrectAnswer: "d"},
         {ID: "q5", CorrectAnswer: "a"},
     }
-    
+
     studentAnswers := []Answer{
         {QuestionID: "q1", SelectedOption: "a"},
         {QuestionID: "q2", SelectedOption: "x"},
@@ -260,7 +260,7 @@ func TestScoringService_CalculateScore(t *testing.T) {
         {QuestionID: "q4", SelectedOption: "d"},
         {QuestionID: "q5", SelectedOption: "x"},
     }
-    
+
     score := service.CalculateScore(studentAnswers, correctAnswers)
     assert.Equal(t, 60, score)
 }
@@ -279,16 +279,16 @@ func TestScoringService_CalculateScore(t *testing.T) {
 func TestAttemptRepository_TransactionRollback(t *testing.T) {
     db, mock := setupMockDB(t)
     repo := NewAttemptRepository(db)
-    
+
     // Simular error en segunda inserción
     mock.ExpectBegin()
     mock.ExpectExec("INSERT INTO assessment_attempt").WillReturnResult(sqlmock.NewResult(1, 1))
     mock.ExpectExec("INSERT INTO assessment_attempt_answer").WillReturnError(errors.New("db error"))
     mock.ExpectRollback()
-    
+
     err := repo.CreateAttempt(ctx, attempt)
     assert.Error(t, err)
-    
+
     // Verificar que no quedó basura en BD
     count := db.Model(&Attempt{}).Where("id = ?", attempt.ID).Count()
     assert.Equal(t, 0, count)
@@ -386,14 +386,14 @@ curl -X PUT http://localhost:8080/v1/attempts/uuid-1 \
 func TestAttemptHandler_OnlyOwnerCanAccess(t *testing.T) {
     // Crear intento de studentA
     attemptID := createAttempt(t, studentAToken, materialID)
-    
+
     // Intentar acceder con studentB
     resp := httptest.NewRecorder()
     req, _ := http.NewRequest("GET", "/v1/attempts/"+attemptID+"/results", nil)
     req.Header.Set("Authorization", "Bearer "+studentBToken)
-    
+
     router.ServeHTTP(resp, req)
-    
+
     assert.Equal(t, 403, resp.Code)
     assert.Contains(t, resp.Body.String(), "forbidden")
 }
@@ -455,9 +455,9 @@ func TestAttemptHandler_HistoryOrderedByDate(t *testing.T) {
     attempt1 := createAttempt(t, token, material1, time.Now().Add(-2*time.Hour))
     attempt2 := createAttempt(t, token, material2, time.Now().Add(-1*time.Hour))
     attempt3 := createAttempt(t, token, material1, time.Now())
-    
+
     resp := getAttemptHistory(t, token)
-    
+
     assert.Len(t, resp.Attempts, 3)
     assert.Equal(t, attempt3.ID, resp.Attempts[0].ID) // Más reciente primero
     assert.Equal(t, attempt2.ID, resp.Attempts[1].ID)
@@ -507,14 +507,14 @@ func TestQuestionRepository_FindByMaterialID(t *testing.T) {
     ctx := context.Background()
     mongoContainer, db := setupMongoTestContainer(t)
     defer mongoContainer.Terminate(ctx)
-    
+
     // Seed data
     seedMongoAssessment(t, db, "material-uuid-1")
-    
+
     // Test
     repo := NewMongoQuestionRepository(db)
     questions, err := repo.FindByMaterialID(ctx, "material-uuid-1")
-    
+
     assert.NoError(t, err)
     assert.Len(t, questions, 5)
     assert.NotEmpty(t, questions[0].Text)
@@ -535,7 +535,7 @@ func TestQuestionRepository_FindByMaterialID(t *testing.T) {
 **Validación:**
 ```sql
 -- Setup
-INSERT INTO assessment_attempt (id, assessment_id, student_id, score, ...) 
+INSERT INTO assessment_attempt (id, assessment_id, student_id, score, ...)
 VALUES ('attempt-1', 'assessment-1', 'student-1', 80, ...);
 
 -- Test: Intentar duplicar

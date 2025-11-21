@@ -120,7 +120,7 @@ open coverage_domain.html  # macOS
 # O: xdg-open coverage_domain.html  # Linux
 ```
 
-**Criterio de éxito:** 
+**Criterio de éxito:**
 - Visualmente verificar que líneas críticas están cubiertas (verdes)
 - Business rules tienen tests (ej: CanAttempt, IsPassed, cálculo de score)
 - Validaciones tienen tests (ej: errores por parámetros inválidos)
@@ -219,7 +219,7 @@ go mod tidy
 go mod verify
 ```
 
-**Criterio de éxito:** 
+**Criterio de éxito:**
 - `go mod tidy` no hace cambios
 - `go mod verify` retorna: `all modules verified`
 
@@ -310,14 +310,14 @@ import (
     "errors"
     "fmt"
     "time"
-    
+
     "github.com/google/uuid"
 )
 
 // En tests (_test.go):
 import (
     "testing"
-    
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )

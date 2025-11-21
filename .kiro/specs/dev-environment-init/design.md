@@ -309,19 +309,19 @@ Test Users:
   - email: juan.perez@edugo.com
     password: password123
     role: teacher
-  
+
   - email: maria.gonzalez@edugo.com
     password: password123
     role: teacher
-  
+
   - email: carlos.rodriguez@student.edugo.com
     password: password123
     role: student
-  
+
   - email: ana.martinez@student.edugo.com
     password: password123
     role: student
-  
+
   - email: luis.fernandez@student.edugo.com
     password: password123
     role: student
@@ -358,19 +358,19 @@ Test Users:
 function setup_postgres() {
     local max_retries=3
     local retry_count=0
-    
+
     while [ $retry_count -lt $max_retries ]; do
         if execute_postgres_setup; then
             return 0
         fi
-        
+
         retry_count=$((retry_count + 1))
         if [ $retry_count -lt $max_retries ]; then
             echo "Retry $retry_count/$max_retries..."
             sleep 2
         fi
     done
-    
+
     echo "ERROR: PostgreSQL setup failed after $max_retries attempts"
     echo "Troubleshooting:"
     echo "  1. Check container logs: docker logs edugo-postgres"
@@ -387,12 +387,12 @@ All error messages follow this format:
 ```
 ❌ Error: [Component] [Action] failed
    Reason: [Specific error message]
-   
+
    Troubleshooting:
    1. [First suggestion]
    2. [Second suggestion]
    3. [Third suggestion]
-   
+
    For more help: [Documentation link or command]
 ```
 
@@ -504,21 +504,21 @@ retry_with_backoff() {
     shift
     local command="$@"
     local attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
         if eval "$command"; then
             return 0
         fi
-        
+
         if [ $attempt -lt $max_attempts ]; then
             local wait_time=$((2 ** attempt))
             echo "Attempt $attempt failed, waiting ${wait_time}s..."
             sleep $wait_time
         fi
-        
+
         attempt=$((attempt + 1))
     done
-    
+
     return 1
 }
 ```
