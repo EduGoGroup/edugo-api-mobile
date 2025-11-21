@@ -1,5 +1,12 @@
 name: Sync Main to Dev
 
+# =====================================================
+# NO MIGRADO a workflow reusable en SPRINT-4
+# Razón: Lógica específica del proyecto (versión, loops, diferencias, etc.)
+# Ver: docs/cicd/tracking/decisions/TASK-4.8-NO-MIGRATION.md
+# Migración futura: Posible si se extiende sync-branches.yml en infrastructure
+# =====================================================
+
 # Se ejecuta después de push a main (generalmente después de auto-version)
 on:
   push:
