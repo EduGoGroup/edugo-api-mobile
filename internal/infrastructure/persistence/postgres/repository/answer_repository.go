@@ -37,7 +37,7 @@ func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptI
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding answers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var answers []*entities.Answer
 	for rows.Next() {
@@ -113,7 +113,7 @@ func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*entities
 	if err != nil {
 		return fmt.Errorf("postgres: error preparing statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	for _, answer := range answers {
 		_, err := stmt.ExecContext(ctx,
@@ -158,7 +158,7 @@ func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questio
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding answers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var answers []*entities.Answer
 	for rows.Next() {

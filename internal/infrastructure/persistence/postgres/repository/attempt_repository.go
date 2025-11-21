@@ -75,7 +75,7 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding answers: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var answers []*entities.Answer
 	for rows.Next() {
@@ -155,7 +155,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding attempts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attempts []*entities.Attempt
 	for rows.Next() {
@@ -220,7 +220,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 				&isCorrect, &timeSpentSecs, &answerCreatedAt,
 			)
 			if err != nil {
-				answerRows.Close()
+				_ = answerRows.Close()
 				return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
 			}
 
@@ -239,7 +239,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 
 			answers = append(answers, answer)
 		}
-		answerRows.Close()
+		_ = answerRows.Close()
 
 		attempt := &entities.Attempt{
 			ID:               attemptID,
@@ -383,7 +383,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 	if err != nil {
 		return nil, fmt.Errorf("postgres: error finding attempts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attempts []*entities.Attempt
 	for rows.Next() {
@@ -448,7 +448,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 				&isCorrect, &timeSpentSecs, &answerCreatedAt,
 			)
 			if err != nil {
-				answerRows.Close()
+				_ = answerRows.Close()
 				return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
 			}
 
@@ -467,7 +467,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 
 			answers = append(answers, answer)
 		}
-		answerRows.Close()
+		_ = answerRows.Close()
 
 		attempt := &entities.Attempt{
 			ID:               attemptID,

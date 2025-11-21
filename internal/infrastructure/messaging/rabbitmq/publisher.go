@@ -50,7 +50,7 @@ func (p *RabbitMQPublisher) Connect(url string) error {
 	// Crear canal
 	channel, err := conn.Channel()
 	if err != nil {
-		conn.Close()
+		_ = conn.Close() // Ignorar error en cleanup
 		return fmt.Errorf("failed to open channel: %w", err)
 	}
 	p.channel = channel
@@ -66,16 +66,16 @@ func (p *RabbitMQPublisher) Connect(url string) error {
 		nil,        // argumentos
 	)
 	if err != nil {
-		channel.Close()
-		conn.Close()
+		_ = channel.Close() // Ignorar error en cleanup
+		_ = conn.Close()    // Ignorar error en cleanup
 		return fmt.Errorf("failed to declare exchange: %w", err)
 	}
 
 	// Habilitar publisher confirms
 	err = channel.Confirm(false)
 	if err != nil {
-		channel.Close()
-		conn.Close()
+		_ = channel.Close() // Ignorar error en cleanup
+		_ = conn.Close()    // Ignorar error en cleanup
 		return fmt.Errorf("failed to enable publisher confirms: %w", err)
 	}
 

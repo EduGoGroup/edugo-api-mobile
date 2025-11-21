@@ -1,9 +1,9 @@
 # Estado del Sprint Actual
 
-**Proyecto:** edugo-api-mobile  
-**Sprint:** Pendiente  
-**Fase Actual:** Ninguna  
-**Última Actualización:** Pendiente
+**Proyecto:** edugo-api-mobile
+**Sprint:** SPRINT-2 - Migración Go 1.25 + Optimización
+**Fase Actual:** FASE 1 - Implementación con Stubs
+**Última Actualización:** 2025-11-21
 
 ⚠️ **CONTEXTO DE UBICACIÓN:**
 ```
@@ -18,20 +18,26 @@
 
 | Indicador | Valor |
 |-----------|-------|
-| ⏰ **Próxima acción** | Iniciar sprint (ver PROMPTS.md) |
-| 📊 **Progreso global** | 0% |
-| 🔄 **Fase actual** | Ninguna |
-| ✅ **Tareas completadas** | 0/0 |
-| ⏳ **Tareas pendientes** | 0 |
-| 🔴 **Bloqueadores** | Ninguno |
+| ⏰ **Próxima acción** | Tarea 2.5 - Paralelismo PR→dev (COMPLETABLE) |
+| 📊 **Progreso global** | 27% (4/15 tareas) |
+| 🔄 **Fase actual** | FASE 1 - Implementación |
+| ✅ **Tareas completadas** | 4/15 |
+| ⏳ **Tareas pendientes** | 11 |
+| 🔴 **Bloqueadores** | Go, Docker, GitHub CLI no disponibles |
 
 ---
 
 ## 🎯 Sprint Activo
 
-**Sprint:** N/A  
-**Inicio:** N/A  
-**Objetivo:** N/A
+**Sprint:** SPRINT-2 - Migración Go 1.25 + Optimización
+**Inicio:** 2025-11-21
+**Objetivo:** Migrar a Go 1.25 (PILOTO) + Optimizar CI/CD
+
+**Contexto:**
+- api-mobile es el proyecto PILOTO para Go 1.25
+- Si CI pasa aquí → replicar a demás proyectos
+- Success rate actual: 90% (el mejor después de shared)
+- Ciclos de CI rápidos (~2-5 min)
 
 ---
 
@@ -39,12 +45,12 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Fase actual** | - |
-| **Tareas totales** | 0 |
-| **Tareas completadas** | 0 |
+| **Fase actual** | FASE 1 - Implementación con Stubs |
+| **Tareas totales** | 15 |
+| **Tareas completadas** | 2 (1 completa + 1 stub) |
 | **Tareas en progreso** | 0 |
-| **Tareas pendientes** | 0 |
-| **Progreso** | 0% |
+| **Tareas pendientes** | 13 |
+| **Progreso** | 13% |
 
 ---
 
@@ -52,11 +58,58 @@
 
 ### FASE 1: Implementación
 
-| # | Tarea | Estado | Notas |
-|---|-------|--------|-------|
-| - | No iniciado | - | - |
+#### DÍA 1: Migración Go 1.25 (4h)
 
-**Progreso Fase 1:** 0/0 (0%)
+| # | Tarea | Prioridad | Estimación | Estado | Notas |
+|---|-------|-----------|------------|--------|-------|
+| 2.1 | Preparación y Backup | 🟢 P2 | 30 min | ✅ Completado | Estructura creada, herramientas no disponibles |
+| 2.2 | Migrar a Go 1.25 | 🟡 P1 | 60 min | ✅ (stub) | Archivos actualizados, validación pendiente |
+| 2.3 | Validar compilación local | 🟡 P1 | 30 min | ✅ (stub) | Comandos documentados para FASE 2 |
+| 2.4 | Validar en CI (GitHub Actions) | 🟡 P1 | 90 min | ✅ (stub) | Comandos documentados para FASE 2 |
+
+**Progreso Día 1:** 4/4 (100% - 1 completa + 3 stubs)
+
+---
+
+#### DÍA 2: Paralelismo (4h)
+
+| # | Tarea | Prioridad | Estimación | Estado | Notas |
+|---|-------|-----------|------------|--------|-------|
+| 2.5 | Paralelismo PR→dev | 🟡 P1 | 90 min | ⏳ Pendiente | Eliminar `needs` entre jobs |
+| 2.6 | Paralelismo PR→main | 🟡 P1 | 90 min | ⏳ Pendiente | Similar a 2.5 |
+| 2.7 | Validar tiempos mejorados | 🟢 P2 | 60 min | ⏳ Pendiente | Comparar antes/después |
+
+**Progreso Día 2:** 0/3 (0%)
+
+---
+
+#### DÍA 3: Pre-commit + Lint (4h)
+
+| # | Tarea | Prioridad | Estimación | Estado | Notas |
+|---|-------|-----------|------------|--------|-------|
+| 2.8 | Pre-commit hooks | 🟡 P1 | 90 min | ⏳ Pendiente | 7 validaciones automáticas |
+| 2.9 | Validar hooks localmente | 🟢 P2 | 30 min | ⏳ Pendiente | - |
+| 2.10 | Corregir 23 errores lint | 🟢 P2 | 60 min | ⏳ Pendiente | 20 errcheck + 3 govet |
+| 2.11 | Validar lint limpio | 🟢 P2 | 30 min | ⏳ Pendiente | golangci-lint debe pasar |
+
+**Progreso Día 3:** 0/4 (0%)
+
+---
+
+#### DÍA 4: Control + Docs (3h)
+
+| # | Tarea | Prioridad | Estimación | Estado | Notas |
+|---|-------|-----------|------------|--------|-------|
+| 2.12 | Control releases por variable | 🟢 P2 | 30 min | ⏳ Pendiente | Evitar releases accidentales |
+| 2.13 | Documentación actualizada | 🟢 P2 | 60 min | ⏳ Pendiente | README + docs |
+| 2.14 | Testing final exhaustivo | 🟡 P1 | 60 min | ⏳ Pendiente | Validación completa |
+| 2.15 | Crear y mergear PR final | 🟢 P2 | 30 min | ⏳ Pendiente | PR a dev |
+
+**Progreso Día 4:** 0/4 (0%)
+
+---
+
+**Progreso Total Fase 1:** 2/15 (13%)
 
 ---
 
@@ -64,9 +117,9 @@
 
 | # | Tarea Original | Estado Stub | Implementación Real | Notas |
 |---|----------------|-------------|---------------------|-------|
-| - | No iniciado | - | - | - |
+| 2.2 | Migrar a Go 1.25 | ✅ (stub) | ⏳ Pendiente | Archivos actualizados, falta validación con Go |
 
-**Progreso Fase 2:** 0/0 (0%)
+**Progreso Fase 2:** 0/1 (0% - 1 stub pendiente de resolver)
 
 ---
 
@@ -89,11 +142,19 @@
 
 ## 🚨 Bloqueos y Decisiones
 
-**Stubs activos:** 0
+**Stubs activos:** 1
+**Stubs identificados:** 7 (pendientes de implementar)
 
-| Tarea | Razón | Archivo Decisión |
-|-------|-------|------------------|
-| - | - | - |
+| Tarea | Estado | Razón | Archivo Decisión |
+|-------|--------|-------|------------------|
+| 2.2 | ✅ (stub) | Go no disponible | tracking/decisions/TASK-2.2-BLOCKED.md |
+| 2.3 | ⏳ Pendiente | Go no disponible | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.4 | ⏳ Pendiente | GitHub CLI no disponible | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.7 | ⏳ Pendiente | Requiere CI ejecutándose | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.9 | ⏳ Pendiente | Go no disponible para validar | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.11 | ⏳ Pendiente | Go y golangci-lint no disponibles | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.14 | ⏳ Pendiente | Go y Docker no disponibles | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
+| 2.15 | ⏳ Pendiente | GitHub CLI no disponible | tracking/decisions/TASK-2.1-ENVIRONMENT.md |
 
 ---
 
@@ -124,22 +185,22 @@
 
 ## 💬 Preguntas Rápidas
 
-**P: ¿Cuál es el sprint actual?**  
-R: Ver sección "Sprint Activo"
+**P: ¿Cuál es el sprint actual?**
+R: SPRINT-2 - Migración Go 1.25 + Optimización
 
-**P: ¿En qué tarea estoy?**  
-R: Buscar primera tarea con estado `🔄 En progreso`
+**P: ¿En qué tarea estoy?**
+R: Tarea 2.2 completada (stub). Siguiente: 2.3 Validar compilación local (STUB)
 
-**P: ¿Cuál es la siguiente tarea?**  
-R: Buscar primera tarea con estado `⏳ Pendiente` después de la actual
+**P: ¿Cuál es la siguiente tarea?**
+R: 2.3 Validar compilación local (requerirá stub por falta de Go)
 
-**P: ¿Cuántas tareas faltan?**  
-R: Ver "Progreso Global" → Tareas pendientes
+**P: ¿Cuántas tareas faltan?**
+R: 13 tareas pendientes (13% completado - 2/15)
 
-**P: ¿Tengo stubs pendientes?**  
-R: Ver sección "Bloqueos y Decisiones"
+**P: ¿Tengo stubs pendientes?**
+R: 1 stub activo (2.2), 7 stubs identificados para tareas futuras
 
 ---
 
-**Última actualización:** Pendiente  
+**Última actualización:** 2025-11-21 - Tarea 2.2 completada (stub)
 **Generado por:** Claude Code
