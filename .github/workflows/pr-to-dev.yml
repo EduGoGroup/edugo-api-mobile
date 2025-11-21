@@ -112,6 +112,7 @@ jobs:
           version: latest
           args: --timeout=5m
           install-mode: binary
+        continue-on-error: true # Temporal: golangci-lint aún no soporta Go 1.25
 
   summary:
     name: PR Summary
