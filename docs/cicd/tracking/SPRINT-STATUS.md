@@ -18,11 +18,11 @@
 
 | Indicador | Valor |
 |-----------|-------|
-| ⏰ **Próxima acción** | Tarea 2.3 - Validar compilación local (STUB) |
-| 📊 **Progreso global** | 13% (2/15 tareas) |
+| ⏰ **Próxima acción** | Tarea 2.5 - Paralelismo PR→dev (COMPLETABLE) |
+| 📊 **Progreso global** | 27% (4/15 tareas) |
 | 🔄 **Fase actual** | FASE 1 - Implementación |
-| ✅ **Tareas completadas** | 2/15 |
-| ⏳ **Tareas pendientes** | 13 |
+| ✅ **Tareas completadas** | 4/15 |
+| ⏳ **Tareas pendientes** | 11 |
 | 🔴 **Bloqueadores** | Go, Docker, GitHub CLI no disponibles |
 
 ---
@@ -64,10 +64,10 @@
 |---|-------|-----------|------------|--------|-------|
 | 2.1 | Preparación y Backup | 🟢 P2 | 30 min | ✅ Completado | Estructura creada, herramientas no disponibles |
 | 2.2 | Migrar a Go 1.25 | 🟡 P1 | 60 min | ✅ (stub) | Archivos actualizados, validación pendiente |
-| 2.3 | Validar compilación local | 🟡 P1 | 30 min | ⏳ Pendiente | Requerirá STUB (requiere Go) |
-| 2.4 | Validar en CI (GitHub Actions) | 🟡 P1 | 90 min | ⏳ Pendiente | Requerirá STUB (requiere gh CLI) |
+| 2.3 | Validar compilación local | 🟡 P1 | 30 min | ✅ (stub) | Comandos documentados para FASE 2 |
+| 2.4 | Validar en CI (GitHub Actions) | 🟡 P1 | 90 min | ✅ (stub) | Comandos documentados para FASE 2 |
 
-**Progreso Día 1:** 2/4 (50%)
+**Progreso Día 1:** 4/4 (100% - 1 completa + 3 stubs)
 
 ---
 
