@@ -1,9 +1,9 @@
 # Estado del Sprint Actual
 
 **Proyecto:** edugo-api-mobile
-**Sprint:** SPRINT-2 - Migración Go 1.25 + Optimización
-**Fase Actual:** TAREAS RESTANTES
-**Última Actualización:** 2025-11-21 (Post-análisis paralelismo)
+**Sprint:** SPRINT-4 - Workflows Reusables
+**Fase Actual:** FASE 1 - Implementación con Stubs
+**Última Actualización:** 2025-11-21 (Inicio SPRINT-4)
 
 ⚠️ **CONTEXTO DE UBICACIÓN:**
 ```
@@ -18,28 +18,32 @@
 
 | Indicador | Valor |
 |-----------|-------|
-| ⏰ **Próxima acción** | Tarea 2.8 - Pre-commit hooks |
-| 📊 **Progreso global** | 73% (11/15 tareas) |
-| 🔄 **Fase actual** | Tareas Restantes |
-| ✅ **Tareas completadas** | 11/15 |
-| ⏳ **Tareas pendientes** | 4 |
+| ⏰ **Próxima acción** | Tarea 4.1 - Setup en infrastructure |
+| 📊 **Progreso global** | 0% (0/15 tareas) |
+| 🔄 **Fase actual** | FASE 1 - Implementación |
+| ✅ **Tareas completadas** | 0/15 |
+| ⏳ **Tareas pendientes** | 15 |
 | 🔴 **Bloqueadores** | Ninguno |
 
 ---
 
 ## 🎯 Sprint Activo
 
-**Sprint:** SPRINT-2 - Migración Go 1.25 + Optimización
+**Sprint:** SPRINT-4 - Workflows Reusables
 **Inicio:** 2025-11-21
-**Objetivo:** Migrar a Go 1.25 (PILOTO) + Optimizar CI/CD
+**Objetivo:** Crear workflows reusables en infrastructure y migrar api-mobile como PILOTO
+
+**Prerequisitos:**
+- ✅ **SPRINT-2 COMPLETADO** (15/15 tareas - 100%)
+- ✅ Go 1.25 funcionando correctamente en CI/CD
+- ✅ Paralelismo implementado
+- ✅ Pre-commit hooks configurados
+- ✅ Success rate actual: 90% (el mejor después de shared)
 
 **Contexto:**
-- api-mobile es el proyecto PILOTO para Go 1.25
-- ✅ **FASE 1 y FASE 2 COMPLETADAS** - PR #65 mergeado
-- ✅ Go 1.25 funcionando correctamente en CI/CD
-- ✅ Errores de lint corregidos (24 errores)
-- ✅ **Paralelismo ya estaba implementado desde antes**
-- Success rate actual: 90% (el mejor después de shared)
+- api-mobile es el proyecto PILOTO para workflows reusables
+- Se crearán workflows centralizados en edugo-infrastructure
+- Se reducirá código duplicado ~60%
 
 ---
 
@@ -47,58 +51,61 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Fase actual** | Tareas Restantes |
+| **Fase actual** | FASE 1 - Implementación |
 | **Tareas totales** | 15 |
-| **Tareas completadas** | 11/15 |
-| **Tareas en progreso** | 0 |
-| **Tareas pendientes** | 4 |
-| **Progreso** | 73% |
+| **Tareas completadas** | 0/15 |
+| **Tareas en progreso** | 1 (inicialización) |
+| **Tareas pendientes** | 14 |
+| **Progreso** | 0% |
 
 ---
 
 ## 📋 Tareas por Estado
 
-### ✅ COMPLETADAS (11/15)
+### 🔄 EN PROGRESO (1/15)
 
-#### DÍA 1: Migración Go 1.25 - ✅ 100%
+| # | Tarea | Estado | Inicio | Notas |
+|---|-------|--------|--------|-------|
+| - | Inicialización tracking | 🔄 En progreso | 2025-11-21 | Preparando SPRINT-4 |
 
-| # | Tarea | Estado | Notas |
-|---|-------|--------|-------|
-| 2.1 | Preparación y Backup | ✅ Completado | Estructura de tracking creada |
-| 2.2 | Migrar a Go 1.25 | ✅ Completado | go.mod, workflows, Dockerfile actualizados |
-| 2.3 | Validar compilación local | ✅ Completado | go build, go test, race detector ✅ |
-| 2.4 | Validar en CI (GitHub Actions) | ✅ Completado | Todos los checks pasan, PR #65 mergeado |
+### ⏳ PENDIENTES (14/15)
 
-#### DÍA 2: Paralelismo - ✅ 100% (YA ESTABA IMPLEMENTADO)
+#### DÍA 1: Crear Workflows Reusables Base (4 tareas)
 
-| # | Tarea | Estado | Notas |
-|---|-------|--------|-------|
-| 2.5 | Paralelismo PR→dev | ✅ Pre-existente | unit-tests y lint ya corren en paralelo |
-| 2.6 | Paralelismo PR→main | ✅ Pre-existente | 4 jobs (unit-tests, integration-tests, lint, security-scan) en paralelo |
-| 2.7 | Validar tiempos mejorados | ✅ Verificado | PR→dev: ~2min, PR→main: ~3-4min |
+| # | Tarea | Estimación | Notas |
+|---|-------|------------|-------|
+| 4.1 | Setup en Infrastructure | 30 min | Clonar/preparar edugo-infrastructure |
+| 4.2 | Crear pr-validation.yml reusable | 90 min | Workflow para validación de PRs |
+| 4.3 | Crear sync-branches.yml reusable | 60 min | Workflow para sincronización |
+| 4.4 | Validar sintaxis y documentar | 60 min | Validar YAML y crear docs |
 
-**Análisis de paralelismo:**
-- ✅ pr-to-dev.yml: 2 jobs en paralelo (sin `needs:`)
-- ✅ pr-to-main.yml: 4 jobs en paralelo (sin `needs:`)
-- ✅ Tiempos optimizados desde implementación anterior
+#### DÍA 2: Migrar api-mobile (5 tareas)
 
-#### DÍA 3: Lint - ✅ 50% (2/4 tareas)
+| # | Tarea | Estimación | Notas |
+|---|-------|------------|-------|
+| 4.5 | Preparación y backup | 30 min | Backup workflows actuales |
+| 4.6 | Convertir pr-to-dev.yml | 60 min | Llamar workflow reusable |
+| 4.7 | Convertir pr-to-main.yml | 60 min | Llamar workflow reusable |
+| 4.8 | Convertir sync-main-to-dev.yml | 45 min | Llamar workflow reusable |
+| 4.9 | Validar workflows localmente | 45 min | Validar sintaxis |
 
-| # | Tarea | Estado | Notas |
-|---|-------|--------|-------|
-| 2.8 | Pre-commit hooks | ⏳ **Pendiente** | .pre-commit-config.yaml no existe |
-| 2.9 | Validar hooks localmente | ⏳ **Pendiente** | Depende de 2.8 |
-| 2.10 | Corregir errores lint | ✅ Completado | 24 errores corregidos en PR #65 |
-| 2.11 | Validar lint limpio | ✅ Completado | golangci-lint pasa en CI/CD |
+#### DÍA 3: Testing Exhaustivo (3 tareas)
 
-#### DÍA 4: Control + Docs - ✅ 50% (2/4 tareas)
+| # | Tarea | Estimación | Notas |
+|---|-------|------------|-------|
+| 4.10 | Tests de PR→dev | 60 min | Crear PR de prueba |
+| 4.11 | Tests de PR→main | 60 min | Crear PR de prueba |
+| 4.12 | Tests de sync | 30 min | Validar sincronización |
 
-| # | Tarea | Estado | Notas |
-|---|-------|--------|-------|
-| 2.12 | Control releases por variable | ⏳ **Pendiente** | ENABLE_AUTO_RELEASE no implementado |
-| 2.13 | Documentación actualizada | ⏳ **Pendiente** | README/docs pendientes de actualizar |
-| 2.14 | Testing final exhaustivo | ✅ Completado | Tests validados en PR #65 |
-| 2.15 | Crear y mergear PR final | ✅ Completado | PR #65 mergeado a dev |
+#### DÍA 4: Documentación y Cierre (3 tareas)
+
+| # | Tarea | Estimación | Notas |
+|---|-------|------------|-------|
+| 4.13 | Documentación completa | 60 min | README y guías |
+| 4.14 | Métricas y comparación | 30 min | Before/After |
+| 4.15 | PR y merge | 30 min | Crear PRs finales |
+
+**Tiempo estimado total:** ~12-15 horas
 
 ---
 
@@ -106,145 +113,85 @@
 
 | Día | Tareas Totales | Completadas | Pendientes | Progreso |
 |-----|----------------|-------------|------------|----------|
-| **Día 1** | 4 | ✅ 4 | 0 | 100% |
-| **Día 2** | 3 | ✅ 3 | 0 | 100% (pre-existente) |
-| **Día 3** | 4 | ✅ 2 | ⏳ 2 | 50% |
-| **Día 4** | 4 | ✅ 2 | ⏳ 2 | 50% |
-| **TOTAL** | **15** | **✅ 11** | **⏳ 4** | **73%** |
-
----
-
-## 🎉 Logros Completados
-
-### ✅ Migración Go 1.25 (100%)
-- ✅ go.mod actualizado a Go 1.25
-- ✅ Todos los workflows actualizados
-- ✅ Dockerfile actualizado
-- ✅ Compilación local exitosa (613 paquetes)
-- ✅ Todos los tests pasan
-- ✅ CI/CD funcionando correctamente
-- ✅ golangci-lint v2.4.0 con soporte Go 1.25
-
-### ✅ Paralelismo CI/CD (100% - Pre-existente)
-- ✅ pr-to-dev.yml: 2 jobs paralelos
-- ✅ pr-to-main.yml: 4 jobs paralelos
-- ✅ Tiempos optimizados: ~2-4 min
-
-### ✅ Corrección de Lint (100%)
-- ✅ 24 errores errcheck corregidos
-- ✅ golangci-lint pasa sin errores
-- ✅ CI/CD limpio
-
-### ✅ Validación y Testing (100%)
-- ✅ Tests unitarios: Todos pasan
-- ✅ Coverage: 61.8% (>33% requerido)
-- ✅ Race detector: Sin race conditions
-- ✅ CI/CD: Todos los checks pasan
-- ✅ PR #65 mergeado exitosamente
-
----
-
-## 📋 Tareas Pendientes (4/15)
-
-### Prioridad Alta (P1)
-1. **Tarea 2.8:** Pre-commit hooks (90 min)
-   - Crear `.pre-commit-config.yaml`
-   - Configurar 7 validaciones automáticas
-   - Documentar instalación y uso
-
-### Prioridad Media (P2)
-2. **Tarea 2.9:** Validar hooks localmente (30 min)
-   - Instalar pre-commit
-   - Probar hooks funcionan
-   - Validar no son molestos
-
-3. **Tarea 2.12:** Control releases por variable (30 min)
-   - Agregar `ENABLE_AUTO_RELEASE` a manual-release.yml
-   - Prevenir releases accidentales
-   - Documentar uso
-
-4. **Tarea 2.13:** Documentación actualizada (60 min)
-   - Actualizar README con Go 1.25
-   - Documentar cambios en CI/CD
-   - Actualizar guías de desarrollo
-
-**Tiempo estimado restante:** ~3.5 horas
+| **Día 1** | 4 | 0 | ⏳ 4 | 0% |
+| **Día 2** | 5 | 0 | ⏳ 5 | 0% |
+| **Día 3** | 3 | 0 | ⏳ 3 | 0% |
+| **Día 4** | 3 | 0 | ⏳ 3 | 0% |
+| **TOTAL** | **15** | **0** | **⏳ 15** | **0%** |
 
 ---
 
 ## 🎯 Próxima Acción Recomendada
 
-**Tarea 2.8 - Configurar Pre-commit Hooks**
+**Tarea 4.1 - Setup en Infrastructure**
 
 ### ¿Por qué esta tarea?
-- ✅ Alta prioridad (P1)
-- ✅ Mejora experiencia de desarrollo
-- ✅ Previene errores antes de commit
-- ✅ No requiere validación en CI
-- ✅ Completable en ~90 min
+- ✅ Primera tarea del sprint
+- ✅ Prerequisito para todas las demás tareas del Día 1
+- ✅ Preparación del repositorio infrastructure
+- ✅ Completable en ~30 min
 
-### ¿Qué crear?
-Archivo `.pre-commit-config.yaml` con:
-1. go fmt (formateo automático)
-2. go vet (detección de errores)
-3. golangci-lint (linting)
-4. go mod tidy (limpieza de dependencias)
-5. trailing whitespace (espacios finales)
-6. end of file fixer (salto de línea final)
-7. check yaml (validación YAML)
+### ¿Qué hacer?
+1. Verificar acceso a edugo-infrastructure
+2. Actualizar repo (git pull)
+3. Crear rama de trabajo: `feature/cicd-reusable-workflows`
+4. Crear estructura de directorios: `.github/workflows/reusable/`
+5. Crear README básico
 
 ### Beneficios:
-- Código más limpio
-- Menos errores en CI
-- Feedback inmediato
-- Opcional (no molesto)
+- Base para crear workflows reusables
+- Estructura organizada
+- Documentación desde el inicio
 
 ---
 
 ## 📚 Referencias de Documentación
 
-- ✅ [FASE-1-COMPLETE.md](./FASE-1-COMPLETE.md) - Reporte FASE 1
-- ✅ [FASE-2-COMPLETE.md](./FASE-2-COMPLETE.md) - Reporte FASE 2
-- ✅ [FASE-2-VALIDATION.md](./FASE-2-VALIDATION.md) - Validación exitosa
-- 📖 [SPRINT-2-TASKS.md](../sprints/SPRINT-2-TASKS.md) - Plan detallado
+- ✅ [SPRINT-2-COMPLETE.md](./SPRINT-2-COMPLETE.md) - Sprint anterior completado
+- 📖 [SPRINT-4-TASKS.md](../sprints/SPRINT-4-TASKS.md) - Plan detallado de tareas
+- 📖 [REGLAS.md](./REGLAS.md) - Reglas de ejecución (3 fases)
 
 ---
 
 ## 💬 Preguntas Rápidas
 
 **P: ¿Cuál es el sprint actual?**
-R: SPRINT-2 - Migración Go 1.25 + Optimización
+R: SPRINT-4 - Workflows Reusables
 
-**P: ¿Qué se completó en PR #65?**
-R: Tareas 2.1-2.4, 2.10-2.11, 2.14-2.15 + corrección de 24 errores lint
-
-**P: ¿El paralelismo ya estaba implementado?**
-R: Sí, las tareas 2.5-2.7 ya estaban completadas desde antes del Sprint 2
+**P: ¿Qué se completó en SPRINT-2?**
+R: 15/15 tareas (100%) - Go 1.25, pre-commit hooks, lint fixes, control releases
 
 **P: ¿Cuál es la siguiente tarea?**
-R: Tarea 2.8 - Pre-commit hooks (alta prioridad, ~90 min)
+R: Tarea 4.1 - Setup en infrastructure (~30 min)
 
 **P: ¿Cuántas tareas faltan?**
-R: 4 tareas pendientes (~3.5 horas estimadas)
+R: 15 tareas pendientes (~12-15 horas estimadas)
 
 **P: ¿Hay bloqueadores?**
-R: No, todas las tareas pendientes son completables
+R: No, todas las tareas son completables
+
+**P: ¿Qué repositorios se usarán?**
+R: edugo-infrastructure (workflows reusables) + edugo-api-mobile (migración)
 
 ---
 
-## 🎓 Aprendizajes
+## 📝 Notas de Inicio
 
-### ✅ Descubrimiento Importante
-**Paralelismo ya implementado:** Los workflows ya tenían paralelismo desde antes del Sprint 2. Esto significa que:
-- ✅ Tareas 2.5-2.7 se marcan como completadas (pre-existentes)
-- ✅ No requieren trabajo adicional
-- ✅ El proyecto ya tiene CI/CD optimizado
+### Objetivo del Sprint
+Crear workflows reusables centralizados en `edugo-infrastructure` y migrar `edugo-api-mobile` para validar el patrón antes de replicar a otros proyectos.
 
-### 📝 Lección Aprendida
-Siempre verificar el estado actual antes de planificar tareas. Algunas optimizaciones pueden ya estar implementadas.
+### Beneficios Esperados
+- Reducir código duplicado ~60%
+- Centralizar mantenimiento de workflows
+- Facilitar replicación a otros proyectos
+- Mejorar consistencia en CI/CD
+
+### Repositorios Involucrados
+1. **edugo-infrastructure**: Workflows reusables centralizados
+2. **edugo-api-mobile**: Proyecto PILOTO que usará los workflows
 
 ---
 
-**Última actualización:** 2025-11-21 - Post-verificación de paralelismo
-**PR completado:** #65 - Sprint 2 FASE 2 - Migración Go 1.25 validada
+**Última actualización:** 2025-11-21 - Inicio de SPRINT-4
+**Sprint anterior:** SPRINT-2 completado al 100% ✅
 **Generado por:** Claude Code
