@@ -119,7 +119,7 @@ func (r *mongoAssessmentRepository) FindAttemptsByUser(ctx context.Context, mate
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var attempts []*repository.AssessmentAttempt
 	for cursor.Next(ctx) {
@@ -227,7 +227,7 @@ func (r *mongoAssessmentRepository) CalculateAverageScore(ctx context.Context) (
 	if err != nil {
 		return 0.0, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// Leer resultado
 	if cursor.Next(ctx) {
