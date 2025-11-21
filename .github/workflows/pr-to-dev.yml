@@ -109,10 +109,9 @@ jobs:
       - name: 🔍 Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.4.0
           args: --timeout=5m
           install-mode: binary
-        continue-on-error: true # Temporal: golangci-lint aún no soporta Go 1.25
 
   summary:
     name: PR Summary
