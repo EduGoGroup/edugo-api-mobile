@@ -20,20 +20,50 @@ Esta API maneja:
 
 ## Tecnologías
 
-- **Lenguaje**: Go 1.25.3
+- **Lenguaje**: Go 1.25.0
 - **Framework Web**: Gin
 - **Documentación API**: Swagger/OpenAPI (Swaggo)
-- **Base de Datos**: PostgreSQL + MongoDB (mock)
-- **Autenticación**: JWT (mock)
+- **Base de Datos**: PostgreSQL + MongoDB
+- **Messaging**: RabbitMQ
+- **Autenticación**: JWT (via edugo-shared)
+- **Linting**: golangci-lint v2.4.0
+- **Pre-commit Hooks**: Configurados (opcional)
 
 ## Requisitos Previos
 
-- Go 1.25.3
+- Go 1.25.0 o superior
 - PostgreSQL 12+
 - MongoDB 5.0+
 - RabbitMQ 3.12+
 - Docker (opcional, para desarrollo local)
+- pre-commit (opcional, recomendado para desarrollo)
 
+
+## 🚀 Novedades - Sprint 2 (Noviembre 2025)
+
+### Migración a Go 1.25
+- ✅ Actualizado de Go 1.24 a Go 1.25.0
+- ✅ Todos los workflows de CI/CD actualizados
+- ✅ Dockerfile actualizado a `golang:1.25-alpine`
+- ✅ golangci-lint actualizado a v2.4.0 (soporte Go 1.25)
+
+### Pre-commit Hooks (Nuevo)
+- ✅ Configuración de hooks automáticos para calidad de código
+- ✅ 12 validaciones automáticas (formato, linting, seguridad)
+- ✅ Opcional pero recomendado para desarrollo
+- 📖 Ver [docs/PRE-COMMIT-HOOKS.md](docs/PRE-COMMIT-HOOKS.md) para instalación
+
+### Control de Releases
+- ✅ Variable de confirmación para prevenir releases accidentales
+- ✅ Workflow `manual-release.yml` requiere confirmación explícita
+- ✅ Mayor seguridad en el proceso de release
+
+### Mejoras de Calidad
+- ✅ 24 errores de lint corregidos (errcheck)
+- ✅ CI/CD optimizado con paralelismo
+- ✅ Cobertura de tests: 61.8% (meta: 33%)
+
+---
 
 ## 🧪 Testing
 
