@@ -489,7 +489,9 @@ func TestMaterialService_NotifyUploadComplete_Success(t *testing.T) {
 	}
 
 	req := dto.UploadCompleteRequest{
-		FileURL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	mockRepo.On("FindByID", ctx, materialID).Return(material, nil)
@@ -594,7 +596,9 @@ func TestMaterialService_NotifyUploadComplete_MaterialNotFound(t *testing.T) {
 	materialID := valueobject.NewMaterialID()
 
 	req := dto.UploadCompleteRequest{
-		FileURL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	mockRepo.On("FindByID", ctx, materialID).Return(nil, nil)
@@ -640,7 +644,9 @@ func TestMaterialService_NotifyUploadComplete_UpdateError(t *testing.T) {
 	}
 
 	req := dto.UploadCompleteRequest{
-		FileURL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	dbError := errors.New("database error")
@@ -837,7 +843,7 @@ func TestMaterialService_GetMaterialWithVersions_Success_WithVersions(t *testing
 	versions := []*pgentities.MaterialVersion{version1, version2}
 
 	// Configurar mock
-	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(*material, versions, nil)
+	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(material, versions, nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
 	// Act
@@ -885,7 +891,7 @@ func TestMaterialService_GetMaterialWithVersions_Success_WithoutVersions(t *test
 	versions := []*pgentities.MaterialVersion{} // Array vacío
 
 	// Configurar mock
-	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(*material, versions, nil)
+	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(material, versions, nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
 	// Act

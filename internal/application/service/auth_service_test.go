@@ -314,7 +314,8 @@ func TestAuthService_RefreshAccessToken_Success(t *testing.T) {
 	}
 
 	refreshTokenRepo.On("FindByTokenHash", ctx, tokenHash).Return(tokenData, nil)
-	userReader.On("FindByID", ctx, testUser.ID).Return(testUser, nil)
+	userIDVO, _ := valueobject.UserIDFromString(testUser.ID.String())
+	userReader.On("FindByID", ctx, userIDVO).Return(testUser, nil)
 
 	response, err := service.RefreshAccessToken(ctx, refreshToken)
 
