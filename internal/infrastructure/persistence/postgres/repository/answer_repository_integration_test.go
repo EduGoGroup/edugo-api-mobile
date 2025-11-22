@@ -113,7 +113,7 @@ func (s *AnswerRepositoryIntegrationSuite) TestSave_EmptyArray() {
 	ctx := context.Background()
 
 	// Act
-	err := s.repo.Save(ctx, []**pgentities.AssessmentAttemptAnswer{})
+	err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{})
 
 	// Assert
 	s.Error(err, "Save debe fallar con array vacío")

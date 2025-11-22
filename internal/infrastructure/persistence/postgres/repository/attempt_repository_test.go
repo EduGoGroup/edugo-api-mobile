@@ -161,7 +161,7 @@ func TestPostgresAttemptRepository_Save_Success(t *testing.T) {
 		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2},
 		IdempotencyKey:   nil,
 	}
-	err := require.NoError(t, nil)
+	// Removed unnecessary require.NoError(t, nil)
 
 	// Act
 	err = repo.Save(ctx, *attempt)
