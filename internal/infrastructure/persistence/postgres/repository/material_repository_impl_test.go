@@ -51,24 +51,32 @@ func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
 
 	// Arrange
 	authorID := valueobject.NewUserID()
+	schoolID := valueobject.NewUserID() // Reusar UserID como UUID genérico
+	materialID := valueobject.NewMaterialID()
 	now := time.Now()
 	material := &pgentities.Material{
-		ID:                  valueobject.NewMaterialID(),
-		Title:               "Test Material",
-		Description:         ptr("Description"),
-		SchoolID:            nil,
-		UploadedByTeacherID: authorID,
-		FileURL:             "",
-		FileType:            "",
-		FileSizeBytes:       0,
-		Status:              "draft",
-		IsPublic:            false,
-		CreatedAt:           now,
-		UpdatedAt:           now,
+		ID:                    materialID.UUID().UUID,
+		SchoolID:              schoolID.UUID().UUID,
+		UploadedByTeacherID:   authorID.UUID().UUID,
+		AcademicUnitID:        nil,
+		Title:                 "Test Material",
+		Description:           ptr("Description"),
+		Subject:               ptr("Mathematics"),
+		Grade:                 ptr("10th"),
+		FileURL:               "",
+		FileType:              "",
+		FileSizeBytes:         0,
+		Status:                "draft",
+		ProcessingStartedAt:   nil,
+		ProcessingCompletedAt: nil,
+		IsPublic:              false,
+		CreatedAt:             now,
+		UpdatedAt:             now,
+		DeletedAt:             nil,
 	}
 
 	// Act
-	err := s.repo.Create(ctx, *material)
+	err := s.repo.Create(ctx, material)
 
 	// Assert
 	s.NoError(err, "Create should not return error")
@@ -86,11 +94,12 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
 	// Arrange - Crear material directamente en DB
 	materialID := valueobject.NewMaterialID()
 	authorID := valueobject.NewUserID()
+	schoolID := valueobject.NewUserID()
 
 	_, err := s.PostgresDB.Exec(`
-		INSERT INTO materials (id, title, description, author_id, subject_id, status, processing_status)
-		VALUES ($1, $2, $3, $4, $5, 'published', 'completed')
-	`, materialID.String(), "Test Material", "Test Description", authorID.String(), "subject-1")
+		INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, "Test Material", "Test Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
 	s.Require().NoError(err)
 
 	// Act
@@ -99,8 +108,9 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
 	// Assert
 	s.NoError(err, "FindByID should not return error when material exists")
 	s.NotNil(material)
-	s.Equal("Test Material", material.Title())
-	s.Equal("Test Description", material.Description())
+	s.Equal("Test Material", material.Title)
+	s.NotNil(material.Description)
+	s.Equal("Test Description", *material.Description)
 }
 
 // TestFindByID_MaterialNotFound valida que FindByID retorna nil cuando no existe
@@ -124,14 +134,15 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
 
 	// Arrange
 	authorID := valueobject.NewUserID()
+	schoolID := valueobject.NewUserID()
 
 	// Crear 2 materiales del mismo autor
 	for i := 1; i <= 2; i++ {
 		materialID := valueobject.NewMaterialID()
 		_, err := s.PostgresDB.Exec(`
-			INSERT INTO materials (id, title, description, author_id, status, processing_status)
-			VALUES ($1, $2, $3, $4, 'published', 'completed')
-		`, materialID.String(), fmt.Sprintf("Material %d", i), "Description", authorID.String())
+			INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, fmt.Sprintf("Material %d", i), "Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
 		s.Require().NoError(err)
 	}
 

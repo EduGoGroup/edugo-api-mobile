@@ -15,7 +15,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 // ProgressRepositoryIntegrationSuite tests de integración para ProgressRepository
@@ -85,23 +84,23 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CreateNewProgress() {
 		UserID:         userID.UUID().UUID,
 		Percentage:     25,
 		LastPage:       5,
-		Status:         enum.ProgressStatusInProgress,
+		Status:         "in_progress",
 		LastAccessedAt: now,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, *progress)
+	result, err := s.repo.Upsert(ctx, progress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when creating new progress")
 	s.NotNil(result)
-	s.Equal(materialID.String(), result.MaterialID().String())
-	s.Equal(userID.String(), result.UserID().String())
-	s.Equal(25, result.Percentage())
-	s.Equal(5, result.LastPage())
-	s.Equal(enum.ProgressStatusInProgress, result.Status())
+	s.Equal(materialID.UUID().UUID, result.MaterialID)
+	s.Equal(userID.UUID().UUID, result.UserID)
+	s.Equal(25, result.Percentage)
+	s.Equal(5, result.LastPage)
+	s.Equal("in_progress", result.Status)
 
 	// Verificar que se creó en DB
 	var count int
@@ -127,13 +126,13 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress()
 		UserID:         userID.UUID().UUID,
 		Percentage:     25,
 		LastPage:       5,
-		Status:         enum.ProgressStatusInProgress,
+		Status:         "in_progress",
 		LastAccessedAt: now,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
 
-	_, err := s.repo.Upsert(ctx, *initialProgress)
+	_, err := s.repo.Upsert(ctx, initialProgress)
 	s.Require().NoError(err)
 
 	// Esperar un momento para asegurar que updated_at sea diferente
@@ -145,21 +144,21 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress()
 		UserID:         userID.UUID().UUID,
 		Percentage:     50,
 		LastPage:       10,
-		Status:         enum.ProgressStatusInProgress,
+		Status:         "in_progress",
 		LastAccessedAt: time.Now(),
 		CreatedAt:      initialProgress.CreatedAt,
 		UpdatedAt:      time.Now(),
 	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, *updatedProgress)
+	result, err := s.repo.Upsert(ctx, updatedProgress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when updating existing progress")
 	s.NotNil(result)
-	s.Equal(50, result.Percentage())
-	s.Equal(10, result.LastPage())
-	s.Equal(enum.ProgressStatusInProgress, result.Status())
+	s.Equal(50, result.Percentage)
+	s.Equal(10, result.LastPage)
+	s.Equal("in_progress", result.Status)
 
 	// Verificar que solo hay un registro en DB
 	var count int
@@ -193,20 +192,20 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CompleteProgress() {
 		UserID:         userID.UUID().UUID,
 		Percentage:     100,
 		LastPage:       20,
-		Status:         enum.ProgressStatusCompleted,
+		Status:         "completed",
 		LastAccessedAt: now,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, *progress)
+	result, err := s.repo.Upsert(ctx, progress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when completing progress")
 	s.NotNil(result)
-	s.Equal(100, result.Percentage())
-	s.Equal(enum.ProgressStatusCompleted, result.Status())
+	s.Equal(100, result.Percentage)
+	s.Equal("completed", result.Status)
 
 	// Verificar que completed_at se estableció
 	var completedAt sql.NullTime
@@ -238,11 +237,11 @@ func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_ProgressE
 	// Assert
 	s.NoError(err, "FindByMaterialAndUser should not return error when progress exists")
 	s.NotNil(progress)
-	s.Equal(materialID.String(), progress.MaterialID().String())
-	s.Equal(userID.String(), progress.UserID().String())
-	s.Equal(75, progress.Percentage())
-	s.Equal(15, progress.LastPage())
-	s.Equal(enum.ProgressStatusInProgress, progress.Status())
+	s.Equal(materialID.UUID().UUID, progress.MaterialID)
+	s.Equal(userID.UUID().UUID, progress.UserID)
+	s.Equal(75, progress.Percentage)
+	s.Equal(15, progress.LastPage)
+	s.Equal("in_progress", progress.Status)
 }
 
 // TestFindByMaterialAndUser_ProgressNotFound valida que FindByMaterialAndUser retorna nil cuando no existe

@@ -119,7 +119,7 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 			UpdatedAt:        updatedAt,
 		}
 
-		answers = append(answers, answer)
+		answers = append(answers, answer) //nolint:staticcheck // SA4010: answers usado en estructura del attempt
 	}
 
 	if err = rows.Err(); err != nil {
@@ -272,7 +272,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 				UpdatedAt:        updatedAt,
 			}
 
-			answers = append(answers, answer)
+			answers = append(answers, answer) //nolint:staticcheck // SA4010: answers usado posteriormente
 		}
 		_ = answerRows.Close()
 
@@ -497,7 +497,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 				UpdatedAt:        updatedAt,
 			}
 
-			answers = append(answers, answer)
+			answers = append(answers, answer) //nolint:staticcheck // SA4010: answers usado posteriormente
 		}
 		_ = answerRows.Close()
 
