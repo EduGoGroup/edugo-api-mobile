@@ -11,14 +11,20 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptr es una función auxiliar para crear punteros
+func ptr[T any](v T) *T {
+	return &v
+}
 
 func TestNewPostgresAnswerRepository(t *testing.T) {
 	var mockDB *sql.DB
@@ -74,11 +80,39 @@ func TestPostgresAnswerRepository_Save_Success(t *testing.T) {
 	attemptID := uuid.New()
 
 	// Crear múltiples respuestas
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", false, 45)
-	answer3, _ := entities.NewAnswer(attemptID, "q3", "c", true, 20)
+	now := time.Now()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptr("a"),
+		IsCorrect:        ptr(true),
+		TimeSpentSeconds: ptr(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptr("b"),
+		IsCorrect:        ptr(false),
+		TimeSpentSeconds: ptr(45),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer3 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q3",
+		StudentAnswer:    ptr("c"),
+		IsCorrect:        ptr(true),
+		TimeSpentSeconds: ptr(20),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	answers := []*entities.Answer{answer1, answer2, answer3}
+	answers := []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3}
 
 	// Act
 	err := repo.Save(ctx, answers)
@@ -95,7 +129,7 @@ func TestPostgresAnswerRepository_Save_EmptyArray(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	err := repo.Save(ctx, []*entities.Answer{})
+	err := repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{})
 
 	// Assert
 	assert.Error(t, err)
@@ -110,7 +144,7 @@ func TestPostgresAnswerRepository_Save_InvalidAnswer(t *testing.T) {
 	ctx := context.Background()
 
 	// Answer inválido (ID nil)
-	invalidAnswer := &entities.Answer{
+	invalidAnswer := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.Nil, // Inválido
 		AttemptID:        uuid.New(),
 		QuestionID:       "q1",
@@ -120,7 +154,7 @@ func TestPostgresAnswerRepository_Save_InvalidAnswer(t *testing.T) {
 	}
 
 	// Act
-	err := repo.Save(ctx, []*entities.Answer{invalidAnswer})
+	err := repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{invalidAnswer})
 
 	// Assert
 	assert.Error(t, err)
@@ -134,11 +168,20 @@ func TestPostgresAnswerRepository_Save_SingleAnswer(t *testing.T) {
 
 	ctx := context.Background()
 
-	answer, err := entities.NewAnswer(uuid.New(), "q1", "a", true, 30)
-	require.NoError(t, err)
+	now := time.Now()
+	answer := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        uuid.New(),
+		QuestionID:       "q1",
+		StudentAnswer:    ptr("a"),
+		IsCorrect:        ptr(true),
+		TimeSpentSeconds: ptr(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
 	// Act
-	err = repo.Save(ctx, []*entities.Answer{answer})
+	err := repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 
 	// Assert
 	assert.NoError(t, err)

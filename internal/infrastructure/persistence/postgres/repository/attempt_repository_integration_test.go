@@ -11,10 +11,25 @@ import (
 	"github.com/google/uuid"
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptrStr crea un puntero a string
+func ptrStr(s string) *string {
+	return &s
+}
+
+// ptrBool crea un puntero a bool
+func ptrBool(b bool) *bool {
+	return &b
+}
+
+// ptrInt crea un puntero a int
+func ptrInt(i int) *int {
+	return &i
+}
 
 // AttemptRepositoryIntegrationSuite tests de integración para AttemptRepository
 type AttemptRepositoryIntegrationSuite struct {
@@ -47,21 +62,49 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_AtomicTransaction() {
 
 	// Arrange
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", false, 45)
-	answer3, _ := entities.NewAnswer(attemptID, "q3", "c", true, 60)
+	now := time.Now().UTC()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptrStr("b"),
+		IsCorrect:        ptrBool(false),
+		TimeSpentSeconds: ptrInt(45),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer3 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q3",
+		StudentAnswer:    ptrStr("c"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(60),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	attempt := &entities.Attempt{
+	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
 		Score:            66, // 2 correctas de 3 = (2*100)/3 = 66 (división entera)
 		MaxScore:         100,
 		TimeSpentSeconds: 135,
-		StartedAt:        time.Now().UTC().Add(-3 * time.Minute),
-		CompletedAt:      time.Now().UTC(),
-		CreatedAt:        time.Now().UTC(),
-		Answers:          []*entities.Answer{answer1, answer2, answer3},
+		StartedAt:        now.Add(-3 * time.Minute),
+		CompletedAt:      now,
+		CreatedAt:        now,
+		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3},
 		IdempotencyKey:   nil,
 	}
 
@@ -90,20 +133,30 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_WithIdempotencyKey() {
 
 	// Arrange
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
+	now := time.Now().UTC()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 	idempotencyKey := "attempt-" + attemptID.String()
 
-	attempt := &entities.Attempt{
+	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
 		Score:            100,
 		MaxScore:         100,
 		TimeSpentSeconds: 30,
-		StartedAt:        time.Now().UTC().Add(-1 * time.Minute),
-		CompletedAt:      time.Now().UTC(),
-		CreatedAt:        time.Now().UTC(),
-		Answers:          []*entities.Answer{answer1},
+		StartedAt:        now.Add(-1 * time.Minute),
+		CompletedAt:      now,
+		CreatedAt:        now,
+		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1},
 		IdempotencyKey:   &idempotencyKey,
 	}
 
@@ -127,22 +180,59 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 
 	// Arrange - Guardar attempt con múltiples answers
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 20)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", false, 30)
-	answer3, _ := entities.NewAnswer(attemptID, "q3", "a", true, 40)
-	answer4, _ := entities.NewAnswer(attemptID, "q4", "d", true, 25)
+	now := time.Now().UTC()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(20),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptrStr("b"),
+		IsCorrect:        ptrBool(false),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer3 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q3",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(40),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer4 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q4",
+		StudentAnswer:    ptrStr("d"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(25),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	attempt := &entities.Attempt{
+	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
 		Score:            75,
 		MaxScore:         100,
 		TimeSpentSeconds: 115,
-		StartedAt:        time.Now().UTC().Add(-2 * time.Minute),
-		CompletedAt:      time.Now().UTC(),
-		CreatedAt:        time.Now().UTC(),
-		Answers:          []*entities.Answer{answer1, answer2, answer3, answer4},
+		StartedAt:        now.Add(-2 * time.Minute),
+		CompletedAt:      now,
+		CreatedAt:        now,
+		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3, answer4},
 		IdempotencyKey:   nil,
 	}
 
@@ -183,22 +273,32 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudentAndAssessment_Succe
 	// Arrange - Guardar 3 intentos del mismo estudiante en la misma assessment
 	studentID := uuid.New()
 	assessmentID := uuid.New()
+	now := time.Now().UTC()
 
 	for i := 0; i < 3; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       "q1",
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(true),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		attempt := &entities.Attempt{
+		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     assessmentID,
 			StudentID:        studentID,
 			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
 			MaxScore:         100,
 			TimeSpentSeconds: 30,
-			StartedAt:        time.Now().UTC().Add(-time.Duration(i+1) * time.Minute),
-			CompletedAt:      time.Now().UTC().Add(-time.Duration(i) * time.Minute),
-			CreatedAt:        time.Now().UTC().Add(-time.Duration(i) * time.Minute),
-			Answers:          []*entities.Answer{answer},
+			StartedAt:        now.Add(-time.Duration(i+1) * time.Minute),
+			CompletedAt:      now.Add(-time.Duration(i) * time.Minute),
+			CreatedAt:        now.Add(-time.Duration(i) * time.Minute),
+			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 
@@ -246,22 +346,32 @@ func (s *AttemptRepositoryIntegrationSuite) TestCountByStudentAndAssessment_Succ
 	// Arrange - Guardar 2 intentos del mismo estudiante
 	studentID := uuid.New()
 	assessmentID := uuid.New()
+	now := time.Now().UTC()
 
 	for i := 0; i < 2; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       "q1",
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(true),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		attempt := &entities.Attempt{
+		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     assessmentID,
 			StudentID:        studentID,
 			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
 			MaxScore:         100,
 			TimeSpentSeconds: 30,
-			StartedAt:        time.Now().UTC().Add(-1 * time.Minute),
-			CompletedAt:      time.Now().UTC(),
-			CreatedAt:        time.Now().UTC(),
-			Answers:          []*entities.Answer{answer},
+			StartedAt:        now.Add(-1 * time.Minute),
+			CompletedAt:      now,
+			CreatedAt:        now,
+			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 
@@ -283,22 +393,32 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudent_WithPagination() {
 
 	// Arrange - Guardar 5 intentos del mismo estudiante en diferentes assessments
 	studentID := uuid.New()
+	now := time.Now().UTC()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       "q1",
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(true),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		attempt := &entities.Attempt{
+		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     uuid.New(),
 			StudentID:        studentID,
 			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
 			MaxScore:         100,
 			TimeSpentSeconds: 30,
-			StartedAt:        time.Now().UTC().Add(-time.Duration(i+1) * time.Minute),
-			CompletedAt:      time.Now().UTC().Add(-time.Duration(i) * time.Minute),
-			CreatedAt:        time.Now().UTC().Add(-time.Duration(i) * time.Minute),
-			Answers:          []*entities.Answer{answer},
+			StartedAt:        now.Add(-time.Duration(i+1) * time.Minute),
+			CompletedAt:      now.Add(-time.Duration(i) * time.Minute),
+			CreatedAt:        now.Add(-time.Duration(i) * time.Minute),
+			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 

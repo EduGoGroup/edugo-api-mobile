@@ -19,6 +19,11 @@ import (
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
+// Helper para crear punteros a strings
+func stringPtr(s string) *string {
+	return &s
+}
+
 // TestNewMaterialHandler verifica el constructor del handler
 func TestNewMaterialHandler(t *testing.T) {
 	// Arrange
@@ -120,47 +125,47 @@ func TestMaterialHandler_GenerateUploadURL_PathTraversalPrevention(t *testing.T)
 // TestMaterialHandler_GenerateUploadURL_ValidFileNames verifica nombres de archivo válidos
 func TestMaterialHandler_GenerateUploadURL_ValidFileNames(t *testing.T) {
 	testCases := []struct {
-		name          string
-		fileName      string
-		contentType   string
-		expectedS3Key string
+		name            string
+		fileName        string
+		contentType     string
+		expectedFileURL string
 	}{
 		{
-			name:          "nombre simple válido",
-			fileName:      "document.pdf",
-			contentType:   "application/pdf",
-			expectedS3Key: "materials/test-id/document.pdf",
+			name:            "nombre simple válido",
+			fileName:        "document.pdf",
+			contentType:     "application/pdf",
+			expectedFileURL: "materials/test-id/document.pdf",
 		},
 		{
-			name:          "nombre con guiones",
-			fileName:      "my-document-2024.pdf",
-			contentType:   "application/pdf",
-			expectedS3Key: "materials/test-id/my-document-2024.pdf",
+			name:            "nombre con guiones",
+			fileName:        "my-document-2024.pdf",
+			contentType:     "application/pdf",
+			expectedFileURL: "materials/test-id/my-document-2024.pdf",
 		},
 		{
-			name:          "nombre con guiones bajos",
-			fileName:      "my_document_final.pdf",
-			contentType:   "application/pdf",
-			expectedS3Key: "materials/test-id/my_document_final.pdf",
+			name:            "nombre con guiones bajos",
+			fileName:        "my_document_final.pdf",
+			contentType:     "application/pdf",
+			expectedFileURL: "materials/test-id/my_document_final.pdf",
 		},
 		{
-			name:          "nombre con espacios",
-			fileName:      "my document.pdf",
-			contentType:   "application/pdf",
-			expectedS3Key: "materials/test-id/my document.pdf",
+			name:            "nombre con espacios",
+			fileName:        "my document.pdf",
+			contentType:     "application/pdf",
+			expectedFileURL: "materials/test-id/my document.pdf",
 		},
 		{
-			name:          "imagen PNG",
-			fileName:      "diagram.png",
-			contentType:   "image/png",
-			expectedS3Key: "materials/test-id/diagram.png",
+			name:            "imagen PNG",
+			fileName:        "diagram.png",
+			contentType:     "image/png",
+			expectedFileURL: "materials/test-id/diagram.png",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
-			expectedURL := "https://s3.amazonaws.com/bucket/" + tc.expectedS3Key + "?presigned-params"
+			expectedURL := "https://s3.amazonaws.com/bucket/" + tc.expectedFileURL + "?presigned-params"
 
 			mockService := &MockMaterialService{
 				GetMaterialFunc: func(ctx context.Context, id string) (*dto.MaterialResponse, error) {
@@ -171,7 +176,7 @@ func TestMaterialHandler_GenerateUploadURL_ValidFileNames(t *testing.T) {
 			mockS3 := &MockS3Storage{
 				GeneratePresignedUploadURLFunc: func(ctx context.Context, key, contentType string, expires time.Duration) (string, error) {
 					// Verificar que el S3 key es el esperado
-					assert.Equal(t, tc.expectedS3Key, key)
+					assert.Equal(t, tc.expectedFileURL, key)
 					assert.Equal(t, tc.contentType, contentType)
 					return expectedURL, nil
 				},
@@ -199,7 +204,7 @@ func TestMaterialHandler_GenerateUploadURL_ValidFileNames(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, expectedURL, response.UploadURL)
-			assert.Equal(t, tc.expectedS3Key, response.S3Key)
+			assert.Equal(t, tc.expectedFileURL, response.FileURL)
 			assert.Equal(t, 900, response.ExpiresIn) // 15 minutos = 900 segundos
 		})
 	}
@@ -411,9 +416,9 @@ func TestMaterialHandler_GenerateDownloadURL_FileNotUploaded(t *testing.T) {
 	mockService := &MockMaterialService{
 		GetMaterialFunc: func(ctx context.Context, id string) (*dto.MaterialResponse, error) {
 			return &dto.MaterialResponse{
-				ID:    id,
-				Title: "Material sin archivo",
-				S3Key: "", // Sin S3 key (archivo no subido)
+				ID:      id,
+				Title:   "Material sin archivo",
+				FileURL: "", // Sin S3 key (archivo no subido)
 			}, nil
 		},
 	}
@@ -450,12 +455,12 @@ func TestMaterialHandler_ListMaterials_Success(t *testing.T) {
 				{
 					ID:          "material-1",
 					Title:       "Material 1",
-					Description: "Description 1",
+					Description: stringPtr("Description 1"),
 				},
 				{
 					ID:          "material-2",
 					Title:       "Material 2",
-					Description: "Description 2",
+					Description: stringPtr("Description 2"),
 				},
 			}, nil
 		},

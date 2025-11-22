@@ -10,22 +10,22 @@ repos:
     hooks:
       # Prevenir commits a main/dev directamente
       - id: no-commit-to-branch
-        args: ['--branch', 'main', '--branch', 'dev']
+        args: ["--branch", "main", "--branch", "dev"]
 
       # Remover espacios en blanco al final de líneas
       - id: trailing-whitespace
-        args: ['--markdown-linebreak-ext=md']
+        args: ["--markdown-linebreak-ext=md"]
 
       # Asegurar que archivos terminan con salto de línea
       - id: end-of-file-fixer
 
       # Prevenir archivos grandes (>500KB)
       - id: check-added-large-files
-        args: ['--maxkb=500']
+        args: ["--maxkb=500"]
 
       # Validar sintaxis YAML
       - id: check-yaml
-        args: ['--unsafe']  # Permite templates de GitHub Actions
+        args: ["--unsafe"] # Permite templates de GitHub Actions
 
       # Validar sintaxis JSON
       - id: check-json
@@ -66,7 +66,7 @@ repos:
       # golangci-lint - Linting completo (opcional, puede ser lento)
       - id: golangci-lint
         name: golangci-lint
-        entry: bash -c 'golangci-lint run --fast'
+        entry: bash -c 'golangci-lint run'
         language: system
         files: \.go$
         pass_filenames: false

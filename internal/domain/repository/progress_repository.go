@@ -3,22 +3,22 @@ package repository
 import (
 	"context"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 // ProgressReader define operaciones de lectura para Progress
 // Principio ISP: Separar lectura de escritura y estadísticas
 type ProgressReader interface {
-	FindByMaterialAndUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*entity.Progress, error)
+	FindByMaterialAndUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*pgentities.Progress, error)
 }
 
 // ProgressWriter define operaciones de escritura para Progress
 type ProgressWriter interface {
-	Save(ctx context.Context, progress *entity.Progress) error
-	Update(ctx context.Context, progress *entity.Progress) error
+	Save(ctx context.Context, progress *pgentities.Progress) error
+	Update(ctx context.Context, progress *pgentities.Progress) error
 	// Upsert realiza INSERT o UPDATE idempotente usando ON CONFLICT de PostgreSQL
-	Upsert(ctx context.Context, progress *entity.Progress) (*entity.Progress, error)
+	Upsert(ctx context.Context, progress *pgentities.Progress) (*pgentities.Progress, error)
 }
 
 // ProgressStats define operaciones de estadísticas para Progress

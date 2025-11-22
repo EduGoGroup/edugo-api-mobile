@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
@@ -12,25 +12,25 @@ import (
 // Principio ISP: Separar lectura de escritura y estadísticas
 type MaterialReader interface {
 	// FindByID busca un material por ID
-	FindByID(ctx context.Context, id valueobject.MaterialID) (*entity.Material, error)
+	FindByID(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, error)
 
 	// FindByIDWithVersions busca un material por ID incluyendo su historial de versiones
-	FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*entity.Material, []*entity.MaterialVersion, error)
+	FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, []*pgentities.MaterialVersion, error)
 
 	// List lista materiales con filtros
-	List(ctx context.Context, filters ListFilters) ([]*entity.Material, error)
+	List(ctx context.Context, filters ListFilters) ([]*pgentities.Material, error)
 
 	// FindByAuthor busca materiales de un autor
-	FindByAuthor(ctx context.Context, authorID valueobject.UserID) ([]*entity.Material, error)
+	FindByAuthor(ctx context.Context, authorID valueobject.UserID) ([]*pgentities.Material, error)
 }
 
 // MaterialWriter define operaciones de escritura para Material
 type MaterialWriter interface {
 	// Create crea un nuevo material
-	Create(ctx context.Context, material *entity.Material) error
+	Create(ctx context.Context, material *pgentities.Material) error
 
 	// Update actualiza un material
-	Update(ctx context.Context, material *entity.Material) error
+	Update(ctx context.Context, material *pgentities.Material) error
 
 	// UpdateStatus actualiza el status del material
 	UpdateStatus(ctx context.Context, id valueobject.MaterialID, status enum.MaterialStatus) error

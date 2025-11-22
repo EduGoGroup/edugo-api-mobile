@@ -9,6 +9,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"github.com/EduGoGroup/edugo-shared/logger"
 )
 
@@ -72,14 +73,14 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		return nil, errors.NewDatabaseError("find user", err)
 	}
 
-	if user == nil || !user.IsActive() {
+	if user == nil || !user.IsActive {
 		// Registrar intento fallido
 		s.recordLoginAttempt(ctx, req.Email, client.IP, false, client.UserAgent)
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
 	// Verificar password con bcrypt
-	err = auth.VerifyPassword(user.PasswordHash(), req.Password)
+	err = auth.VerifyPassword(user.PasswordHash, req.Password)
 	if err != nil {
 		s.logger.Warn("invalid password attempt", "email", req.Email)
 		// Registrar intento fallido
@@ -89,9 +90,9 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 
 	// Generar access token JWT (15 minutos)
 	accessToken, err := s.jwtManager.GenerateToken(
-		user.ID().String(),
-		user.Email().String(),
-		user.Role(),
+		user.ID.String(),
+		user.Email,
+		enum.SystemRole(user.Role),
 		15*time.Minute,
 	)
 	if err != nil {
@@ -110,7 +111,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	tokenData := repository.RefreshTokenData{
 		ID:         valueobject.NewUserID().UUID().UUID,
 		TokenHash:  refreshToken.TokenHash,
-		UserID:     user.ID().UUID().UUID,
+		UserID:     user.ID,
 		ClientInfo: map[string]string{},
 		ExpiresAt:  refreshToken.ExpiresAt,
 		CreatedAt:  time.Now(),
@@ -125,9 +126,9 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	s.recordLoginAttempt(ctx, req.Email, client.IP, true, client.UserAgent)
 
 	s.logger.Info("user logged in",
-		"user_id", user.ID().String(),
-		"email", user.Email().String(),
-		"role", user.Role().String(),
+		"user_id", user.ID.String(),
+		"email", user.Email,
+		"role", user.Role,
 	)
 
 	return &dto.LoginResponse{
@@ -136,12 +137,12 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		ExpiresIn:    900, // 15 minutos en segundos
 		TokenType:    "Bearer",
 		User: dto.UserInfo{
-			ID:        user.ID().String(),
-			Email:     user.Email().String(),
-			FirstName: user.FirstName(),
-			LastName:  user.LastName(),
-			FullName:  user.FullName(),
-			Role:      user.Role().String(),
+			ID:        user.ID.String(),
+			Email:     user.Email,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			FullName:  user.FirstName + " " + user.LastName,
+			Role:      user.Role,
 		},
 	}, nil
 }
@@ -184,16 +185,16 @@ func (s *authService) RefreshAccessToken(ctx context.Context, refreshTokenStr st
 		s.logger.Error("error finding user", "error", err, "user_id", tokenData.UserID.String())
 		return nil, errors.NewDatabaseError("find user", err)
 	}
-	if user == nil || !user.IsActive() {
+	if user == nil || !user.IsActive {
 		s.logger.Warn("user not found or inactive", "user_id", tokenData.UserID.String())
 		return nil, errors.NewUnauthorizedError("user not found or inactive")
 	}
 
 	// 6. Generar nuevo access token
 	newAccessToken, err := s.jwtManager.GenerateToken(
-		user.ID().String(),
-		user.Email().String(),
-		user.Role(),
+		user.ID.String(),
+		user.Email,
+		enum.SystemRole(user.Role),
 		15*time.Minute,
 	)
 	if err != nil {
@@ -201,7 +202,7 @@ func (s *authService) RefreshAccessToken(ctx context.Context, refreshTokenStr st
 		return nil, errors.NewInternalError("token generation failed", err)
 	}
 
-	s.logger.Info("access token refreshed", "user_id", user.ID().String())
+	s.logger.Info("access token refreshed", "user_id", user.ID.String())
 
 	return &dto.RefreshResponse{
 		AccessToken: newAccessToken,

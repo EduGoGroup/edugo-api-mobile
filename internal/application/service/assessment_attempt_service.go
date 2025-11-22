@@ -9,9 +9,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
+	domainServices "github.com/EduGoGroup/edugo-api-mobile/internal/domain/services"
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 )
@@ -33,11 +34,13 @@ type AssessmentAttemptService interface {
 }
 
 type assessmentAttemptService struct {
-	assessmentRepo repositories.AssessmentRepository
-	attemptRepo    repositories.AttemptRepository
-	answerRepo     repositories.AnswerRepository
-	mongoRepo      mongoRepo.AssessmentDocumentRepository
-	logger         logger.Logger
+	assessmentRepo      repositories.AssessmentRepository
+	attemptRepo         repositories.AttemptRepository
+	answerRepo          repositories.AnswerRepository
+	mongoRepo           mongoRepo.AssessmentDocumentRepository
+	assessmentDomainSvc *domainServices.AssessmentDomainService
+	attemptDomainSvc    *domainServices.AttemptDomainService
+	logger              logger.Logger
 }
 
 // NewAssessmentAttemptService crea una nueva instancia del servicio
@@ -49,11 +52,13 @@ func NewAssessmentAttemptService(
 	logger logger.Logger,
 ) AssessmentAttemptService {
 	return &assessmentAttemptService{
-		assessmentRepo: assessmentRepo,
-		attemptRepo:    attemptRepo,
-		answerRepo:     answerRepo,
-		mongoRepo:      mongoRepo,
-		logger:         logger,
+		assessmentRepo:      assessmentRepo,
+		attemptRepo:         attemptRepo,
+		answerRepo:          answerRepo,
+		mongoRepo:           mongoRepo,
+		assessmentDomainSvc: domainServices.NewAssessmentDomainService(),
+		attemptDomainSvc:    domainServices.NewAttemptDomainService(),
+		logger:              logger,
 	}
 }
 
@@ -82,15 +87,31 @@ func (s *assessmentAttemptService) GetAssessmentByMaterialID(ctx context.Context
 	// 3. Sanitizar preguntas (remover correct_answer y feedback)
 	sanitizedQuestions := sanitizeQuestions(mongoDoc.Questions)
 
-	// 4. Construir response DTO
+	// 4. Convertir campos nullable a valores concretos para DTO
+	title := ""
+	if assessment.Title != nil {
+		title = *assessment.Title
+	}
+
+	totalQuestions := assessment.QuestionsCount // Usar QuestionsCount no-nullable
+	if assessment.TotalQuestions != nil {
+		totalQuestions = *assessment.TotalQuestions
+	}
+
+	passThreshold := 60 // Default
+	if assessment.PassThreshold != nil {
+		passThreshold = *assessment.PassThreshold
+	}
+
+	// 5. Construir response DTO
 	return &dto.AssessmentResponse{
 		AssessmentID:         assessment.ID,
 		MaterialID:           assessment.MaterialID,
-		Title:                assessment.Title,
-		TotalQuestions:       assessment.TotalQuestions,
-		PassThreshold:        assessment.PassThreshold,
-		MaxAttempts:          assessment.MaxAttempts,
-		TimeLimitMinutes:     assessment.TimeLimitMinutes,
+		Title:                title,
+		TotalQuestions:       totalQuestions,
+		PassThreshold:        passThreshold,
+		MaxAttempts:          assessment.MaxAttempts,      // Nullable OK en DTO
+		TimeLimitMinutes:     assessment.TimeLimitMinutes, // Nullable OK en DTO
 		EstimatedTimeMinutes: mongoDoc.Metadata.EstimatedTimeMinutes,
 		Questions:            sanitizedQuestions,
 	}, nil
@@ -113,7 +134,7 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 		return nil, errors.NewDatabaseError("count attempts", err)
 	}
 
-	if !assessment.CanAttempt(attemptCount) {
+	if !s.assessmentDomainSvc.CanAttempt(assessment, attemptCount) {
 		return nil, errors.NewValidationError("max attempts reached")
 	}
 
@@ -131,20 +152,33 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 	// 5. VALIDAR RESPUESTAS Y CALCULAR SCORE EN SERVIDOR
 	answers, correctCount, feedback := s.validateAndScoreAnswers(mongoDoc.Questions, req.Answers)
 
-	// 6. Calcular timestamps
+	// 6. Calcular timestamps y score
 	completedAt := startTime.Add(time.Duration(req.TimeSpentSeconds) * time.Second)
+	score := s.attemptDomainSvc.CalculateScore(answers)
+	percentage := score // Score ya es porcentaje (0-100)
+	maxScore := 100.0
+	timeSpent := req.TimeSpentSeconds
 
-	// 7. Crear entity Attempt con score calculado en servidor
-	attempt, err := entities.NewAttempt(
-		assessment.ID,
-		studentID,
-		answers,
-		startTime,
-		completedAt,
-	)
-	if err != nil {
-		s.logger.Error("failed to create attempt entity", zap.Error(err))
-		return nil, errors.NewValidationError("invalid attempt data")
+	// 7. Crear entity Attempt manualmente (no existe constructor NewAttempt)
+	attemptID := uuid.New()
+	attempt := &pgentities.AssessmentAttempt{
+		ID:               attemptID,
+		AssessmentID:     assessment.ID,
+		StudentID:        studentID,
+		StartedAt:        startTime,
+		CompletedAt:      &completedAt,
+		Score:            &score,
+		MaxScore:         &maxScore,
+		Percentage:       &percentage,
+		TimeSpentSeconds: &timeSpent,
+		Status:           "completed",
+		CreatedAt:        time.Now().UTC(),
+		UpdatedAt:        time.Now().UTC(),
+	}
+
+	// Asignar attemptID a todas las respuestas
+	for _, answer := range answers {
+		answer.AttemptID = attemptID
 	}
 
 	// 8. Persistir intento (PostgreSQL con transacción ACID)
@@ -153,44 +187,57 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 		return nil, errors.NewDatabaseError("save attempt", err)
 	}
 
-	// 9. Verificar si puede hacer más intentos
-	canRetake := assessment.CanAttempt(attemptCount + 1)
+	// 9. Persistir respuestas
+	if err := s.answerRepo.Save(ctx, answers); err != nil {
+		s.logger.Error("failed to save answers", zap.Error(err))
+		return nil, errors.NewDatabaseError("save answers", err)
+	}
 
-	// 10. Calcular previous best score (opcional)
+	// 10. Verificar si puede hacer más intentos
+	canRetake := s.assessmentDomainSvc.CanAttempt(assessment, attemptCount+1)
+
+	// 11. Calcular previous best score (opcional)
 	var previousBestScore *int
 	previousAttempts, _ := s.attemptRepo.FindByStudentAndAssessment(ctx, studentID, assessment.ID)
 	if len(previousAttempts) > 1 { // Más de 1 porque ya guardamos el actual
-		best := 0
+		best := 0.0
 		for _, prev := range previousAttempts {
-			if prev.ID != attempt.ID && prev.Score > best {
-				best = prev.Score
+			if prev.ID != attempt.ID && prev.Score != nil && *prev.Score > best {
+				best = *prev.Score
 			}
 		}
 		if best > 0 {
-			previousBestScore = &best
+			bestInt := int(best)
+			previousBestScore = &bestInt
 		}
 	}
 
 	s.logger.Info("attempt created successfully",
 		zap.String("attempt_id", attempt.ID.String()),
 		zap.String("student_id", studentID.String()),
-		zap.Int("score", attempt.Score),
+		zap.Float64("score", score),
 		zap.Int("correct_answers", correctCount),
 	)
 
-	// 11. Retornar resultado con feedback
+	// 12. Obtener pass threshold (nullable, default 60)
+	passThreshold := 60
+	if assessment.PassThreshold != nil {
+		passThreshold = *assessment.PassThreshold
+	}
+
+	// 13. Retornar resultado con feedback
 	return &dto.AttemptResultResponse{
 		AttemptID:         attempt.ID,
 		AssessmentID:      assessment.ID,
-		Score:             attempt.Score,
+		Score:             int(score),
 		MaxScore:          100,
 		CorrectAnswers:    correctCount,
 		TotalQuestions:    len(mongoDoc.Questions),
-		PassThreshold:     assessment.PassThreshold,
-		Passed:            attempt.IsPassed(assessment.PassThreshold),
-		TimeSpentSeconds:  attempt.TimeSpentSeconds,
+		PassThreshold:     passThreshold, // DTO espera int, no *int
+		Passed:            s.attemptDomainSvc.IsPassed(attempt, passThreshold),
+		TimeSpentSeconds:  timeSpent,
 		StartedAt:         attempt.StartedAt,
-		CompletedAt:       attempt.CompletedAt,
+		CompletedAt:       *attempt.CompletedAt, // Desreferenciar *time.Time
 		Feedback:          feedback,
 		CanRetake:         canRetake,
 		PreviousBestScore: previousBestScore,
@@ -226,40 +273,66 @@ func (s *assessmentAttemptService) GetAttemptResult(ctx context.Context, attempt
 		return nil, errors.NewNotFoundError("assessment questions")
 	}
 
-	// 5. Generar feedback desde answers
-	feedback := s.generateFeedback(mongoDoc.Questions, attempt.Answers)
+	// 5. Cargar respuestas del intento (no están en la entity)
+	answers, err := s.answerRepo.FindByAttemptID(ctx, attemptID)
+	if err != nil {
+		s.logger.Error("failed to find answers", zap.Error(err))
+		return nil, errors.NewDatabaseError("find answers", err)
+	}
 
-	// 6. Verificar si puede hacer más intentos
+	// 6. Generar feedback desde answers
+	feedback := s.generateFeedback(mongoDoc.Questions, answers)
+
+	// 7. Verificar si puede hacer más intentos
 	attemptCount, _ := s.attemptRepo.CountByStudentAndAssessment(ctx, studentID, assessment.ID)
-	canRetake := assessment.CanAttempt(attemptCount)
+	canRetake := s.assessmentDomainSvc.CanAttempt(assessment, attemptCount)
 
-	// 7. Calcular previous best score
+	// 8. Calcular previous best score
 	var previousBestScore *int
 	previousAttempts, _ := s.attemptRepo.FindByStudentAndAssessment(ctx, studentID, assessment.ID)
 	if len(previousAttempts) > 1 {
-		best := 0
+		best := 0.0
 		for _, prev := range previousAttempts {
-			if prev.ID != attempt.ID && prev.Score > best {
-				best = prev.Score
+			if prev.ID != attempt.ID && prev.Score != nil && *prev.Score > best {
+				best = *prev.Score
 			}
 		}
 		if best > 0 {
-			previousBestScore = &best
+			bestInt := int(best)
+			previousBestScore = &bestInt
 		}
+	}
+
+	// 9. Obtener pass threshold (nullable, default 60)
+	passThreshold := 60
+	if assessment.PassThreshold != nil {
+		passThreshold = *assessment.PassThreshold
+	}
+
+	// 10. Obtener score del attempt (nullable)
+	score := 0
+	if attempt.Score != nil {
+		score = int(*attempt.Score)
+	}
+
+	// 11. Obtener time spent (nullable)
+	timeSpent := 0
+	if attempt.TimeSpentSeconds != nil {
+		timeSpent = *attempt.TimeSpentSeconds
 	}
 
 	return &dto.AttemptResultResponse{
 		AttemptID:         attempt.ID,
 		AssessmentID:      assessment.ID,
-		Score:             attempt.Score,
+		Score:             score,
 		MaxScore:          100,
-		CorrectAnswers:    attempt.GetCorrectAnswersCount(),
-		TotalQuestions:    attempt.GetTotalQuestions(),
-		PassThreshold:     assessment.PassThreshold,
-		Passed:            attempt.IsPassed(assessment.PassThreshold),
-		TimeSpentSeconds:  attempt.TimeSpentSeconds,
+		CorrectAnswers:    s.attemptDomainSvc.GetCorrectAnswersCount(answers),
+		TotalQuestions:    s.attemptDomainSvc.GetTotalQuestions(answers),
+		PassThreshold:     passThreshold, // DTO espera int, no *int
+		Passed:            s.attemptDomainSvc.IsPassed(attempt, passThreshold),
+		TimeSpentSeconds:  timeSpent,
 		StartedAt:         attempt.StartedAt,
-		CompletedAt:       attempt.CompletedAt,
+		CompletedAt:       *attempt.CompletedAt, // Desreferenciar *time.Time
 		Feedback:          feedback,
 		CanRetake:         canRetake,
 		PreviousBestScore: previousBestScore,
@@ -284,16 +357,40 @@ func (s *assessmentAttemptService) GetAttemptHistory(ctx context.Context, studen
 			continue // Skip si no se encuentra assessment
 		}
 
+		// Obtener pass threshold (nullable, default 60)
+		passThreshold := 60
+		if assessment.PassThreshold != nil {
+			passThreshold = *assessment.PassThreshold
+		}
+
+		// Obtener score (nullable)
+		score := 0
+		if attempt.Score != nil {
+			score = int(*attempt.Score)
+		}
+
+		// Obtener time spent (nullable)
+		timeSpent := 0
+		if attempt.TimeSpentSeconds != nil {
+			timeSpent = *attempt.TimeSpentSeconds
+		}
+
+		// Obtener material title (nullable)
+		materialTitle := ""
+		if assessment.Title != nil {
+			materialTitle = *assessment.Title
+		}
+
 		summaries = append(summaries, dto.AttemptSummaryDTO{
 			AttemptID:        attempt.ID,
 			AssessmentID:     assessment.ID,
 			MaterialID:       assessment.MaterialID,
-			MaterialTitle:    assessment.Title,
-			Score:            attempt.Score,
+			MaterialTitle:    materialTitle, // DTO espera string, no *string
+			Score:            score,
 			MaxScore:         100,
-			Passed:           attempt.IsPassed(assessment.PassThreshold),
-			TimeSpentSeconds: attempt.TimeSpentSeconds,
-			CompletedAt:      attempt.CompletedAt,
+			Passed:           s.attemptDomainSvc.IsPassed(attempt, passThreshold),
+			TimeSpentSeconds: timeSpent,
+			CompletedAt:      *attempt.CompletedAt, // Desreferenciar *time.Time
 		})
 	}
 
@@ -342,18 +439,20 @@ func sanitizeQuestions(questions []mongoRepo.Question) []dto.QuestionDTO {
 func (s *assessmentAttemptService) validateAndScoreAnswers(
 	questions []mongoRepo.Question,
 	userAnswers []dto.UserAnswerDTO,
-) ([]*entities.Answer, int, []dto.AnswerFeedbackDTO) {
-	answers := make([]*entities.Answer, 0, len(userAnswers))
+) ([]*pgentities.AssessmentAttemptAnswer, int, []dto.AnswerFeedbackDTO) {
+	answers := make([]*pgentities.AssessmentAttemptAnswer, 0, len(userAnswers))
 	feedback := make([]dto.AnswerFeedbackDTO, 0, len(userAnswers))
 	correctCount := 0
 
-	// Crear mapa de preguntas para lookup rápido
+	// Crear mapa de preguntas para lookup rápido (por índice)
 	questionMap := make(map[string]mongoRepo.Question)
-	for _, q := range questions {
+	for i, q := range questions {
 		questionMap[q.ID] = q
+		// También mapear por índice para facilitar lookup
+		questionMap[fmt.Sprintf("%d", i)] = q
 	}
 
-	for _, userAnswer := range userAnswers {
+	for i, userAnswer := range userAnswers {
 		// Buscar pregunta correspondiente
 		question, exists := questionMap[userAnswer.QuestionID]
 		if !exists {
@@ -368,17 +467,26 @@ func (s *assessmentAttemptService) validateAndScoreAnswers(
 			correctCount++
 		}
 
-		// Crear entity Answer
-		answer, err := entities.NewAnswer(
-			uuid.Nil, // Attempt ID se asigna después
-			userAnswer.QuestionID,
-			userAnswer.SelectedAnswerID,
-			isCorrect,
-			userAnswer.TimeSpentSeconds,
-		)
-		if err != nil {
-			s.logger.Error("failed to create answer entity", zap.Error(err))
-			continue
+		// Calcular puntos (simple: 100/total_questions por respuesta correcta)
+		pointsEarned := 0.0
+		if isCorrect {
+			pointsEarned = 100.0 / float64(len(questions))
+		}
+		maxPoints := 100.0 / float64(len(questions))
+
+		// Crear entity Answer manualmente (no existe constructor NewAnswer)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        uuid.Nil, // Se asigna después
+			QuestionIndex:    i,        // Usar índice basado en posición
+			StudentAnswer:    &userAnswer.SelectedAnswerID,
+			IsCorrect:        &isCorrect,
+			PointsEarned:     &pointsEarned,
+			MaxPoints:        &maxPoints,
+			TimeSpentSeconds: &userAnswer.TimeSpentSeconds,
+			AnsweredAt:       time.Now().UTC(),
+			CreatedAt:        time.Now().UTC(),
+			UpdatedAt:        time.Now().UTC(),
 		}
 
 		answers = append(answers, answer)
@@ -405,34 +513,48 @@ func (s *assessmentAttemptService) validateAndScoreAnswers(
 }
 
 // generateFeedback genera feedback desde answers persistidas
-func (s *assessmentAttemptService) generateFeedback(questions []mongoRepo.Question, answers []*entities.Answer) []dto.AnswerFeedbackDTO {
+func (s *assessmentAttemptService) generateFeedback(questions []mongoRepo.Question, answers []*pgentities.AssessmentAttemptAnswer) []dto.AnswerFeedbackDTO {
 	feedback := make([]dto.AnswerFeedbackDTO, 0, len(answers))
 
-	// Crear mapa de preguntas
-	questionMap := make(map[string]mongoRepo.Question)
-	for _, q := range questions {
-		questionMap[q.ID] = q
+	// Crear array indexado de preguntas para lookup por QuestionIndex
+	if len(questions) == 0 {
+		return feedback
 	}
 
 	for _, answer := range answers {
-		question, exists := questionMap[answer.QuestionID]
-		if !exists {
+		// Validar que el índice esté dentro del rango
+		if answer.QuestionIndex < 0 || answer.QuestionIndex >= len(questions) {
+			s.logger.Warn("invalid question_index", zap.Int("index", answer.QuestionIndex))
 			continue
 		}
 
+		question := questions[answer.QuestionIndex]
+
+		// Obtener selectedOption (nullable)
+		selectedOption := ""
+		if answer.StudentAnswer != nil {
+			selectedOption = *answer.StudentAnswer
+		}
+
+		// Obtener isCorrect (nullable, default false)
+		isCorrect := false
+		if answer.IsCorrect != nil {
+			isCorrect = *answer.IsCorrect
+		}
+
 		var message string
-		if answer.IsCorrect {
+		if isCorrect {
 			message = question.Feedback.Correct
 		} else {
 			message = question.Feedback.Incorrect
 		}
 
 		feedback = append(feedback, dto.AnswerFeedbackDTO{
-			QuestionID:     answer.QuestionID,
+			QuestionID:     question.ID,
 			QuestionText:   question.Text,
-			SelectedOption: answer.SelectedAnswerID,
+			SelectedOption: selectedOption,
 			CorrectAnswer:  question.CorrectAnswer,
-			IsCorrect:      answer.IsCorrect,
+			IsCorrect:      isCorrect,
 			Message:        message,
 		})
 	}
