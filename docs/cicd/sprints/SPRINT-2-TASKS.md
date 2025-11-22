@@ -73,7 +73,8 @@
 ```bash
 #!/bin/bash
 # Paso 1: Navegar al repositorio
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Paso 2: Asegurar que estamos en dev actualizado
 git checkout dev
@@ -128,7 +129,7 @@ gh auth status
 
 set -e
 
-REPO_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile"
+REPO_PATH="$(git rev-parse --show-toplevel)"
 BACKUP_BRANCH="backup/pre-sprint-2-$(date +%Y%m%d)"
 WORK_BRANCH="feature/cicd-sprint-2-optimization"
 
@@ -199,14 +200,15 @@ echo "🚀 Siguiente paso: Ejecutar Tarea 2.2 (Migrar a Go 1.25)"
 
 ```bash
 # Crear directorio de scripts
-mkdir -p /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS
+REPO_PATH="$(git rev-parse --show-toplevel)"
+mkdir -p "$REPO_PATH/docs/cicd/assets/scripts"
 
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/prepare-sprint-2.sh << 'SCRIPT'
+cat > "$REPO_PATH/docs/cicd/assets/scripts/prepare-sprint-2.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/prepare-sprint-2.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/prepare-sprint-2.sh"
 ```
 
 #### Criterios de Validación
@@ -223,7 +225,8 @@ chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-anal
 
 ```bash
 # Ejecutar este comando para validar
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 git branch --show-current  # Debe mostrar: feature/cicd-sprint-2-optimization
 git status                  # Debe mostrar: nothing to commit, working tree clean
 go version                  # Debe funcionar
@@ -286,7 +289,7 @@ Esta es la **tarea PILOTO** más importante del sprint. Validamos aquí primero 
 #!/bin/bash
 # migrate-to-go-1.25.sh
 
-REPO_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile"
+REPO_PATH="$(git rev-parse --show-toplevel)"
 
 cd "$REPO_PATH"
 
@@ -388,20 +391,22 @@ echo "  4. Continuar con Tarea 2.3 (Validar compilación)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/migrate-to-go-1.25.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/migrate-to-go-1.25.sh"
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/migrate-to-go-1.25.sh
+"$REPO_PATH/docs/cicd/assets/scripts/migrate-to-go-1.25.sh"
 ```
 
 #### Revisar Cambios
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Ver todos los cambios
 git diff
@@ -415,7 +420,8 @@ git diff Dockerfile
 #### Commitear Cambios
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Agregar cambios
 git add .
@@ -441,8 +447,7 @@ Validaciones locales exitosas:
 - ✅ go test -short ./...
 
 Referencias:
-- Análisis: 00-Projects-Isolated/cicd-analysis/08-RESULTADO-PRUEBAS-GO-1.25.md
-- Sprint: 00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SPRINT-2-TASKS.md
+- Sprint: docs/cicd/sprints/SPRINT-2-TASKS.md
 
 🤖 Generated with Claude Code
 
@@ -467,7 +472,8 @@ git push origin feature/cicd-sprint-2-optimization
 
 ```bash
 # Validar cambios
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # 1. Verificar go.mod
 grep "go 1.25" go.mod  # Debe aparecer
@@ -536,7 +542,8 @@ go test -short ./...  # -short skips integration tests
 
 ```bash
 # Si algo sale mal, rollback completo
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 git reset --hard HEAD~1  # Deshacer commit
 git push -f origin feature/cicd-sprint-2-optimization  # Force push
 ```
@@ -562,7 +569,7 @@ git push -f origin feature/cicd-sprint-2-optimization  # Force push
 #!/bin/bash
 # validate-go-1.25-local.sh
 
-REPO_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile"
+REPO_PATH="$(git rev-parse --show-toplevel)"
 
 cd "$REPO_PATH"
 
@@ -697,14 +704,15 @@ echo "🚀 Siguiente paso: Tarea 2.4 (Validar en CI)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-local.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-local.sh"
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-local.sh
+"$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-local.sh"
 ```
 
 #### Criterios de Validación
@@ -722,10 +730,11 @@ chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-anal
 #### Checkpoint
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Ejecutar validación completa
-./path/to/validate-go-1.25-local.sh
+./docs/cicd/assets/scripts/validate-go-1.25-local.sh
 
 # O manualmente:
 go version  # Debe mostrar 1.25
@@ -807,7 +816,7 @@ docker build --progress=plain -t test .
 #!/bin/bash
 # validate-go-1.25-ci.sh
 
-REPO_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile"
+REPO_PATH="$(git rev-parse --show-toplevel)"
 BRANCH="feature/cicd-sprint-2-optimization"
 
 cd "$REPO_PATH"
@@ -879,9 +888,9 @@ Esperando que pasen:
 
 ## Referencias
 
-- Análisis: \`00-Projects-Isolated/cicd-analysis/08-RESULTADO-PRUEBAS-GO-1.25.md\`
-- Sprint: \`00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SPRINT-2-TASKS.md\`
+- Sprint: `docs/cicd/sprints/SPRINT-2-TASKS.md`
 - Tarea: Sprint 2 - Tarea 2.4
+- Tracking: `docs/cicd/tracking/SPRINT-2-COMPLETE.md`
 
 ## Rollback Plan
 
@@ -990,21 +999,23 @@ echo "   Revisar manualmente: gh pr view $PR_NUMBER --web"
 #### Guardar Script
 
 ```bash
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-ci.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-ci.sh"
 ```
 
 #### Ejecutar Validación en CI
 
 ```bash
 # Opción A: Usar script automatizado
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/validate-go-1.25-ci.sh
+REPO_PATH="$(git rev-parse --show-toplevel)"
+"$REPO_PATH/docs/cicd/assets/scripts/validate-go-1.25-ci.sh"
 
 # Opción B: Manualmente
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+cd "$REPO_PATH"
 
 # Crear PR draft
 gh pr create \
@@ -1176,7 +1187,8 @@ gh run view --log-failed | grep -A 50 "docker build"
 Si CI falla y no es fácil de corregir:
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Opción 1: Revert del commit (mantener rama)
 git revert HEAD
@@ -1200,7 +1212,7 @@ Error: <descripción>
 Acción: Rollback a Go 1.24.10
 Next: Investigar causa raíz
 
-" >> /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/LOGS.md
+" >> "$REPO_PATH/docs/cicd/LOGS.md"
 ```
 
 #### Si Todo Pasa ✅
@@ -1417,7 +1429,7 @@ jobs:
 #!/bin/bash
 # implement-parallelism-pr-to-dev.sh
 
-REPO_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile"
+REPO_PATH="$(git rev-parse --show-toplevel)"
 WORKFLOW_FILE=".github/workflows/pr-to-dev.yml"
 
 cd "$REPO_PATH"
@@ -1545,20 +1557,22 @@ echo "  3. Validar en CI: Push y monitorear"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/implement-parallelism-pr-to-dev.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/implement-parallelism-pr-to-dev.sh"
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/implement-parallelism-pr-to-dev.sh
+"$REPO_PATH/docs/cicd/assets/scripts/implement-parallelism-pr-to-dev.sh"
 ```
 
 #### Commitear Cambios
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Verificar cambios
 git diff .github/workflows/pr-to-dev.yml
@@ -1588,7 +1602,7 @@ Validación:
 - Backup creado (.backup)
 
 Referencias:
-- Sprint: 00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SPRINT-2-TASKS.md
+- Sprint: docs/cicd/sprints/SPRINT-2-TASKS.md
 - Tarea: 2.5
 
 🤖 Generated with Claude Code

@@ -4,10 +4,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 📍 Estás en: 03-api-mobile/ (plan de implementación)      │
-│ 📂 Ruta: implementation-plans/03-api-mobile/              │
-│ ⚠️ NO uses archivos de otros proyectos (01, 02, etc.)    │
-│ ✅ SOLO usa archivos dentro de 03-api-mobile/            │
+│ 📍 Estás en: docs/cicd/ (documentación CI/CD)             │
+│ 📂 Ruta: edugo-api-mobile/docs/cicd/                     │
+│ ⚠️ Toda la documentación CI/CD está en esta carpeta      │
+│ ✅ Usa rutas relativas a docs/cicd/                      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -18,28 +18,28 @@
 ## 🗺️ MAPA DE UBICACIÓN
 
 ```
-00-Projects-Isolated/cicd-analysis/implementation-plans/
+edugo-api-mobile/
 │
-├── 01-shared/                                  ← Otro proyecto
-├── 02-infrastructure/                          ← Otro proyecto
-│
-└── 03-api-mobile/                              ← 👉 ESTÁS AQUÍ
-    ├── START-HERE.md                           ← Este archivo
-    ├── INDEX.md                                ← Navegación completa
-    ├── PROMPTS.md                              ← Prompts para cada fase
-    ├── README.md                               ← Contexto del proyecto
-    ├── docs/                                   ← Documentación
-    ├── sprints/                                ← ⭐ Planes de sprint
-    │   ├── SPRINT-2-TASKS.md                   ← Migración + Optimización
-    │   ├── SPRINT-4-TASKS.md                   ← Workflows Reusables
-    │   └── SPRINT-ENTITIES-ADAPTATION.md
-    ├── tracking/                               ← Estado y seguimiento
-    │   ├── SPRINT-STATUS.md                    ← Estado actual
-    │   ├── REGLAS.md                           ← Reglas de ejecución
-    │   └── PR-TEMPLATE.md                      ← Template de PR
-    └── assets/                                 ← Scripts y recursos
-        ├── scripts/
-        └── workflows/
+└── docs/
+    └── cicd/                                   ← 👉 ESTÁS AQUÍ
+        ├── START-HERE.md                       ← Este archivo
+        ├── INDEX.md                            ← Navegación completa
+        ├── PROMPTS.md                          ← Prompts para cada fase
+        ├── README.md                           ← Contexto del proyecto
+        ├── WORKFLOWS-REUSABLES-GUIDE.md        ← Guía de workflows
+        ├── docs/                               ← Documentación adicional
+        ├── sprints/                            ← ⭐ Planes de sprint
+        │   ├── SPRINT-2-TASKS.md               ← Migración + Optimización
+        │   ├── SPRINT-4-TASKS.md               ← Workflows Reusables
+        │   └── SPRINT-ENTITIES-ADAPTATION.md
+        ├── tracking/                           ← Estado y seguimiento
+        │   ├── decisions/                      ← Decisiones técnicas
+        │   ├── SPRINT-2-COMPLETE.md
+        │   ├── SPRINT-4-METRICAS-FINALES.md
+        │   └── FASE-2-VALIDATION.md
+        └── assets/                             ← Scripts y recursos
+            ├── scripts/
+            └── workflows/
 ```
 
 ---
@@ -48,14 +48,15 @@
 
 ### 🔍 Opción 1: Ver Estado Actual del Proyecto
 ```bash
-cat tracking/SPRINT-STATUS.md | head -40
+cat docs/cicd/tracking/SPRINT-2-COMPLETE.md
+cat docs/cicd/tracking/SPRINT-4-METRICAS-FINALES.md
 ```
 
-Lee el archivo para saber:
-- Sprint activo
-- Fase actual (1, 2, o 3)
-- Progreso
-- Próxima tarea
+Lee los archivos para saber:
+- Sprints completados
+- Estado de implementación
+- Métricas finales
+- Próximos pasos
 
 ### ▶️ Opción 2: Continuar Trabajo desde donde quedó
 
@@ -91,11 +92,11 @@ Ver detalles en: [PROMPTS.md](PROMPTS.md#fase-1)
 |-----------|----------|
 | 🗺️ Navegar el proyecto | [INDEX.md](INDEX.md) |
 | 🎯 Prompts para ejecutar | [PROMPTS.md](PROMPTS.md) ⭐ |
-| 📊 Estado actual | [tracking/SPRINT-STATUS.md](tracking/SPRINT-STATUS.md) |
-| 📜 Reglas de ejecución | [tracking/REGLAS.md](tracking/REGLAS.md) |
+| 📊 Estado actual | [tracking/SPRINT-2-COMPLETE.md](tracking/SPRINT-2-COMPLETE.md) |
+| 📈 Métricas finales | [tracking/SPRINT-4-METRICAS-FINALES.md](tracking/SPRINT-4-METRICAS-FINALES.md) |
 | 📖 Contexto del proyecto | [README.md](README.md) |
 | 🎯 Ver tareas del sprint | [sprints/](sprints/) |
-| 📈 Ver progreso | [tracking/SPRINT-STATUS.md](tracking/SPRINT-STATUS.md) |
+| 🔍 Decisiones técnicas | [tracking/decisions/](tracking/decisions/) |
 
 ---
 
@@ -103,39 +104,40 @@ Ver detalles en: [PROMPTS.md](PROMPTS.md#fase-1)
 
 ### ⚠️ Antes de Hacer CUALQUIER COSA:
 
-1. **Lee SIEMPRE:** `INDEX.md`
+1. **Lee SIEMPRE:** `docs/cicd/INDEX.md`
 2. **Verifica ubicación:**
    ```bash
    pwd
-   # Debe contener: /03-api-mobile
+   # Debe estar en el root del proyecto: edugo-api-mobile/
    ```
-3. **Lee estado:** `tracking/SPRINT-STATUS.md`
+3. **Lee estado:** `docs/cicd/tracking/SPRINT-4-METRICAS-FINALES.md`
 4. **Identifica:**
-   - Sprint activo
-   - Fase actual
-   - Próxima tarea
+   - Sprints completados
+   - Estado de workflows
+   - Próximas mejoras
 
-### ⚠️ NO Uses Archivos Fuera de 03-api-mobile/
+### ⚠️ Estructura de la Documentación CI/CD
 
-**Archivos PROHIBIDOS:**
-- ❌ `/01-shared/*` (otro proyecto)
-- ❌ `/02-infrastructure/*` (otro proyecto)
-- ❌ `/04-api-admin/*` (otro proyecto)
-- ❌ Cualquier archivo fuera de 03-api-mobile/
+**Documentación está en:**
+- ✅ `docs/cicd/sprints/SPRINT-X-TASKS.md` - Planes de sprint
+- ✅ `docs/cicd/tracking/*` - Estado y métricas
+- ✅ `docs/cicd/docs/*` - Documentación adicional
+- ✅ `docs/cicd/assets/*` - Scripts y recursos
 
-**Archivos PERMITIDOS:**
-- ✅ `sprints/SPRINT-X-TASKS.md`
-- ✅ `tracking/*`
-- ✅ `docs/*`
+**Código del proyecto está en:**
+- ✅ `.github/workflows/*` - Workflows de CI/CD
+- ✅ `internal/*` - Código fuente
+- ✅ `cmd/*` - Aplicación principal
 
 ### ⚠️ Cómo Verificar que Estás en el Archivo Correcto:
 
 ```bash
-# Al abrir un archivo de sprint, verifica:
-readlink -f sprints/SPRINT-2-TASKS.md
-# Debe mostrar: .../03-api-mobile/sprints/SPRINT-2-TASKS.md
+# Al abrir un archivo de documentación CI/CD, verifica:
+ls -la docs/cicd/sprints/SPRINT-2-TASKS.md
+# Debe existir en: edugo-api-mobile/docs/cicd/sprints/
 
-# Si muestra otra ruta, estás en el lugar equivocado
+# Verificar workflows implementados:
+ls -la .github/workflows/
 ```
 
 ---
@@ -145,32 +147,39 @@ readlink -f sprints/SPRINT-2-TASKS.md
 - **Plan general del proyecto:** [README.md](README.md)
 - **Navegación completa:** [INDEX.md](INDEX.md)
 - **Prompts para ejecutar:** [PROMPTS.md](PROMPTS.md) ⭐
-- **Estado en tiempo real:** [tracking/SPRINT-STATUS.md](tracking/SPRINT-STATUS.md)
-- **Reglas de ejecución:** [tracking/REGLAS.md](tracking/REGLAS.md)
+- **Guía de workflows reusables:** [WORKFLOWS-REUSABLES-GUIDE.md](WORKFLOWS-REUSABLES-GUIDE.md)
+- **Estado de sprints:** [tracking/](tracking/)
 
 ---
 
 ## 📊 COMANDOS RÁPIDOS
 
-### Ver estado actual:
+### Ver estado actual del proyecto:
 ```bash
-cd /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile
-cat tracking/SPRINT-STATUS.md | head -40
+# Ver métricas finales del Sprint 4
+cat docs/cicd/tracking/SPRINT-4-METRICAS-FINALES.md
+
+# Ver completitud del Sprint 2
+cat docs/cicd/tracking/SPRINT-2-COMPLETE.md
 ```
 
-### Ver próxima tarea:
+### Ver workflows implementados:
 ```bash
-grep "⏳\|🔄" tracking/SPRINT-STATUS.md | head -1
+# Listar todos los workflows
+ls -1 .github/workflows/
+
+# Ver workflows reusables
+ls -1 .github/workflows/reusable-*.yml
 ```
 
 ### Ver sprints disponibles:
 ```bash
-ls -1 sprints/
+ls -1 docs/cicd/sprints/
 ```
 
-### Ver logs de sesiones anteriores:
+### Ver decisiones técnicas:
 ```bash
-ls -lt tracking/logs/ | head -5
+ls -1 docs/cicd/tracking/decisions/
 ```
 
 ---
@@ -185,14 +194,15 @@ Has llegado al final del índice. Ahora tienes:
 
 **Siguiente paso recomendado:**
 ```bash
-open README.md
-# Leer contexto completo (15-20 min)
-```
+# Leer contexto completo del proyecto
+cat docs/cicd/README.md
 
-O si ya estás listo:
-```bash
-open sprints/SPRINT-2-TASKS.md
-# Ir directamente a implementación
+# Ver guía de workflows reusables
+cat docs/cicd/WORKFLOWS-REUSABLES-GUIDE.md
+
+# Ver sprints completados
+cat docs/cicd/tracking/SPRINT-2-COMPLETE.md
+cat docs/cicd/tracking/SPRINT-4-METRICAS-FINALES.md
 ```
 
 ---

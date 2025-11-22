@@ -4,9 +4,9 @@
 
 ⚠️ **CONTEXTO DE UBICACIÓN:**
 ```
-📍 Estás en: 03-api-mobile/ (plan de implementación CI/CD)
-📍 Todas las rutas mencionadas son relativas a: 03-api-mobile/
-⚠️ NO uses archivos de otros proyectos (01-shared, 02-infrastructure, etc.)
+📍 Estás en: docs/cicd/ (documentación CI/CD de edugo-api-mobile)
+📍 Todas las rutas mencionadas son relativas al proyecto edugo-api-mobile/
+⚠️ Esta documentación es específica para este proyecto
 ```
 
 ---
@@ -21,7 +21,6 @@
 | **Tecnología** | Go + Gin + GORM + Swagger |
 | **Base de Datos** | PostgreSQL 15 |
 | **Repositorio** | https://github.com/EduGoGroup/edugo-api-mobile |
-| **Ruta Local** | `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile` |
 | **Workflows Actuales** | 5 |
 | **Success Rate** | 90% (9/10 últimas ejecuciones) ✅ |
 | **Estado** | ✅ Muy bueno (mejor después de shared) |
@@ -608,14 +607,12 @@ git revert <commit-lint-fixes>
 ## 📚 Referencias
 
 ### Documentación Interna
-- [Análisis Estado Actual](../../01-ANALISIS-ESTADO-ACTUAL.md)
-- [Propuestas de Mejora](../../02-PROPUESTAS-MEJORA.md)
-- [Matriz Comparativa](../../04-MATRIZ-COMPARATIVA.md)
-- [Quick Wins](../../05-QUICK-WINS.md)
-- [Resultado Pruebas Go 1.25](../../08-RESULTADO-PRUEBAS-GO-1.25.md)
 - [Sprint 2 Tasks](./sprints/SPRINT-2-TASKS.md)
 - [Sprint 4 Tasks](./sprints/SPRINT-4-TASKS.md)
 - [Sprint Entities Adaptation](./sprints/SPRINT-ENTITIES-ADAPTATION.md)
+- [Workflows Reusables Guide](./WORKFLOWS-REUSABLES-GUIDE.md)
+- [Tracking Sprint 2](./tracking/SPRINT-2-COMPLETE.md)
+- [Tracking Sprint 4](./tracking/SPRINT-4-METRICAS-FINALES.md)
 
 ### Documentación Externa
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

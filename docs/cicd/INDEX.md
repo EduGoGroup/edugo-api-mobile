@@ -4,9 +4,9 @@
 
 ⚠️ **CONTEXTO DE UBICACIÓN:**
 ```
-📍 Estás en: 03-api-mobile/ (plan de implementación CI/CD)
-📍 Todas las rutas mencionadas son relativas a: 03-api-mobile/
-⚠️ NO uses archivos de otros proyectos (01-shared, 02-infrastructure, etc.)
+📍 Estás en: docs/cicd/ (documentación CI/CD de edugo-api-mobile)
+📍 Todas las rutas mencionadas son relativas al proyecto edugo-api-mobile/
+⚠️ Esta documentación es específica para este proyecto
 ```
 
 ---
@@ -95,10 +95,13 @@ Total Estimado: 24-31 horas en 6-8 días
 ## 📁 Estructura de Archivos
 
 ```
-03-api-mobile/
+docs/cicd/
 ├── INDEX.md                    ← Estás aquí
 ├── README.md                   ← Contexto del proyecto
-├── docs/                       ← Documentación
+├── START-HERE.md               ← Punto de entrada rápido
+├── PROMPTS.md                  ← Prompts para ejecutar
+├── WORKFLOWS-REUSABLES-GUIDE.md ← Guía de workflows
+├── docs/                       ← Documentación adicional
 │   ├── RESUMEN.md
 │   └── SPRINT-TRACKING.md
 ├── sprints/                    ← Planes de sprint
@@ -106,23 +109,13 @@ Total Estimado: 24-31 horas en 6-8 días
 │   ├── SPRINT-4-TASKS.md      ← Sprint 4 completo
 │   └── SPRINT-ENTITIES-ADAPTATION.md
 ├── tracking/                   ← Seguimiento de ejecución
-│   ├── REGLAS.md
-│   ├── SPRINT-STATUS.md
-│   ├── logs/
-│   ├── errors/
-│   ├── decisions/
-│   └── reviews/
+│   ├── SPRINT-2-COMPLETE.md
+│   ├── SPRINT-4-METRICAS-FINALES.md
+│   ├── FASE-2-VALIDATION.md
+│   └── decisions/             ← Decisiones técnicas
 └── assets/                     ← Recursos auxiliares
     ├── scripts/               ← Scripts bash reutilizables
-    │   ├── migrate-go-1.25.sh
-    │   ├── setup-precommit.sh
-    │   └── validate-workflows.sh
     └── workflows/             ← Templates de workflows
-        ├── pr-to-dev.yml
-        ├── pr-to-main.yml
-        ├── manual-release.yml
-        ├── sync-main-to-dev.yml
-        └── test.yml
 ```
 
 ---
@@ -302,12 +295,12 @@ Reusabilidad: Base para api-admin y worker
 
 ### Repositorio
 - **URL:** https://github.com/EduGoGroup/edugo-api-mobile
-- **Ruta Local:** `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile`
 - **Branch Principal:** `main`
 - **Branch Desarrollo:** `dev`
 
-### Ejemplo de Referencia (shared)
-- [Plan shared](../01-shared/) - Proyecto anterior con estructura similar
+### Documentación del Proyecto
+- [README Principal](../../README.md) - README del proyecto
+- [Workflows Actuales](../../.github/workflows/) - Workflows implementados
 
 ---
 
@@ -327,20 +320,19 @@ Antes de comenzar:
 ## 🎯 Próxima Acción
 
 ```bash
-# Opción A: Comenzar a implementar HOY
-cd /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile
-open sprints/SPRINT-2-TASKS.md
+# Opción A: Comenzar a leer documentación
+cat docs/cicd/README.md
 
-# Opción B: Solo entender el contexto
-open README.md
+# Opción B: Ver sprints completados
+cat docs/cicd/tracking/SPRINT-2-COMPLETE.md
+cat docs/cicd/tracking/SPRINT-4-METRICAS-FINALES.md
 
-# Opción C: Ver solo los scripts
-cd assets/scripts/
-ls -la
-cat README.md
+# Opción C: Ver workflows implementados
+ls -la .github/workflows/
+cat .github/workflows/reusable-*.yml
 
-# Opción D: Validar que tengo todo
-./assets/scripts/validate-prerequisites.sh
+# Opción D: Ver guía de workflows reusables
+cat docs/cicd/WORKFLOWS-REUSABLES-GUIDE.md
 ```
 
 ---

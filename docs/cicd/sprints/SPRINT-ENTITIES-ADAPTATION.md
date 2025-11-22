@@ -243,8 +243,9 @@ internal/domain/entities/attempt_test.go
 #### Tarea 0.1: Verificar que infrastructure entities existen
 
 ```bash
-# Clonar o actualizar edugo-infrastructure
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure
+# Navegar a edugo-infrastructure (ajustar ruta según tu setup)
+INFRA_PATH="../edugo-infrastructure"  # Asume que está al mismo nivel que api-mobile
+cd "$INFRA_PATH"
 
 # Verificar que entities fueron creadas en Sprint anterior
 ls -la postgres/entities/
@@ -265,7 +266,8 @@ git tag | grep entities
 #### Tarea 1.1: Agregar dependencia de infrastructure
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Agregar dependency (ajustar versión según tag real)
 go get github.com/EduGoGroup/edugo-infrastructure/postgres/entities@postgres/entities/v0.1.0
@@ -632,7 +634,8 @@ func (s *AttemptDomainService) ValidateAnswer(answer *pgentities.AssessmentAnswe
 **Buscar y reemplazar en todos los archivos:**
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Reemplazar import de domain/entity
 find internal/ -name "*.go" -type f -exec sed -i '' \
@@ -752,7 +755,8 @@ func ToMaterialResponse(material *pgentities.Material) *MaterialResponse {
 #### Tarea 4.1: Eliminar entities antiguos
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Eliminar entities de entity/
 rm -rf internal/domain/entity/
@@ -905,7 +909,8 @@ internal/application/service/assessment_attempt_service.go (si tiene tests)
 #### Tarea 8.1: Compilación
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH"
 
 # Compilar todo el proyecto
 go build ./...

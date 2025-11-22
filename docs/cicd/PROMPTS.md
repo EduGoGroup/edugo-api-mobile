@@ -1,14 +1,14 @@
 # 🎯 Prompts para Ejecutar Sprints
 
-**Ubicación:** `implementation-plans/03-api-mobile/PROMPTS.md`  
+**Ubicación:** `docs/cicd/PROMPTS.md`  
 **Propósito:** Definir prompts estándar y no ambiguos para cada fase  
 **Fecha:** 20 de Noviembre, 2025
 
 ⚠️ **CONTEXTO DE UBICACIÓN:**
 ```
-📍 Estás en: 03-api-mobile/ (dentro de Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/)
-📍 Todas las rutas mencionadas son relativas a: 03-api-mobile/
-⚠️ NO uses archivos fuera de 03-api-mobile/ (pueden ser versiones viejas)
+📍 Estás en: docs/cicd/ (dentro de edugo-api-mobile)
+📍 Todas las rutas mencionadas son relativas a: docs/cicd/
+⚠️ Esta documentación es específica para edugo-api-mobile
 ```
 
 ---
@@ -38,12 +38,11 @@ Completar todas las tareas del sprint. Si una tarea requiere recursos externos (
 Ejecuta FASE 1 del SPRINT-X en edugo-api-mobile.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 - Sprint: SPRINT-X
 - Fase: 1 - Implementación con Stubs
 - Archivo de tareas: sprints/SPRINT-X-TASKS.md
-- Reglas: tracking/REGLAS.md
-- Estado: tracking/SPRINT-STATUS.md
+- Estado: tracking/SPRINT-X-COMPLETE.md
 
 Instrucciones:
 1. Lee INDEX.md para orientarte
@@ -62,7 +61,7 @@ Instrucciones:
 9. Al terminar TODAS las tareas, reporta resumen de Fase 1
 
 ⚠️ Reemplaza X con el número de sprint (2, 4, etc.)
-⚠️ Verifica que estés usando archivos en 03-api-mobile/, NO en otros proyectos
+⚠️ Verifica que estés en el proyecto edugo-api-mobile
 ```
 
 ---
@@ -78,11 +77,10 @@ Reemplazar todos los stubs con implementación real, verificando que los recurso
 Ejecuta FASE 2 del SPRINT-X en edugo-api-mobile.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 - Sprint: SPRINT-X
 - Fase: 2 - Resolución de Stubs
-- Tareas con stub: [ver en tracking/SPRINT-STATUS.md]
-- Reglas: tracking/REGLAS.md
+- Tareas con stub: [ver en tracking/SPRINT-X-COMPLETE.md]
 
 Pre-requisitos:
 - Fase 1 debe estar completa (100%)
@@ -119,10 +117,9 @@ Validar todo el código, crear PR a `dev`, monitorear CI/CD, mergear.
 Ejecuta FASE 3 del SPRINT-X en edugo-api-mobile.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 - Sprint: SPRINT-X
 - Fase: 3 - Validación y PR
-- Reglas: tracking/REGLAS.md
 
 Pre-requisitos:
 - Fase 1 completa (100%)
@@ -162,11 +159,11 @@ Instrucciones:
 Continúa el trabajo de CI/CD en edugo-api-mobile desde donde quedó.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 
 Instrucciones:
-1. Lee INDEX.md para orientarte
-2. Lee tracking/SPRINT-STATUS.md
+1. Lee README.md para orientarte
+2. Lee tracking/SPRINT-X-COMPLETE.md o tracking/SPRINT-4-METRICAS-FINALES.md
 3. Identifica:
    - ¿Qué sprint está activo?
    - ¿En qué fase estamos (1, 2, o 3)?
@@ -175,7 +172,7 @@ Instrucciones:
 4. Continúa desde esa tarea usando las reglas de la fase actual
 5. Si hay dudas, pregunta antes de continuar
 
-⚠️ Verifica que estés usando archivos en 03-api-mobile/
+⚠️ Verifica que estés en el proyecto edugo-api-mobile
 ```
 
 ### Ver estado actual:
@@ -184,11 +181,11 @@ Instrucciones:
 Muéstrame el estado actual del proyecto edugo-api-mobile CI/CD.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 
 Instrucciones:
-1. Lee INDEX.md
-2. Lee tracking/SPRINT-STATUS.md
+1. Lee README.md
+2. Lee tracking/SPRINT-4-METRICAS-FINALES.md
 3. Reporta:
    - Sprint activo: [número]
    - Fase actual: [1, 2, o 3]
@@ -200,7 +197,7 @@ Instrucciones:
    - Última actividad: [fecha/hora]
    - Branch activo: [nombre]
 
-⚠️ Usa solo archivos dentro de 03-api-mobile/
+⚠️ Usa solo archivos dentro de docs/cicd/
 ```
 
 ### Iniciar nuevo sprint:
@@ -209,7 +206,7 @@ Instrucciones:
 Iniciar SPRINT-X en edugo-api-mobile.
 
 Contexto:
-- Ubicación: 03-api-mobile/ (dentro de implementation-plans/)
+- Ubicación: docs/cicd/ (dentro de edugo-api-mobile)
 - Sprint anterior: [estado]
 - Nuevo sprint: SPRINT-X
 - Archivo: sprints/SPRINT-X-TASKS.md
@@ -240,33 +237,31 @@ Instrucciones:
 ### ⚠️ Regla #1: Orientación Primero
 **ANTES de ejecutar cualquier fase:**
 1. Verifica ubicación: estás en el repo edugo-api-mobile
-2. Lee: `INDEX.md` (3-5 min)
-3. Lee: `tracking/REGLAS.md` (5-10 min)
-4. Lee: `tracking/SPRINT-STATUS.md` (2 min)
+2. Lee: `docs/cicd/README.md` (3-5 min)
+3. Lee: `docs/cicd/tracking/SPRINT-X-COMPLETE.md` (2 min)
 
 ### ⚠️ Regla #2: Contexto de Ubicación
-**TODAS las rutas son relativas a:** `03-api-mobile/`
+**TODAS las rutas son relativas a:** `docs/cicd/`
 
 **Archivos CORRECTOS (usar):**
 - ✅ `sprints/SPRINT-2-TASKS.md`
-- ✅ `tracking/SPRINT-STATUS.md`
-- ✅ `tracking/REGLAS.md`
+- ✅ `tracking/SPRINT-2-COMPLETE.md`
+- ✅ `tracking/SPRINT-4-METRICAS-FINALES.md`
 
 **Archivos INCORRECTOS (NO usar):**
-- ❌ `/01-shared/*` (otro proyecto)
-- ❌ `/02-infrastructure/*` (otro proyecto)
-- ❌ Archivos fuera de 03-api-mobile/
+- ❌ Archivos fuera del proyecto edugo-api-mobile
 
 ### ⚠️ Regla #3: Validar Antes de Ejecutar
 ```bash
 # Antes de abrir un archivo de sprint:
-ls -la /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/sprints/SPRINT-X-TASKS.md
+REPO_PATH="$(git rev-parse --show-toplevel)"
+ls -la "$REPO_PATH/docs/cicd/sprints/SPRINT-X-TASKS.md"
 
 # Debe existir. Si no existe, reportar error.
 ```
 
 ### ⚠️ Regla #4: Actualizar en Tiempo Real
-- Después de CADA tarea → actualizar `tracking/SPRINT-STATUS.md`
+- Después de CADA tarea → actualizar tracking correspondiente
 - NO agrupar múltiples tareas antes de actualizar
 - Hacer commit después de cada tarea
 
@@ -356,12 +351,11 @@ Si encuentras:
 
 | Situación | Acción |
 |-----------|--------|
-| No sé qué fase ejecutar | Lee `tracking/SPRINT-STATUS.md` |
-| No sé qué sprint está activo | Lee `INDEX.md` |
+| No sé qué fase ejecutar | Lee `tracking/SPRINT-4-METRICAS-FINALES.md` |
+| No sé qué sprint está activo | Lee `README.md` |
 | Quiero ver todas las tareas | Abre `sprints/SPRINT-X-TASKS.md` |
-| Necesito las reglas | Lee `tracking/REGLAS.md` |
-| ¿Dónde está el código? | Repo: `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile` |
-| Claude se confunde con archivos | Verifica que use rutas `03-api-mobile/` |
+| ¿Dónde está el código? | Repo raíz: `$(git rev-parse --show-toplevel)` |
+| Claude se confunde con archivos | Verifica que use rutas relativas a `docs/cicd/` |
 
 ---
 

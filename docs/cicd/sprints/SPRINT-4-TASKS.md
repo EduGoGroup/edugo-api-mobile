@@ -179,14 +179,16 @@ Crear workflows reusables centralizados en `edugo-infrastructure` y migrar `edug
 #!/bin/bash
 # setup-infrastructure-reusables.sh
 
-INFRA_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure"
+# Asume que infrastructure está en el mismo nivel que api-mobile
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INFRA_PATH="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")/edugo-infrastructure"
 
 echo "🚀 Preparando infrastructure para workflows reusables..."
 
 # Verificar si existe el repo
 if [ ! -d "$INFRA_PATH" ]; then
   echo "❌ edugo-infrastructure no existe en: $INFRA_PATH"
-  echo "   Clonarlo con: gh repo clone EduGoGroup/edugo-infrastructure $INFRA_PATH"
+  echo "   Clonarlo con: gh repo clone EduGoGroup/edugo-infrastructure"
   exit 1
 fi
 
@@ -277,14 +279,15 @@ echo "🚀 Siguiente paso: Tarea 4.2 (Crear pr-validation.yml)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/setup-infrastructure-reusables.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/setup-infrastructure-reusables.sh"
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/setup-infrastructure-reusables.sh
+"$REPO_PATH/docs/cicd/assets/scripts/setup-infrastructure-reusables.sh"
 ```
 
 #### Criterios de Validación
@@ -297,7 +300,9 @@ chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-anal
 #### Checkpoint
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure
+# Navegar al repo infrastructure (ajustar ruta según tu setup)
+INFRA_PATH="../edugo-infrastructure"  # Asume que está al mismo nivel
+cd "$INFRA_PATH"
 git branch --show-current  # feature/cicd-reusable-workflows
 ls -la .github/workflows/reusable/  # Debe existir
 cat .github/workflows/reusable/README.md  # Debe tener contenido
@@ -484,7 +489,9 @@ jobs:
 #!/bin/bash
 # create-pr-validation-reusable.sh
 
-INFRA_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure"
+# Asume que infrastructure está en el mismo nivel que api-mobile
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INFRA_PATH="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")/edugo-infrastructure"
 REUSABLE_FILE=".github/workflows/reusable/pr-validation.yml"
 
 cd "$INFRA_PATH"
@@ -628,20 +635,23 @@ echo "🚀 Siguiente paso: Tarea 4.3 (Crear sync-branches.yml)"
 
 ```bash
 # Guardar script
-cat > /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh << 'SCRIPT'
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cat > "$REPO_PATH/docs/cicd/assets/scripts/create-pr-validation-reusable.sh" << 'SCRIPT'
 # ... (copiar script de arriba)
 SCRIPT
 
-chmod +x /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh
+chmod +x "$REPO_PATH/docs/cicd/assets/scripts/create-pr-validation-reusable.sh"
 
 # Ejecutar
-/Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/assets/scripts/create-pr-validation-reusable.sh
+"$REPO_PATH/docs/cicd/assets/scripts/create-pr-validation-reusable.sh"
 ```
 
 #### Commitear
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure
+# Navegar al repo infrastructure
+INFRA_PATH="../edugo-infrastructure"  # Ajustar según tu setup
+cd "$INFRA_PATH"
 
 git add .
 git commit -m "feat: agregar workflow reusable pr-validation
@@ -809,7 +819,9 @@ jobs:
 #!/bin/bash
 # create-sync-branches-reusable.sh
 
-INFRA_PATH="/Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure"
+# Asume que infrastructure está en el mismo nivel que api-mobile
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INFRA_PATH="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")/edugo-infrastructure"
 REUSABLE_FILE=".github/workflows/reusable/sync-branches.yml"
 
 cd "$INFRA_PATH"
@@ -923,7 +935,9 @@ echo "🚀 Siguiente paso: Tarea 4.4 (Validar y documentar)"
 #### Commitear
 
 ```bash
-cd /Users/jhoanmedina/source/EduGo/repos-separados/edugo-infrastructure
+# Navegar al repo infrastructure
+INFRA_PATH="../edugo-infrastructure"  # Ajustar según tu setup
+cd "$INFRA_PATH"
 
 git add .
 git commit -m "feat: agregar workflow reusable sync-branches

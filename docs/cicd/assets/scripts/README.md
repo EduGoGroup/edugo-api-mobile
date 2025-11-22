@@ -66,7 +66,8 @@ Colección de scripts bash listos para ejecutar durante los Sprints 2 y 4.
 
 ```bash
 # 1. Navegar al directorio de scripts
-cd /Users/jhoanmedina/source/EduGo/Analisys/00-Projects-Isolated/cicd-analysis/implementation-plans/03-api-mobile/SCRIPTS
+REPO_PATH="$(git rev-parse --show-toplevel)"
+cd "$REPO_PATH/docs/cicd/assets/scripts"
 
 # 2. Dar permisos de ejecución (primera vez)
 chmod +x *.sh
