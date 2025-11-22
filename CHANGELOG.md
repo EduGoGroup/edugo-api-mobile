@@ -5,6 +5,34 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-11-22
+
+### Tipo de Release: patch
+
+- fix(ci): Deshabilitar tests de integración y corregir issues (#72)
+- refactor(sprint-entities): Migración completa a infrastructure entities v0.10.0 (#70)
+- feat(sprint-4): migrar job lint a workflow reusable
+- feat: Sprint 2 - Completar tareas pendientes (2.8-2.13) (#66)
+- docs(sprint-2): corregir estado - paralelismo ya existía
+- docs(sprint-2): actualizar SPRINT-STATUS.md post-merge PR #65
+- feat: Sprint 2 FASE 2 - Migración Go 1.25 validada (#65)
+- docs: actualizar documentación CI/CD desde análisis centralizado
+- docs: actualizar documentación CI/CD desde análisis centralizado
+- docs: agregar documentación de CI/CD desde análisis centralizado
+- chore: actualizar a edugo-infrastructure postgres@v0.9.0
+- chore: actualizar a edugo-infrastructure postgres/v0.8.0 (#62)
+- fix: convertir test de score a informativo para evitar panic en CI (#60)
+- docs: Sprint 05-B - Decisión de Posponer Testing Avanzado hasta Post-MVP
+- docs: Sprint 05-A - Reorganización de Testing y Tests de Seguridad
+- refactor: migrar tests legacy a suite compartida (eliminar 16 contenedores individuales) (#55)
+- fix: retener sqlDB en CreateConnection
+- chore: actualizar dependencies (bootstrap v0.9.0, infrastructure v0.7.0) (#53)
+- Sprint 03: Repositorios con BD Real + Tests de Integración (#52)
+- feat: Sprint 02 - Implementación completa de la capa de dominio (Clean Architecture + DDD) (#51)
+
+
+---
+
 ## [0.4.2] - 2025-11-19
 
 ### Tipo de Release: patch
