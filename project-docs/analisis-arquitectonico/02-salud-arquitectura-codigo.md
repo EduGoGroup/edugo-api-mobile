@@ -449,17 +449,17 @@ type InfrastructureContainer struct {
 }
 
 type RepositoryContainer struct {
-    UserRepo, MaterialRepo, ProgressRepo, SummaryRepo, AssessmentRepo, 
+    UserRepo, MaterialRepo, ProgressRepo, SummaryRepo, AssessmentRepo,
     RefreshTokenRepo, LoginAttemptRepo
 }
 
 type ServiceContainer struct {
-    AuthService, MaterialService, ProgressService, SummaryService, 
+    AuthService, MaterialService, ProgressService, SummaryService,
     AssessmentService, StatsService
 }
 
 type HandlerContainer struct {
-    AuthHandler, MaterialHandler, ProgressHandler, SummaryHandler, 
+    AuthHandler, MaterialHandler, ProgressHandler, SummaryHandler,
     AssessmentHandler, StatsHandler
 }
 ```

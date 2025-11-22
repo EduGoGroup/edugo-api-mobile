@@ -23,10 +23,10 @@ func TestCalculateScore(t *testing.T) {
     // Arrange - Preparar datos
     input := UserResponse{Answer: "A"}
     expected := 100.0
-    
+
     // Act - Ejecutar función
     score := CalculateScore(input)
-    
+
     // Assert - Verificar resultado
     assert.Equal(t, expected, score)
 }
@@ -65,13 +65,13 @@ func TestEmailValidation(t *testing.T) {
         {"inválido", "invalid", true},
         {"vacío", "", true},
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
-            
+
             err := ValidateEmail(tt.input)
-            
+
             if tt.wantErr {
                 assert.Error(t, err)
             } else {
@@ -89,9 +89,9 @@ func TestEmailValidation(t *testing.T) {
 ```go
 func TestNewEmail_Valid(t *testing.T) {
     t.Parallel()
-    
+
     email, err := NewEmail("test@example.com")
-    
+
     require.NoError(t, err)
     assert.Equal(t, "test@example.com", email.String())
     assert.False(t, email.IsZero())
@@ -103,9 +103,9 @@ func TestNewEmail_Valid(t *testing.T) {
 ```go
 func TestNewMaterial_Validation(t *testing.T) {
     t.Parallel()
-    
+
     material, err := NewMaterial("", "desc", authorID, "")
-    
+
     require.Error(t, err)
     assert.Contains(t, err.Error(), "title is required")
 }
@@ -120,12 +120,12 @@ func TestAuthService_Login(t *testing.T) {
     mockJWT := new(MockJWTManager)
     mockRepo.On("FindByEmail", mock.Anything, email).Return(user, nil)
     mockJWT.On("GenerateTokens", user).Return(tokens, nil)
-    
+
     service := NewAuthService(mockRepo, mockJWT)
-    
+
     // Act
     result, err := service.Login(ctx, email, password)
-    
+
     // Assert
     require.NoError(t, err)
     assert.NotEmpty(t, result.AccessToken)

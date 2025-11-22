@@ -31,15 +31,15 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **1.2** - Crear estructura de eventos de dominio
   - **Descripción**: Definir tipos de eventos (MaterialUploadedEvent, AssessmentAttemptRecordedEvent) con campos y métodos de serialización JSON
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/messaging/events.go` (NUEVO)
   - **Criterio de aceptación**: Structs con tags JSON, métodos ToJSON() que retornan []byte
 
 - [ ] **1.3** - Implementar RabbitMQ Publisher
   - **Descripción**: Crear cliente RabbitMQ con conexión persistente, declaración de exchanges, publicación de mensajes con publisher confirms
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/messaging/rabbitmq/publisher.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Struct `RabbitMQPublisher` con métodos Connect(), Publish(), Close()
     - Manejo de reconexión automática
     - Logging con Zap de eventos publicados
@@ -47,18 +47,18 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **1.4** - Agregar configuración de RabbitMQ
   - **Descripción**: Extender config.go con struct RabbitMQConfig (URL, Exchange, QueueNames) y agregar sección en config.yaml
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/config/config.go`
     - `config/config.yaml`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Struct RabbitMQConfig con campos URL, Exchange string
     - config.yaml tiene sección rabbitmq con valores de ejemplo
 
 - [ ] **1.5** - Inicializar RabbitMQ en main.go
   - **Descripción**: Instanciar RabbitMQPublisher en cmd/main.go con config de Viper, conectar al servidor, agregar defer Close()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `cmd/main.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Publisher inicializado después de DBs y antes de Container
     - Log de conexión exitosa
     - Graceful shutdown con Close()
@@ -66,36 +66,36 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **1.6** - Agregar Publisher al Container DI
   - **Descripción**: Extender Container struct con campo MessagePublisher, inyectar en constructor NewContainer()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/container/container.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Campo `MessagePublisher` en struct Container
     - Servicios pueden acceder a publisher via container
   - 🔗 **Depende de**: Tarea 1.5
 
 - [ ] **1.7** - Integrar eventos en MaterialService
   - **Descripción**: Inyectar MessagePublisher en MaterialService, publicar MaterialUploadedEvent después de crear material en método CreateMaterial()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/material_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Evento publicado con payload: material_id, title, content_type, uploaded_at
     - Si falla publicación, log warning pero NO falla el request HTTP
   - 🔗 **Depende de**: Tarea 1.6
 
 - [ ] **1.8** - Integrar eventos en AssessmentService
   - **Descripción**: Inyectar MessagePublisher en AssessmentService, publicar AssessmentAttemptRecordedEvent después de registrar intento en método RecordAttempt()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/assessment_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Evento publicado con payload: attempt_id, user_id, assessment_id, score, submitted_at
     - Si falla publicación, log warning pero NO falla el request HTTP
   - 🔗 **Depende de**: Tarea 1.6
 
 - [ ] **1.9** - Crear tests unitarios de RabbitMQ Publisher
   - **Descripción**: Tests con mock de amqp.Connection para validar lógica de publicación, serialización de eventos, manejo de errores
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/messaging/rabbitmq/publisher_test.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Al menos 5 tests: conexión exitosa, publicación exitosa, error de conexión, error de publicación, serialización JSON
     - Tests pasan con `go test ./internal/infrastructure/messaging/...`
   - 🔗 **Depende de**: Tarea 1.3
@@ -103,7 +103,7 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 - [ ] **1.10** - Commit atómico de RabbitMQ Messaging
   - **Descripción**: Crear commit con mensaje "feat: implementar messaging RabbitMQ para eventos"
   - **Archivos incluidos**: Todos los archivos modificados en Fase 1
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - `go build ./...` compila sin errores
     - Tests pasan: `go test ./...`
     - Commit creado en branch feature/fase2-servicios
@@ -126,9 +126,9 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **2.2** - Crear cliente AWS S3
   - **Descripción**: Implementar S3Client con método GeneratePresignedURL(fileName, contentType, expiration) usando S3 Presign API
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/storage/s3/client.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Struct S3Client con campos: s3Client *s3.Client, bucket string, region string
     - Método GeneratePresignedURL retorna URL string y error
     - URL válida por tiempo configurado (default 15 min)
@@ -137,18 +137,18 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **2.3** - Agregar configuración de S3
   - **Descripción**: Extender config.go con S3Config (Region, Bucket, PresignedURLExpiration) y agregar sección en config.yaml
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/config/config.go`
     - `config/config.yaml`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Struct S3Config con campos Region, Bucket string, PresignedURLExpiration time.Duration
     - config.yaml tiene sección s3 con valores: region=us-east-1, bucket=edugo-materials, expiration=15m
 
 - [ ] **2.4** - Inicializar S3Client en main.go
   - **Descripción**: Instanciar S3Client en cmd/main.go usando config de Viper, inicializar AWS config con credenciales (env vars o IAM roles)
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `cmd/main.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - S3Client inicializado después de RabbitMQ
     - Log de inicialización exitosa con región y bucket
     - Manejo de error si falla carga de credenciales AWS
@@ -156,18 +156,18 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **2.5** - Agregar S3Client al Container DI
   - **Descripción**: Extender Container struct con campo S3Client, inyectar en NewContainer()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/container/container.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Campo `S3Client` en struct Container
     - MaterialService puede acceder a S3Client via container
   - 🔗 **Depende de**: Tarea 2.4
 
 - [ ] **2.6** - Integrar S3 en MaterialService
   - **Descripción**: Inyectar S3Client en MaterialService, generar presigned URL en CreateMaterial() ANTES de insertar en DB, retornar URL en response
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/material_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Método CreateMaterial llama a s3Client.GeneratePresignedURL()
     - URL incluida en MaterialResponse DTO
     - Si falla generación, retornar error 500 (es crítico)
@@ -175,17 +175,17 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **2.7** - Actualizar MaterialResponse DTO
   - **Descripción**: Agregar campo UploadURL string con tag JSON en MaterialResponse DTO
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/dto/material_dto.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Campo `UploadURL string` con tag `json:"upload_url,omitempty"`
     - Documentación en comentario explicando que es presigned URL temporal
 
 - [ ] **2.8** - Crear tests unitarios de S3Client
   - **Descripción**: Tests con mock de AWS SDK para validar generación de URLs, formato de URLs, expiración
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/storage/s3/client_test.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Al menos 4 tests: URL generada exitosamente, formato URL válido, error de AWS SDK, expiración correcta
     - Tests pasan con `go test ./internal/infrastructure/storage/...`
   - 🔗 **Depende de**: Tarea 2.2
@@ -193,7 +193,7 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 - [ ] **2.9** - Commit atómico de S3 Presigned URLs
   - **Descripción**: Crear commit con mensaje "feat: implementar generación de URLs firmadas S3"
   - **Archivos incluidos**: Todos los archivos modificados en Fase 2
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - `go build ./...` compila sin errores
     - Tests pasan: `go test ./...`
     - Commit creado en branch feature/fase2-servicios
@@ -213,35 +213,35 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.1** - Crear índice en material_versions
   - **Descripción**: Crear script de migración SQL para agregar índices en tabla material_versions (material_id, version_number)
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `scripts/postgresql/05_indexes_material_versions.sql` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Script crea índices: `idx_material_versions_material_id`, `idx_material_versions_material_id_version`
     - Índices incluyen columna version_number DESC para ordenamiento
     - Script es idempotente (IF NOT EXISTS)
 
 - [ ] **3.2** - Crear índice en materials
   - **Descripción**: Crear script SQL para agregar índice en materials.updated_at
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `scripts/postgresql/06_indexes_materials.sql` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Script crea índice: `idx_materials_updated_at DESC`
     - Idempotente (IF NOT EXISTS)
 
 - [ ] **3.3** - Crear índice UNIQUE en user_progress
   - **Descripción**: Crear script SQL para índice UNIQUE compuesto (user_id, material_id) en user_progress, requerido para UPSERT
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `scripts/postgresql/07_indexes_user_progress.sql` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Índice UNIQUE: `idx_user_progress_user_material ON user_progress(user_id, material_id)`
     - Idempotente (IF NOT EXISTS)
 
 - [ ] **3.4** - Implementar GetMaterialsWithVersions en MaterialRepository
   - **Descripción**: Agregar método GetMaterialsWithVersions() que ejecuta CTE con JSON aggregation para retornar materiales con array de versiones
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/domain/repository/material_repository.go` (agregar método a interfaz)
     - `internal/infrastructure/persistence/postgres/repository/material_repository_impl.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Query usa CTE `material_stats` con COUNT de versiones y MAX de version_number
     - json_agg construye array de versiones ordenado por version_number DESC
     - Retorna []Material con campo Versions []MaterialVersion poblado
@@ -250,9 +250,9 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.5** - Implementar UpdateProgress con UPSERT en ProgressRepository
   - **Descripción**: Modificar UpdateProgress() para usar INSERT ... ON CONFLICT ... DO UPDATE con lógica condicional de GREATEST()
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/infrastructure/persistence/postgres/repository/progress_repository_impl.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Query usa ON CONFLICT (user_id, material_id) DO UPDATE
     - progress_percentage usa GREATEST para solo actualizar si nuevo > actual
     - status calculado automáticamente según porcentaje (CASE WHEN)
@@ -262,18 +262,18 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.6** - Actualizar MaterialService para usar GetMaterialsWithVersions
   - **Descripción**: Modificar método GetMaterials() en MaterialService para llamar al nuevo método del repositorio
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/material_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Servicio llama a repository.GetMaterialsWithVersions()
     - Response DTO incluye array de versiones
   - 🔗 **Depende de**: Tarea 3.4
 
 - [ ] **3.7** - Actualizar ProgressService para usar UPSERT
   - **Descripción**: El método UpdateProgress() ya debería estar usando el repositorio actualizado, solo verificar integración
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/progress_service.go` (verificar, puede no requerir cambios)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Servicio llama a repository.UpdateProgress()
     - Lógica de negocio correcta (validaciones de porcentaje 0-100)
   - 🔗 **Depende de**: Tarea 3.5
@@ -282,19 +282,19 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.8** - Crear índices en assessment_attempts
   - **Descripción**: Crear función de migración Go que crea índices en colección assessment_attempts (assessment_id, user_id+submitted_at)
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `scripts/mongodb/indexes.go` (NUEVO) o ejecutar en main.go durante init
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Índice simple: `assessment_id` (ascending)
     - Índice compuesto: `user_id` (asc) + `submitted_at` (desc)
     - Logging de índices creados
 
 - [ ] **3.9** - Implementar CalculateScoreWithFeedback en AssessmentRepository
   - **Descripción**: Agregar método que ejecuta aggregation pipeline con $lookup, $project y $switch para generar feedback dinámico
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/domain/repository/assessment_repository.go` (agregar método a interfaz)
     - `internal/infrastructure/persistence/mongodb/repository/assessment_repository_impl.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Pipeline con stages: $match (attempt_id), $lookup (assessments), $unwind, $project
     - Cálculo de percentage con $divide y $multiply
     - Feedback generado con $switch según rangos (>=90%, >=70%, >=50%, <50%)
@@ -303,10 +303,10 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.10** - Implementar GetUserStatistics en StatsRepository
   - **Descripción**: Agregar método que ejecuta aggregation pipeline de 5 stages para calcular estadísticas del usuario
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/domain/repository/stats_repository.go` (agregar método a interfaz)
     - `internal/infrastructure/persistence/mongodb/repository/stats_repository_impl.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Pipeline: $match (user_id), $lookup (assessments), $unwind, $group (cálculos), $project (formato)
     - Cálculos: total_attempts, average_score, highest/lowest, overall_percentage
     - Array recent_attempts con $slice (últimos 10) y $sortArray
@@ -315,18 +315,18 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.11** - Actualizar AssessmentService para usar CalculateScoreWithFeedback
   - **Descripción**: Modificar RecordAttempt() para llamar al nuevo método del repositorio después de insertar intento
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/assessment_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Después de insertar attempt, llamar a repository.CalculateScoreWithFeedback()
     - Feedback incluido en response DTO
   - 🔗 **Depende de**: Tarea 3.9
 
 - [ ] **3.12** - Actualizar StatsService para usar GetUserStatistics
   - **Descripción**: Modificar método GetStatistics() para usar aggregation pipeline en lugar de queries simples
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `internal/application/service/stats_service.go`
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Servicio llama a repository.GetUserStatistics()
     - Response DTO con todas las estadísticas calculadas
   - 🔗 **Depende de**: Tarea 3.10
@@ -335,9 +335,9 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.13** - Crear tests de integración para queries PostgreSQL
   - **Descripción**: Tests con Testcontainers PostgreSQL para validar GetMaterialsWithVersions y UpdateProgress
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `test/integration/postgres_queries_test.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Test GetMaterialsWithVersions: seed 2 materiales con 3 versiones cada uno, validar array de versiones
     - Test UpdateProgress INSERT: usuario sin progreso → crea registro
     - Test UpdateProgress UPDATE mayor: 50% → 75% → actualiza
@@ -348,9 +348,9 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 
 - [ ] **3.14** - Crear tests de integración para aggregations MongoDB
   - **Descripción**: Tests con Testcontainers MongoDB para validar CalculateScoreWithFeedback y GetUserStatistics
-  - **Archivos a crear/modificar**: 
+  - **Archivos a crear/modificar**:
     - `test/integration/mongodb_aggregations_test.go` (NUEVO)
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - Test CalculateScoreWithFeedback: seed assessment + attempt con 80% → feedback="Buen trabajo!"
     - Test GetUserStatistics: seed 5 intentos de 2 assessments → validar totales, promedio, recent_attempts
     - Todos los tests pasan
@@ -359,7 +359,7 @@ Completar la implementación de tres servicios fundamentales pendientes en la ar
 - [ ] **3.15** - Commit atómico de Queries Complejas
   - **Descripción**: Crear commit con mensaje "feat: implementar consultas complejas en servicios"
   - **Archivos incluidos**: Todos los archivos modificados en Fase 3
-  - **Criterio de aceptación**: 
+  - **Criterio de aceptación**:
     - `go build ./...` compila sin errores
     - Tests unitarios pasan: `go test ./internal/...`
     - Tests de integración pasan: `go test ./test/integration/...`
@@ -389,7 +389,7 @@ graph TD
     T1_7 --> T1_10[1.10: Commit RabbitMQ]
     T1_8 --> T1_10
     T1_9 --> T1_10
-    
+
     %% Fase 2: S3
     T2_1[2.1: Deps AWS] --> T2_2[2.2: S3Client impl]
     T2_1 --> T2_3[2.3: Config S3]
@@ -401,7 +401,7 @@ graph TD
     T2_2 --> T2_8[2.8: Tests S3]
     T2_7 --> T2_9[2.9: Commit S3]
     T2_8 --> T2_9
-    
+
     %% Fase 3A: PostgreSQL
     T3_1[3.1: Índices material_versions] --> T3_4[3.4: GetMaterialsWithVersions]
     T3_2[3.2: Índices materials] --> T3_4
@@ -410,7 +410,7 @@ graph TD
     T3_5 --> T3_7[3.7: ProgressService update]
     T3_4 --> T3_13[3.13: Tests PostgreSQL]
     T3_5 --> T3_13
-    
+
     %% Fase 3B: MongoDB
     T3_8[3.8: Índices MongoDB] --> T3_9[3.9: CalculateScoreWithFeedback]
     T3_8 --> T3_10[3.10: GetUserStatistics]
@@ -418,7 +418,7 @@ graph TD
     T3_10 --> T3_12[3.12: StatsService update]
     T3_9 --> T3_14[3.14: Tests MongoDB]
     T3_10 --> T3_14
-    
+
     %% Commit final Fase 3
     T3_6 --> T3_15[3.15: Commit Queries]
     T3_7 --> T3_15
@@ -509,7 +509,7 @@ Las siguientes tareas están en la ruta crítica y deben completarse en orden:
    ```bash
    # RabbitMQ
    RABBITMQ_URL=amqp://user:password@localhost:5672/
-   
+
    # AWS S3
    AWS_REGION=us-east-1
    AWS_ACCESS_KEY_ID=your-key-id

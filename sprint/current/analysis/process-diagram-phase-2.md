@@ -22,21 +22,21 @@ flowchart TD
     A --> B{Handler: ValidarDTO}
     B -->|Inválido| E1[400 Bad Request]
     B -->|Válido| C[Service: CreateMaterial]
-    
+
     C --> D[Generar ID de material]
     D --> E[S3Client: GeneratePresignedURL]
     E --> F{URL generada?}
     F -->|Error| E2[500 Internal Server Error]
     F -->|OK| G[Repository: Insert metadata en DB]
-    
+
     G --> H{Insert exitoso?}
     H -->|Error| E3[500 Database Error]
     H -->|OK| I[Publisher: Publish material_uploaded event]
-    
+
     I --> J{Evento publicado?}
     J -->|Error| L[Log warning pero continuar]
     J -->|OK| K[Retornar MaterialResponse + presignedURL]
-    
+
     L --> K
     K --> M[Handler: 201 Created]
     M --> N[Cliente recibe presignedURL]
@@ -44,7 +44,7 @@ flowchart TD
     O --> P{Upload a S3 exitoso?}
     P -->|Error| E4[Cliente reintenta]
     P -->|OK| End([Material creado y archivo subido])
-    
+
     style E fill:#f44336
     style E2 fill:#f44336
     style E3 fill:#f44336
@@ -98,27 +98,27 @@ flowchart TD
     A --> B{Handler: ValidarAnswers}
     B -->|Inválido| E1[400 Bad Request]
     B -->|Válido| C[Service: RecordAttempt]
-    
+
     C --> D[Repository: Get assessment de MongoDB]
     D --> E{Assessment existe?}
     E -->|No| E2[404 Not Found]
     E -->|Sí| F[Calcular puntaje de respuestas]
-    
+
     F --> G[Repository: Insert attempt en MongoDB]
     G --> H{Insert exitoso?}
     H -->|Error| E3[500 Database Error]
     H -->|OK| I[Repository: CalculateScoreWithFeedback]
-    
+
     I --> J[Aggregation pipeline para feedback]
     J --> K[Publisher: Publish assessment_attempt_recorded]
     K --> L{Evento publicado?}
     L -->|Error| M[Log warning]
     L -->|OK| N[Retornar AttemptResponse + feedback]
-    
+
     M --> N
     N --> O[Handler: 201 Created]
     O --> End([Intento registrado y evento publicado])
-    
+
     style E1 fill:#f44336
     style E2 fill:#f44336
     style E3 fill:#f44336
@@ -173,30 +173,30 @@ flowchart TD
     A --> B{Handler: ValidarDTO}
     B -->|Inválido| E1[400 Bad Request]
     B -->|Válido| C[Service: UpdateProgress]
-    
+
     C --> D[Repository: UPSERT en PostgreSQL]
     D --> E{Registro existe?}
-    
+
     E -->|No| F[INSERT nuevo registro]
     E -->|Sí| G{Nuevo % > % actual?}
-    
+
     G -->|No| H[Mantener % actual, actualizar last_accessed]
     G -->|Sí| I[UPDATE con nuevo %]
-    
+
     F --> J[Calcular status según %]
     I --> J
     H --> J
-    
+
     J --> K{% >= 100?}
     K -->|Sí| L[status = completed, completed_at = NOW]
     K -->|No| M[status = in_progress]
-    
+
     L --> N[RETURNING registro actualizado]
     M --> N
-    
+
     N --> O[Handler: 200 OK]
     O --> End([Progreso actualizado])
-    
+
     style E1 fill:#f44336
     style End fill:#4caf50
 ```
@@ -212,7 +212,7 @@ flowchart TD
      - Crea nuevo registro con porcentaje dado
      - Establece `status` según porcentaje
      - `completed_at` = NOW si porcentaje >= 100
-   
+
    - **Caso UPDATE**: Si par ya existe
      - **Solo actualiza si nuevo % > % actual** (usa GREATEST)
      - Siempre actualiza `last_accessed_at`
@@ -236,32 +236,32 @@ flowchart TD
 flowchart TD
     Start([Cliente solicita estadísticas]) --> A[GET /users/:id/stats]
     A --> B[Service: GetUserStatistics]
-    
+
     B --> C[Repository: Aggregation pipeline MongoDB]
     C --> D[Stage 1: Match intentos del usuario]
     D --> E[Stage 2: Lookup de assessments]
     E --> F[Stage 3: Group con cálculos]
-    
+
     F --> G[Calcular total_attempts]
     F --> H[Calcular average_score]
     F --> I[Calcular highest/lowest]
     F --> J[Construir array de intentos]
-    
+
     G --> K[Stage 4: Proyección final]
     H --> K
     I --> K
     J --> K
-    
+
     K --> L[Stage 5: Sort y limit últimos 10]
     L --> M{Datos encontrados?}
-    
+
     M -->|No| N[Retornar estadísticas vacías]
     M -->|Sí| O[Retornar estadísticas completas]
-    
+
     N --> P[Handler: 200 OK]
     O --> P
     P --> End([Estadísticas retornadas])
-    
+
     style End fill:#4caf50
 ```
 
@@ -310,10 +310,10 @@ flowchart TD
     C --> D[Log error con contexto]
     D --> E[Continuar con flujo normal]
     E --> F[Retornar respuesta exitosa al cliente]
-    
+
     B -->|Sí| G[Evento publicado]
     G --> F
-    
+
     style C fill:#ff9800
     style D fill:#ff9800
 ```
@@ -333,9 +333,9 @@ flowchart TD
     E --> F[Service genera nueva presigned URL]
     F --> G[Retorna nueva URL]
     G --> H[Cliente reintenta upload]
-    
+
     B -->|No| I[Upload exitoso]
-    
+
     style C fill:#f44336
 ```
 
@@ -352,15 +352,15 @@ flowchart TD
     C --> D[Repository catch error]
     D --> E[Log query lenta]
     E --> F[Retornar 503 Service Unavailable]
-    
+
     B -->|No| G[Query exitosa]
     G --> H[Retornar datos]
-    
+
     style C fill:#f44336
     style F fill:#f44336
 ```
 
-**Mitigación**: 
+**Mitigación**:
 - Índices optimizados en PostgreSQL y MongoDB
 - EXPLAIN ANALYZE para identificar queries lentas
 - Paginación para limitar resultados

@@ -211,7 +211,7 @@ GET {{baseUrl}}/v1/health
   test("Status is 200", () => {
     expect(response.statusCode).toBe(200);
   });
-  
+
   test("Response has status field", () => {
     expect(response.parsedBody.status).toBe("ok");
   });

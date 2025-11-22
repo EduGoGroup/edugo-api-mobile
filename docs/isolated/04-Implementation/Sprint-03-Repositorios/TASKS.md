@@ -24,82 +24,82 @@ Implementar repositorio PostgreSQL para entity Assessment usando GORM como ORM.
 2. Implementar repositorio con GORM:
    ```go
    package persistence
-   
+
    import (
        "context"
        "errors"
-       
+
        "github.com/google/uuid"
        "gorm.io/gorm"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        "edugo-api-mobile/internal/domain/repositories"
    )
-   
+
    // PostgresAssessmentRepository implementa repositories.AssessmentRepository
    type PostgresAssessmentRepository struct {
        db *gorm.DB
    }
-   
+
    // NewPostgresAssessmentRepository crea un nuevo repositorio
    func NewPostgresAssessmentRepository(db *gorm.DB) repositories.AssessmentRepository {
        return &PostgresAssessmentRepository{db: db}
    }
-   
+
    // FindByID busca un assessment por ID
    func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUID) (*entities.Assessment, error) {
        var assessment entities.Assessment
-       
+
        result := r.db.WithContext(ctx).
            Where("id = ?", id).
            First(&assessment)
-       
+
        if result.Error != nil {
            if errors.Is(result.Error, gorm.ErrRecordNotFound) {
                return nil, nil // No encontrado
            }
            return nil, result.Error
        }
-       
+
        return &assessment, nil
    }
-   
+
    // FindByMaterialID busca assessment por material ID
    func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, materialID uuid.UUID) (*entities.Assessment, error) {
        var assessment entities.Assessment
-       
+
        result := r.db.WithContext(ctx).
            Where("material_id = ?", materialID).
            First(&assessment)
-       
+
        if result.Error != nil {
            if errors.Is(result.Error, gorm.ErrRecordNotFound) {
                return nil, nil
            }
            return nil, result.Error
        }
-       
+
        return &assessment, nil
    }
-   
+
    // Save guarda un assessment (INSERT o UPDATE)
    func (r *PostgresAssessmentRepository) Save(ctx context.Context, assessment *entities.Assessment) error {
        return r.db.WithContext(ctx).Save(assessment).Error
    }
-   
+
    // Delete elimina un assessment
    func (r *PostgresAssessmentRepository) Delete(ctx context.Context, id uuid.UUID) error {
        result := r.db.WithContext(ctx).
            Delete(&entities.Assessment{}, "id = ?", id)
-       
+
        if result.Error != nil {
            return result.Error
        }
-       
+
        if result.RowsAffected == 0 {
            return errors.New("assessment not found")
        }
-       
+
        return nil
    }
    ```
@@ -149,46 +149,46 @@ Implementar repositorio para Attempt con soporte de transacciones ACID. Al guard
 2. Implementar con transacciones:
    ```go
    package persistence
-   
+
    import (
        "context"
        "errors"
-       
+
        "github.com/google/uuid"
        "gorm.io/gorm"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        "edugo-api-mobile/internal/domain/repositories"
    )
-   
+
    type PostgresAttemptRepository struct {
        db *gorm.DB
    }
-   
+
    func NewPostgresAttemptRepository(db *gorm.DB) repositories.AttemptRepository {
        return &PostgresAttemptRepository{db: db}
    }
-   
+
    // FindByID busca un intento por ID
    func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*entities.Attempt, error) {
        var attempt entities.Attempt
-       
+
        // Cargar attempt con sus answers (eager loading)
        result := r.db.WithContext(ctx).
            Preload("Answers").  // GORM preload de relación
            Where("id = ?", id).
            First(&attempt)
-       
+
        if result.Error != nil {
            if errors.Is(result.Error, gorm.ErrRecordNotFound) {
                return nil, nil
            }
            return nil, result.Error
        }
-       
+
        return &attempt, nil
    }
-   
+
    // Save guarda un attempt CON sus answers en transacción ACID
    func (r *PostgresAttemptRepository) Save(ctx context.Context, attempt *entities.Attempt) error {
        // Usar transacción para atomicidad
@@ -197,7 +197,7 @@ Implementar repositorio para Attempt con soporte de transacciones ACID. Al guard
            if err := tx.Create(attempt).Error; err != nil {
                return err // Rollback automático
            }
-           
+
            // 2. Guardar todas las answers
            for _, answer := range attempt.Answers {
                answer.AttemptID = attempt.ID // Asegurar FK
@@ -205,51 +205,51 @@ Implementar repositorio para Attempt con soporte de transacciones ACID. Al guard
                    return err // Rollback automático
                }
            }
-           
+
            // 3. Commit si todo OK
            return nil
        })
    }
-   
+
    // FindByStudentAndAssessment busca intentos de un estudiante en un assessment
    func (r *PostgresAttemptRepository) FindByStudentAndAssessment(
        ctx context.Context,
        studentID, assessmentID uuid.UUID,
    ) ([]*entities.Attempt, error) {
        var attempts []*entities.Attempt
-       
+
        result := r.db.WithContext(ctx).
            Preload("Answers").
            Where("student_id = ? AND assessment_id = ?", studentID, assessmentID).
            Order("created_at DESC").
            Find(&attempts)
-       
+
        if result.Error != nil {
            return nil, result.Error
        }
-       
+
        return attempts, nil
    }
-   
+
    // CountByStudentAndAssessment cuenta intentos de un estudiante
    func (r *PostgresAttemptRepository) CountByStudentAndAssessment(
        ctx context.Context,
        studentID, assessmentID uuid.UUID,
    ) (int, error) {
        var count int64
-       
+
        result := r.db.WithContext(ctx).
            Model(&entities.Attempt{}).
            Where("student_id = ? AND assessment_id = ?", studentID, assessmentID).
            Count(&count)
-       
+
        if result.Error != nil {
            return 0, result.Error
        }
-       
+
        return int(count), nil
    }
-   
+
    // FindByStudent busca todos los intentos de un estudiante (historial)
    func (r *PostgresAttemptRepository) FindByStudent(
        ctx context.Context,
@@ -257,7 +257,7 @@ Implementar repositorio para Attempt con soporte de transacciones ACID. Al guard
        limit, offset int,
    ) ([]*entities.Attempt, error) {
        var attempts []*entities.Attempt
-       
+
        result := r.db.WithContext(ctx).
            Preload("Answers").
            Where("student_id = ?", studentID).
@@ -265,11 +265,11 @@ Implementar repositorio para Attempt con soporte de transacciones ACID. Al guard
            Limit(limit).
            Offset(offset).
            Find(&attempts)
-       
+
        if result.Error != nil {
            return nil, result.Error
        }
-       
+
        return attempts, nil
    }
    ```
@@ -316,15 +316,15 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
 2. Implementar con MongoDB driver:
    ```go
    package persistence
-   
+
    import (
        "context"
-       
+
        "go.mongodb.org/mongo-driver/bson"
        "go.mongodb.org/mongo-driver/bson/primitive"
        "go.mongodb.org/mongo-driver/mongo"
    )
-   
+
    // Question representa una pregunta de MongoDB
    type Question struct {
        ID          string    `bson:"id"`
@@ -333,12 +333,12 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
        Options     []Option  `bson:"options"`
        // NO incluir correct_answer (seguridad)
    }
-   
+
    type Option struct {
        ID   string `bson:"id"`
        Text string `bson:"text"`
    }
-   
+
    // MaterialAssessment representa documento de MongoDB
    type MaterialAssessment struct {
        ID              primitive.ObjectID `bson:"_id"`
@@ -346,33 +346,33 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
        Questions       []Question         `bson:"questions"`
        TotalQuestions  int                `bson:"total_questions"`
    }
-   
+
    type MongoQuestionRepository struct {
        collection *mongo.Collection
    }
-   
+
    func NewMongoQuestionRepository(db *mongo.Database) *MongoQuestionRepository {
        return &MongoQuestionRepository{
            collection: db.Collection("material_assessment"),
        }
    }
-   
+
    // FindQuestionsByMaterialID obtiene preguntas (SIN respuestas correctas)
    func (r *MongoQuestionRepository) FindQuestionsByMaterialID(
        ctx context.Context,
        materialID string,
    ) ([]Question, error) {
        var assessment MaterialAssessment
-       
+
        // Buscar por material_id
        filter := bson.M{"material_id": materialID}
-       
+
        // Proyección: EXCLUIR respuestas correctas por seguridad
        projection := bson.M{
            "questions.correct_answer": 0,  // NO enviar al cliente
            "questions.feedback":       0,  // NO enviar feedback
        }
-       
+
        err := r.collection.FindOne(ctx, filter).Decode(&assessment)
        if err != nil {
            if err == mongo.ErrNoDocuments {
@@ -380,10 +380,10 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
            }
            return nil, err
        }
-       
+
        return assessment.Questions, nil
    }
-   
+
    // FindByMongoDocumentID busca por ObjectID de MongoDB
    func (r *MongoQuestionRepository) FindByMongoDocumentID(
        ctx context.Context,
@@ -393,14 +393,14 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
        if err != nil {
            return nil, err
        }
-       
+
        var assessment MaterialAssessment
        filter := bson.M{"_id": objectID}
        projection := bson.M{
            "questions.correct_answer": 0,
            "questions.feedback":       0,
        }
-       
+
        opts := mongo.NewSingleResultOptions().SetProjection(projection)
        err = r.collection.FindOne(ctx, filter, opts).Decode(&assessment)
        if err != nil {
@@ -409,7 +409,7 @@ Implementar repositorio MongoDB para leer preguntas de evaluaciones desde colecc
            }
            return nil, err
        }
-       
+
        return &assessment, nil
    }
    ```
@@ -457,13 +457,13 @@ Crear tests de integración que usan PostgreSQL y MongoDB reales (via Testcontai
    ```go
    //go:build integration
    // +build integration
-   
+
    package integration_test
-   
+
    import (
        "context"
        "testing"
-       
+
        "github.com/google/uuid"
        "github.com/stretchr/testify/assert"
        "github.com/stretchr/testify/require"
@@ -471,14 +471,14 @@ Crear tests de integración que usan PostgreSQL y MongoDB reales (via Testcontai
        "github.com/testcontainers/testcontainers-go/modules/postgres"
        "gorm.io/driver/postgres"
        "gorm.io/gorm"
-       
+
        "edugo-api-mobile/internal/domain/entities"
        "edugo-api-mobile/internal/infrastructure/persistence"
    )
-   
+
    func TestPostgresAssessmentRepository_Integration(t *testing.T) {
        ctx := context.Background()
-       
+
        // 1. Iniciar contenedor PostgreSQL
        pgContainer, err := postgres.RunContainer(ctx,
            testcontainers.WithImage("postgres:15-alpine"),
@@ -488,22 +488,22 @@ Crear tests de integración que usan PostgreSQL y MongoDB reales (via Testcontai
        )
        require.NoError(t, err)
        defer pgContainer.Terminate(ctx)
-       
+
        // 2. Obtener connection string
        connStr, err := pgContainer.ConnectionString(ctx)
        require.NoError(t, err)
-       
+
        // 3. Conectar con GORM
        db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
        require.NoError(t, err)
-       
+
        // 4. Migrar schema
        err = db.AutoMigrate(&entities.Assessment{})
        require.NoError(t, err)
-       
+
        // 5. Crear repositorio
        repo := persistence.NewPostgresAssessmentRepository(db)
-       
+
        // 6. Test: Guardar y recuperar
        assessment, _ := entities.NewAssessment(
            uuid.New(),
@@ -512,28 +512,28 @@ Crear tests de integración que usan PostgreSQL y MongoDB reales (via Testcontai
            5,
            70,
        )
-       
+
        err = repo.Save(ctx, assessment)
        require.NoError(t, err)
-       
+
        // 7. Recuperar
        found, err := repo.FindByID(ctx, assessment.ID)
        require.NoError(t, err)
        require.NotNil(t, found)
-       
+
        assert.Equal(t, assessment.Title, found.Title)
        assert.Equal(t, assessment.TotalQuestions, found.TotalQuestions)
    }
-   
+
    func TestPostgresAttemptRepository_Transaction_Integration(t *testing.T) {
        // ... similar setup con Testcontainers ...
-       
+
        // Test que transacción funciona: crear attempt con 5 answers
        attempt, _ := entities.NewAttempt(...)
-       
+
        err := repo.Save(ctx, attempt)
        require.NoError(t, err)
-       
+
        // Verificar que attempt Y answers se guardaron
        found, err := repo.FindByID(ctx, attempt.ID)
        require.NoError(t, err)
@@ -587,15 +587,15 @@ Configurar pool de conexiones para PostgreSQL y MongoDB con parámetros optimiza
 2. Implementar configuración:
    ```go
    package database
-   
+
    import (
        "fmt"
        "time"
-       
+
        "gorm.io/driver/postgres"
        "gorm.io/gorm"
    )
-   
+
    type PostgresConfig struct {
        Host         string
        Port         int
@@ -606,33 +606,33 @@ Configurar pool de conexiones para PostgreSQL y MongoDB con parámetros optimiza
        MaxIdleConns int
        MaxLifetime  time.Duration
    }
-   
+
    func NewPostgresConnection(cfg PostgresConfig) (*gorm.DB, error) {
        dsn := fmt.Sprintf(
            "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
            cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database,
        )
-       
+
        db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
        if err != nil {
            return nil, err
        }
-       
+
        // Configurar connection pool
        sqlDB, err := db.DB()
        if err != nil {
            return nil, err
        }
-       
+
        sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
        sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
        sqlDB.SetConnMaxLifetime(cfg.MaxLifetime)
-       
+
        // Ping para verificar conexión
        if err := sqlDB.Ping(); err != nil {
            return nil, err
        }
-       
+
        return db, nil
    }
    ```

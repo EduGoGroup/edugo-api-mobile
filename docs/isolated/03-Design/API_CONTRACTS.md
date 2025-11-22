@@ -17,12 +17,12 @@ info:
   title: EduGo API Mobile - Sistema de Evaluaciones
   description: |
     API REST para gestión de evaluaciones automáticas en la plataforma EduGo.
-    
+
     Permite a estudiantes:
     - Obtener cuestionarios de materiales educativos
     - Enviar respuestas y recibir calificación automática
     - Consultar historial de intentos
-    
+
     **Seguridad:** Autenticación JWT requerida en todos los endpoints.
   version: 1.0.0
   contact:
@@ -30,7 +30,7 @@ info:
     email: dev@edugo.com
   license:
     name: Privado
-    
+
 servers:
   - url: http://localhost:8080
     description: Desarrollo local
@@ -83,12 +83,12 @@ Obtiene el cuestionario asociado a un material educativo específico.
     summary: Obtener cuestionario de un material
     description: |
       Retorna las preguntas de evaluación de un material sin exponer las respuestas correctas.
-      
+
       **Validaciones:**
       - Material debe existir
       - Material debe tener processing_status = 'completed'
       - Assessment debe estar disponible en MongoDB
-      
+
       **Seguridad:**
       - Respuestas correctas sanitizadas antes de enviar
       - Solo usuarios autenticados
@@ -102,7 +102,7 @@ Obtiene el cuestionario asociado a un material educativo específico.
           type: string
           format: uuid
         example: "01936d9a-7f8e-7e4c-9d3f-987654321cba"
-    
+
     responses:
       '200':
         description: Cuestionario obtenido exitosamente
@@ -128,7 +128,7 @@ Obtiene el cuestionario asociado a un material educativo específico.
                           text: "Un programa que traduce código fuente"
                         - id: "b"
                           text: "Un tipo de variable"
-      
+
       '400':
         $ref: '#/components/responses/BadRequest'
       '401':
@@ -211,7 +211,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
     summary: Crear intento de evaluación
     description: |
       Envía respuestas de un cuestionario, calcula puntaje automáticamente y retorna feedback educativo.
-      
+
       **Proceso:**
       1. Validar que todas las preguntas tienen respuesta
       2. Obtener respuestas correctas de MongoDB
@@ -219,7 +219,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
       4. Generar feedback educativo
       5. Persistir intento y respuestas en PostgreSQL (transacción ACID)
       6. Retornar resultados
-      
+
       **Performance:** <2 segundos (p95)
     operationId: createAttempt
     parameters:
@@ -229,7 +229,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
         schema:
           type: string
           format: uuid
-    
+
     requestBody:
       required: true
       content:
@@ -252,7 +252,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
                   - question_id: "q5"
                     selected_option: "a"
                 time_spent_seconds: 420
-    
+
     responses:
       '201':
         description: Intento creado exitosamente
@@ -280,7 +280,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
                       message: "¡Correcto! Un compilador traduce código fuente..."
                   can_retake: true
                   previous_best_score: null
-      
+
       '400':
         description: Request inválido
         content:
@@ -296,7 +296,7 @@ Crea un nuevo intento de evaluación enviando las respuestas del estudiante. El 
                 value:
                   error: "validation_error"
                   message: "invalid question_id: q99"
-      
+
       '401':
         $ref: '#/components/responses/Unauthorized'
       '404':
@@ -369,7 +369,7 @@ curl -X POST \
     summary: Obtener resultados de un intento
     description: |
       Retorna los resultados detallados de un intento específico.
-      
+
       **Autorización:**
       - Solo el propietario del intento puede acceder
       - Retorna 403 si el usuario no es el propietario
@@ -381,7 +381,7 @@ curl -X POST \
         schema:
           type: string
           format: uuid
-    
+
     responses:
       '200':
         description: Resultados obtenidos exitosamente
@@ -417,7 +417,7 @@ curl -X POST \
     summary: Obtener historial de intentos del usuario
     description: |
       Retorna todos los intentos de evaluación del usuario autenticado, ordenados por fecha descendente.
-      
+
       **Paginación:** Soporta limit y offset
     operationId: getUserAttemptHistory
     parameters:
@@ -436,7 +436,7 @@ curl -X POST \
           type: integer
           minimum: 0
           default: 0
-    
+
     responses:
       '200':
         description: Historial obtenido exitosamente
@@ -496,7 +496,7 @@ components:
           - question_id: "q1"
             selected_option: "a"
         time_spent_seconds: 420
-    
+
     AnswerInput:
       type: object
       required:
@@ -551,7 +551,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QuestionDTO'
-    
+
     QuestionDTO:
       type: object
       required:
@@ -580,9 +580,9 @@ components:
         ⚠️ IMPORTANTE: Este DTO NUNCA incluye:
         - correct_answer
         - feedback
-        
+
         Estos campos se sanitizan antes de enviar al cliente.
-    
+
     OptionDTO:
       type: object
       required:
@@ -595,7 +595,7 @@ components:
         text:
           type: string
           example: "Un programa que traduce código fuente"
-    
+
     AttemptResultResponse:
       type: object
       required:
@@ -642,7 +642,7 @@ components:
           nullable: true
           minimum: 0
           maximum: 100
-    
+
     FeedbackDTO:
       type: object
       required:
@@ -666,7 +666,7 @@ components:
         message:
           type: string
           description: Feedback educativo personalizado
-    
+
     AttemptHistoryResponse:
       type: object
       required:
@@ -689,7 +689,7 @@ components:
           type: integer
           minimum: 1
           maximum: 100
-    
+
     AttemptSummaryDTO:
       type: object
       required:
@@ -771,7 +771,7 @@ components:
           example:
             error: "validation_error"
             message: "Invalid request parameters"
-    
+
     Unauthorized:
       description: No autenticado
       content:
@@ -781,7 +781,7 @@ components:
           example:
             error: "unauthorized"
             message: "Missing or invalid authentication token"
-    
+
     Forbidden:
       description: Sin permisos
       content:
@@ -791,7 +791,7 @@ components:
           example:
             error: "forbidden"
             message: "You don't have permission to access this resource"
-    
+
     NotFound:
       description: Recurso no encontrado
       content:
@@ -801,7 +801,7 @@ components:
           example:
             error: "not_found"
             message: "Resource not found"
-    
+
     InternalServerError:
       description: Error interno del servidor
       content:
@@ -842,7 +842,7 @@ headers:
       type: string
       pattern: "^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$"
     example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  
+
   Content-Type:
     description: Tipo de contenido (solo para POST/PUT)
     required: true
@@ -850,7 +850,7 @@ headers:
       type: string
       enum: [application/json]
     example: "application/json"
-  
+
   Idempotency-Key:
     description: Clave de idempotencia para POST (Post-MVP)
     required: false
@@ -868,26 +868,26 @@ headers:
     schema:
       type: string
       enum: [application/json]
-  
+
   X-Request-ID:
     description: ID único de la petición (para tracing)
     schema:
       type: string
       format: uuid
     example: "01936d9c-req1-7e4c-9d3f-requestid1234"
-  
+
   X-RateLimit-Limit:
     description: Límite de requests por minuto
     schema:
       type: integer
     example: 100
-  
+
   X-RateLimit-Remaining:
     description: Requests restantes en la ventana actual
     schema:
       type: integer
     example: 95
-  
+
   X-RateLimit-Reset:
     description: Timestamp cuando se resetea el contador
     schema:
@@ -1074,7 +1074,7 @@ rules:
   operation-operationId-unique: error
   operation-description: warn
   operation-tags: error
-  
+
   # Custom rules
   no-$ref-siblings: error
   paths-kebab-case: warn
@@ -1094,7 +1094,7 @@ func TestAssessmentContract(t *testing.T) {
         Consumer: "mobile-app",
         Provider: "api-mobile",
     }
-    
+
     pact.AddInteraction().
         Given("Material uuid-1 has assessment").
         UponReceiving("GET /v1/materials/uuid-1/assessment").

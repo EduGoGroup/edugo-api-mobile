@@ -43,33 +43,33 @@ Almacena metadatos de evaluaciones asociadas a materiales educativos. Enlace ent
 CREATE TABLE assessment (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_uuid_v7(),
-    
+
     -- Foreign Keys
     material_id UUID NOT NULL,
-    
+
     -- MongoDB Reference
     mongo_document_id VARCHAR(24) NOT NULL,
-    
+
     -- Metadatos
     title VARCHAR(255) NOT NULL,
     total_questions INTEGER NOT NULL CHECK (total_questions > 0 AND total_questions <= 100),
     pass_threshold INTEGER NOT NULL DEFAULT 70 CHECK (pass_threshold >= 0 AND pass_threshold <= 100),
-    
+
     -- Configuración (Post-MVP)
     max_attempts INTEGER DEFAULT NULL, -- NULL = ilimitado
     time_limit_minutes INTEGER DEFAULT NULL, -- NULL = sin límite
-    
+
     -- Timestamps
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     -- Constraints
-    CONSTRAINT fk_assessment_material 
-        FOREIGN KEY (material_id) 
-        REFERENCES materials(id) 
+    CONSTRAINT fk_assessment_material
+        FOREIGN KEY (material_id)
+        REFERENCES materials(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT unique_material_assessment 
+
+    CONSTRAINT unique_material_assessment
         UNIQUE (material_id)
 );
 
@@ -130,41 +130,41 @@ Registra cada intento de un estudiante en una evaluación. Inmutable después de
 CREATE TABLE assessment_attempt (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_uuid_v7(),
-    
+
     -- Foreign Keys
     assessment_id UUID NOT NULL,
     student_id UUID NOT NULL,
-    
+
     -- Resultados
     score INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
     max_score INTEGER NOT NULL DEFAULT 100,
-    
+
     -- Métricas
     time_spent_seconds INTEGER NOT NULL CHECK (time_spent_seconds > 0 AND time_spent_seconds <= 7200),
-    
+
     -- Timestamps
     started_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     -- Idempotencia (Post-MVP)
     idempotency_key VARCHAR(255) DEFAULT NULL,
-    
+
     -- Constraints
-    CONSTRAINT fk_attempt_assessment 
-        FOREIGN KEY (assessment_id) 
-        REFERENCES assessment(id) 
+    CONSTRAINT fk_attempt_assessment
+        FOREIGN KEY (assessment_id)
+        REFERENCES assessment(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT fk_attempt_student 
-        FOREIGN KEY (student_id) 
-        REFERENCES users(id) 
+
+    CONSTRAINT fk_attempt_student
+        FOREIGN KEY (student_id)
+        REFERENCES users(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT check_completed_after_started 
+
+    CONSTRAINT check_completed_after_started
         CHECK (completed_at >= started_at),
-    
-    CONSTRAINT unique_idempotency_key 
+
+    CONSTRAINT unique_idempotency_key
         UNIQUE (idempotency_key)
 );
 
@@ -189,11 +189,11 @@ CREATE INDEX idx_attempt_completed_at ON assessment_attempt(completed_at DESC);
 CREATE INDEX idx_attempt_student_assessment ON assessment_attempt(student_id, assessment_id);
 
 -- Query común: contar intentos por estudiante y assessment
-CREATE INDEX idx_attempt_count ON assessment_attempt(assessment_id, student_id) 
+CREATE INDEX idx_attempt_count ON assessment_attempt(assessment_id, student_id)
     WHERE completed_at IS NOT NULL;
 
 -- Idempotencia (Post-MVP)
-CREATE UNIQUE INDEX idx_attempt_idempotency_key ON assessment_attempt(idempotency_key) 
+CREATE UNIQUE INDEX idx_attempt_idempotency_key ON assessment_attempt(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 ```
 
@@ -253,21 +253,21 @@ CREATE TABLE assessment_attempt_answer (
     -- Composite Primary Key
     attempt_id UUID NOT NULL,
     question_id VARCHAR(100) NOT NULL,
-    
+
     -- Respuesta del estudiante
     selected_option VARCHAR(10) NOT NULL,
     is_correct BOOLEAN NOT NULL,
-    
+
     -- Timestamps
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     -- Primary Key Constraint
     PRIMARY KEY (attempt_id, question_id),
-    
+
     -- Foreign Key
-    CONSTRAINT fk_answer_attempt 
-        FOREIGN KEY (attempt_id) 
-        REFERENCES assessment_attempt(id) 
+    CONSTRAINT fk_answer_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES assessment_attempt(id)
         ON DELETE CASCADE
 );
 
@@ -302,7 +302,7 @@ INSERT INTO assessment_attempt_answer (
     question_id,
     selected_option,
     is_correct
-) VALUES 
+) VALUES
     ('01936d9b-1234-7e4c-9d3f-abcdef123456', 'q1', 'a', true),
     ('01936d9b-1234-7e4c-9d3f-abcdef123456', 'q2', 'c', false),
     ('01936d9b-1234-7e4c-9d3f-abcdef123456', 'q3', 'b', true),
@@ -322,21 +322,21 @@ Enlace explícito entre materiales y sus resúmenes en MongoDB. Facilita auditor
 CREATE TABLE material_summary_link (
     -- Primary Key
     material_id UUID PRIMARY KEY,
-    
+
     -- MongoDB Reference
     mongo_document_id VARCHAR(24) NOT NULL,
-    
+
     -- Versionado
     summary_version INTEGER NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     -- Foreign Key
-    CONSTRAINT fk_summary_link_material 
-        FOREIGN KEY (material_id) 
-        REFERENCES materials(id) 
+    CONSTRAINT fk_summary_link_material
+        FOREIGN KEY (material_id)
+        REFERENCES materials(id)
         ON DELETE CASCADE
 );
 
@@ -519,7 +519,7 @@ db.createCollection("material_assessment", {
 ```javascript
 // Búsqueda por material_id (único, más frecuente)
 db.material_assessment.createIndex(
-  { "material_id": 1 }, 
+  { "material_id": 1 },
   { unique: true, name: "idx_material_id" }
 );
 
@@ -531,11 +531,11 @@ db.material_assessment.createIndex(
 
 // Text search en títulos y preguntas (Post-MVP)
 db.material_assessment.createIndex(
-  { 
-    "title": "text", 
-    "questions.text": "text" 
+  {
+    "title": "text",
+    "questions.text": "text"
   },
-  { 
+  {
     name: "idx_text_search",
     default_language: "spanish"
   }
@@ -566,13 +566,13 @@ erDiagram
     USERS ||--o{ ASSESSMENT_ATTEMPT : "realiza"
     ASSESSMENT ||--o{ ASSESSMENT_ATTEMPT : "contiene"
     ASSESSMENT_ATTEMPT ||--|{ ASSESSMENT_ATTEMPT_ANSWER : "incluye"
-    
+
     MATERIALS {
         uuid id PK
         string title
         string processing_status
     }
-    
+
     ASSESSMENT {
         uuid id PK
         uuid material_id FK
@@ -581,13 +581,13 @@ erDiagram
         int total_questions
         int pass_threshold
     }
-    
+
     USERS {
         uuid id PK
         string email
         string role
     }
-    
+
     ASSESSMENT_ATTEMPT {
         uuid id PK
         uuid assessment_id FK
@@ -596,7 +596,7 @@ erDiagram
         int time_spent_seconds
         timestamp completed_at
     }
-    
+
     ASSESSMENT_ATTEMPT_ANSWER {
         uuid attempt_id FK
         string question_id
@@ -645,13 +645,13 @@ CREATE TABLE IF NOT EXISTS assessment (
     time_limit_minutes INTEGER DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT fk_assessment_material 
-        FOREIGN KEY (material_id) 
-        REFERENCES materials(id) 
+
+    CONSTRAINT fk_assessment_material
+        FOREIGN KEY (material_id)
+        REFERENCES materials(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT unique_material_assessment 
+
+    CONSTRAINT unique_material_assessment
         UNIQUE (material_id)
 );
 
@@ -678,21 +678,21 @@ CREATE TABLE IF NOT EXISTS assessment_attempt (
     completed_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     idempotency_key VARCHAR(255) DEFAULT NULL,
-    
-    CONSTRAINT fk_attempt_assessment 
-        FOREIGN KEY (assessment_id) 
-        REFERENCES assessment(id) 
+
+    CONSTRAINT fk_attempt_assessment
+        FOREIGN KEY (assessment_id)
+        REFERENCES assessment(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT fk_attempt_student 
-        FOREIGN KEY (student_id) 
-        REFERENCES users(id) 
+
+    CONSTRAINT fk_attempt_student
+        FOREIGN KEY (student_id)
+        REFERENCES users(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT check_completed_after_started 
+
+    CONSTRAINT check_completed_after_started
         CHECK (completed_at >= started_at),
-    
-    CONSTRAINT unique_idempotency_key 
+
+    CONSTRAINT unique_idempotency_key
         UNIQUE (idempotency_key)
 );
 
@@ -701,7 +701,7 @@ CREATE INDEX IF NOT EXISTS idx_attempt_assessment_id ON assessment_attempt(asses
 CREATE INDEX IF NOT EXISTS idx_attempt_student_id ON assessment_attempt(student_id);
 CREATE INDEX IF NOT EXISTS idx_attempt_completed_at ON assessment_attempt(completed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_attempt_student_assessment ON assessment_attempt(student_id, assessment_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_attempt_idempotency_key ON assessment_attempt(idempotency_key) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attempt_idempotency_key ON assessment_attempt(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 
 -- Comentarios
@@ -716,12 +716,12 @@ CREATE TABLE IF NOT EXISTS assessment_attempt_answer (
     selected_option VARCHAR(10) NOT NULL,
     is_correct BOOLEAN NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
+
     PRIMARY KEY (attempt_id, question_id),
-    
-    CONSTRAINT fk_answer_attempt 
-        FOREIGN KEY (attempt_id) 
-        REFERENCES assessment_attempt(id) 
+
+    CONSTRAINT fk_answer_attempt
+        FOREIGN KEY (attempt_id)
+        REFERENCES assessment_attempt(id)
         ON DELETE CASCADE
 );
 
@@ -742,10 +742,10 @@ CREATE TABLE IF NOT EXISTS material_summary_link (
     summary_version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT fk_summary_link_material 
-        FOREIGN KEY (material_id) 
-        REFERENCES materials(id) 
+
+    CONSTRAINT fk_summary_link_material
+        FOREIGN KEY (material_id)
+        REFERENCES materials(id)
         ON DELETE CASCADE
 );
 
@@ -1017,7 +1017,7 @@ print("✅ Seed data inserted successfully");
 
 ```sql
 -- Query 1: Obtener assessment de un material
-SELECT 
+SELECT
     a.id,
     a.mongo_document_id,
     a.title,
@@ -1029,7 +1029,7 @@ INNER JOIN materials m ON a.material_id = m.id
 WHERE m.id = '01936d9a-mat1-7e4c-9d3f-987654321abc';
 
 -- Query 2: Obtener historial de intentos de un estudiante
-SELECT 
+SELECT
     aa.id as attempt_id,
     aa.score,
     aa.completed_at,
@@ -1044,7 +1044,7 @@ ORDER BY aa.completed_at DESC
 LIMIT 10;
 
 -- Query 3: Estadísticas de un assessment
-SELECT 
+SELECT
     COUNT(DISTINCT student_id) as total_students,
     COUNT(*) as total_attempts,
     AVG(score) as average_score,
@@ -1056,7 +1056,7 @@ INNER JOIN assessment a ON aa.assessment_id = a.id
 WHERE a.id = '01936d9a-0001-7e4c-9d3f-111111111111';
 
 -- Query 4: Preguntas problemáticas (alta tasa de error)
-SELECT 
+SELECT
     aaa.question_id,
     COUNT(*) as total_answers,
     SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct_count,
@@ -1140,7 +1140,7 @@ COMMIT;
 
 -- Analizar plan de ejecución
 EXPLAIN ANALYZE
-SELECT 
+SELECT
     aa.id,
     aa.score,
     a.title
@@ -1151,7 +1151,7 @@ ORDER BY aa.completed_at DESC
 LIMIT 10;
 
 -- Verificar uso de índices
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
@@ -1167,7 +1167,7 @@ ORDER BY idx_scan DESC;
 
 ```sql
 -- Ver tamaño de tablas
-SELECT 
+SELECT
     tablename,
     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
     n_tup_ins as inserts,

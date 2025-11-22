@@ -555,7 +555,7 @@ La documentación isolated es:
 | **Estado** | Work in progress | Plan maestro |
 | **Actualización** | Diaria | Por sprint |
 
-**Regla de oro:** 
+**Regla de oro:**
 - Para trabajo actual → Usar `sprint/current/`
 - Para contexto completo del Sistema de Evaluaciones → Usar `docs/isolated/`
 

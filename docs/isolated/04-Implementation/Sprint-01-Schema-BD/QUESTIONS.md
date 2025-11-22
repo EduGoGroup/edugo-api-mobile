@@ -13,7 +13,7 @@
   - No revela información secuencial como SERIAL
   - Permite generación distribuida sin colisiones
   - Soportado por función `gen_uuid_v7()` ya existente en EduGo
-  
+
 - **Contras:**
   - Requiere función custom en PostgreSQL (ya implementada)
   - 16 bytes vs 8 bytes de BIGSERIAL
@@ -24,7 +24,7 @@
   - Nativo en PostgreSQL con `gen_random_uuid()`
   - Completamente random, sin ordenamiento
   - No requiere funciones custom
-  
+
 - **Contras:**
   - Performance degradada en índices B-tree por aleatoriedad
   - Sin ordenamiento cronológico
@@ -35,7 +35,7 @@
   - Más pequeño (8 bytes)
   - Ordenamiento natural
   - Performance óptima
-  
+
 - **Contras:**
   - Revela información de volumen de negocio
   - Problemas en entornos distribuidos
@@ -82,7 +82,7 @@ CREATE TABLE assessment_attempt_answer (
   - Más simple en lógica de negocio (no hay estados intermedios)
   - Mejor para analytics (datos nunca cambian)
   - Previene race conditions en concurrencia
-  
+
 - **Contras:**
   - No se puede "editar" un intento si hay error
   - Correcciones requieren nuevo registro
@@ -92,7 +92,7 @@ CREATE TABLE assessment_attempt_answer (
 - **Pros:**
   - Flexibilidad para correcciones
   - Menos filas en tabla (solo 1 fila por intento)
-  
+
 - **Contras:**
   - Riesgo de pérdida de información histórica
   - Complejidad en auditoría
@@ -144,7 +144,7 @@ COMMENT ON TABLE assessment_attempt IS 'Intentos de estudiantes (INMUTABLE - sol
   - Menos overhead de mantenimiento
   - PostgreSQL 15+ maneja 100K-1M filas sin problemas
   - Índices B-tree suficientes para performance
-  
+
 - **Contras:**
   - Puede necesitar particionamiento en el futuro
   - Queries full-table scan más lentas (pero mitigado por índices)
@@ -154,7 +154,7 @@ COMMENT ON TABLE assessment_attempt IS 'Intentos de estudiantes (INMUTABLE - sol
   - Queries por rango de fecha más rápidas
   - Archivado más fácil (DROP partition antigua)
   - Mejor para tablas >10M filas
-  
+
 - **Contras:**
   - Complejidad operacional (crear partitions mensuales/anuales)
   - Más difícil de gestionar en migraciones
@@ -208,7 +208,7 @@ CREATE TABLE assessment_attempt_2026 PARTITION OF assessment_attempt_partitioned
   - Validación a nivel BD (imposible insertar datos incorrectos)
   - Cero código de aplicación para validar
   - Garantía de integridad de datos
-  
+
 - **Contras:**
   - Constraint puede fallar por redondeo de milisegundos
   - Más estricto (menos flexible)
@@ -217,7 +217,7 @@ CREATE TABLE assessment_attempt_2026 PARTITION OF assessment_attempt_partitioned
 - **Pros:**
   - Más flexible (puede aceptar ±1 segundo de diferencia)
   - Sin overhead de constraint checking
-  
+
 - **Contras:**
   - Posible inconsistencia si se inserta directamente por SQL
   - Requiere tests exhaustivos en aplicación
@@ -236,13 +236,13 @@ CREATE TABLE assessment_attempt (
     time_spent_seconds INTEGER NOT NULL CHECK (time_spent_seconds > 0 AND time_spent_seconds <= 7200),
     started_at TIMESTAMP NOT NULL,
     completed_at TIMESTAMP NOT NULL,
-    
+
     -- Validar que completed_at > started_at
-    CONSTRAINT check_attempt_time_logical 
+    CONSTRAINT check_attempt_time_logical
         CHECK (completed_at > started_at),
-    
+
     -- Validar que time_spent_seconds = completed_at - started_at
-    CONSTRAINT check_attempt_duration 
+    CONSTRAINT check_attempt_duration
         CHECK (EXTRACT(EPOCH FROM (completed_at - started_at)) = time_spent_seconds)
 );
 ```
@@ -266,10 +266,10 @@ attempt.TimeSpentSeconds = timeSpent
 
 **Query típico:**
 ```sql
-SELECT * FROM assessment_attempt 
-WHERE student_id = $1 
-  AND assessment_id = $2 
-ORDER BY created_at DESC 
+SELECT * FROM assessment_attempt
+WHERE student_id = $1
+  AND assessment_id = $2
+ORDER BY created_at DESC
 LIMIT 10;
 ```
 
@@ -280,7 +280,7 @@ LIMIT 10;
   - Covering index para query de historial
   - Una sola búsqueda en índice (sin lookup adicional)
   - Ordenamiento ya incluido
-  
+
 - **Contras:**
   - Más espacio en disco (pero marginal)
   - Solo útil si query usa student_id primero
@@ -289,7 +289,7 @@ LIMIT 10;
 - **Pros:**
   - Más flexible para queries variados
   - Menos espacio total
-  
+
 - **Contras:**
   - PostgreSQL debe combinar índices (bitmap scan)
   - Performance inferior para query específico de historial
@@ -304,17 +304,17 @@ LIMIT 10;
 **Implementación:**
 ```sql
 -- Índice compuesto para historial (query más frecuente)
-CREATE INDEX idx_attempt_student_assessment 
+CREATE INDEX idx_attempt_student_assessment
     ON assessment_attempt(student_id, assessment_id, created_at DESC);
 
 -- Índices separados para queries alternativos
-CREATE INDEX idx_attempt_student_id 
+CREATE INDEX idx_attempt_student_id
     ON assessment_attempt(student_id);
 
-CREATE INDEX idx_attempt_assessment_id 
+CREATE INDEX idx_attempt_assessment_id
     ON assessment_attempt(assessment_id);
 
-CREATE INDEX idx_attempt_created_at 
+CREATE INDEX idx_attempt_created_at
     ON assessment_attempt(created_at DESC);
 
 -- Comentar para documentar uso
@@ -324,10 +324,10 @@ COMMENT ON INDEX idx_attempt_student_assessment IS 'Historial de intentos de un 
 **Query optimizado usará:**
 ```sql
 EXPLAIN ANALYZE
-SELECT * FROM assessment_attempt 
+SELECT * FROM assessment_attempt
 WHERE student_id = '01936d9a-7f8e-7000-a000-123456789abc'
   AND assessment_id = '01936d9a-7f8e-7000-a000-987654321cba'
-ORDER BY created_at DESC 
+ORDER BY created_at DESC
 LIMIT 10;
 
 -- Output esperado:
@@ -348,7 +348,7 @@ LIMIT 10;
   - Valida longitud automáticamente
   - Menos espacio en disco
   - Índices más pequeños
-  
+
 - **Contras:**
   - Si MongoDB cambia formato de ObjectId, requiere ALTER TABLE
   - Menos flexible
@@ -357,7 +357,7 @@ LIMIT 10;
 - **Pros:**
   - Más flexible (acepta cualquier longitud)
   - No requiere cambios si formato cambia
-  
+
 - **Contras:**
   - Más espacio en disco
   - Sin validación de longitud
@@ -378,12 +378,12 @@ CREATE TABLE assessment (
 );
 
 -- Índice para joins con MongoDB
-CREATE INDEX idx_assessment_mongo_document_id 
+CREATE INDEX idx_assessment_mongo_document_id
     ON assessment(mongo_document_id);
 
 -- Validación adicional (opcional)
-ALTER TABLE assessment 
-    ADD CONSTRAINT check_mongo_id_format 
+ALTER TABLE assessment
+    ADD CONSTRAINT check_mongo_id_format
     CHECK (mongo_document_id ~ '^[0-9a-f]{24}$');
 ```
 
@@ -399,7 +399,7 @@ ALTER TABLE assessment
   - Previene duplicados por network errors
   - Alineado con mejores prácticas de APIs REST
   - Útil para operaciones no-idempotentes (POST)
-  
+
 - **Contras:**
   - Campo adicional (32-64 bytes por fila)
   - Índice adicional
@@ -409,7 +409,7 @@ ALTER TABLE assessment
 - **Pros:**
   - Más simple
   - Sin overhead de espacio
-  
+
 - **Contras:**
   - Posibles intentos duplicados si cliente reintenta
   - Sin protección contra double-submit
@@ -427,21 +427,21 @@ CREATE TABLE assessment_attempt (
     -- ...
     idempotency_key VARCHAR(64) DEFAULT NULL,
     -- ...
-    
-    CONSTRAINT unique_idempotency_key 
+
+    CONSTRAINT unique_idempotency_key
         UNIQUE (idempotency_key)
 );
 
 -- Índice parcial (solo índices no-NULL para ahorrar espacio)
-CREATE INDEX idx_attempt_idempotency_key 
-    ON assessment_attempt(idempotency_key) 
+CREATE INDEX idx_attempt_idempotency_key
+    ON assessment_attempt(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
 ```
 
 **Uso en API:**
 ```go
 // Cliente genera key única
-idempotencyKey := fmt.Sprintf("%s-%s-%d", 
+idempotencyKey := fmt.Sprintf("%s-%s-%d",
     studentID, assessmentID, time.Now().Unix())
 
 // POST con header
@@ -469,7 +469,7 @@ if existing != nil {
   - Más simple, una tabla menos
   - Campo `mongo_document_id` en `assessment` es suficiente
   - Sin overhead de joins
-  
+
 - **Contras:**
   - No hay enlace centralizado a `material_summary`
   - Si en el futuro se necesita link a múltiples documentos MongoDB, requiere refactor
@@ -479,7 +479,7 @@ if existing != nil {
   - Tabla de enlace centralizada
   - Facilita queries "obtener todos los documentos MongoDB de un material"
   - Extensible para futuros tipos de documentos (events, analytics)
-  
+
 - **Contras:**
   - Tabla adicional
   - JOIN adicional en queries
@@ -501,13 +501,13 @@ CREATE TABLE IF NOT EXISTS material_summary_link (
     mongo_assessment_id VARCHAR(24) DEFAULT NULL,
     link_type VARCHAR(20) NOT NULL CHECK (link_type IN ('summary', 'assessment', 'both')),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT fk_link_material 
-        FOREIGN KEY (material_id) 
-        REFERENCES materials(id) 
+
+    CONSTRAINT fk_link_material
+        FOREIGN KEY (material_id)
+        REFERENCES materials(id)
         ON DELETE CASCADE,
-    
-    CONSTRAINT unique_material_link 
+
+    CONSTRAINT unique_material_link
         UNIQUE (material_id, link_type)
 );
 

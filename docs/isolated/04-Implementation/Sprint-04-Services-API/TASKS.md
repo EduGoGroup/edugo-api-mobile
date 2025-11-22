@@ -25,7 +25,7 @@ package services
 import (
     "context"
     "github.com/google/uuid"
-    
+
     "edugo-api-mobile/internal/domain/entities"
     "edugo-api-mobile/internal/domain/repositories"
 )
@@ -58,13 +58,13 @@ func (s *AssessmentService) GetAssessmentByMaterialID(
     if assessment == nil {
         return nil, ErrAssessmentNotFound
     }
-    
+
     // 2. Buscar preguntas en MongoDB (sin respuestas correctas)
     questions, err := s.mongoRepo.FindQuestionsByMaterialID(ctx, materialID.String())
     if err != nil {
         return nil, err
     }
-    
+
     // 3. Convertir a DTO (sanitizado)
     return &AssessmentDTO{
         AssessmentID:      assessment.ID,
@@ -88,12 +88,12 @@ func (s *AssessmentService) VerifyAttemptAllowed(
     if assessment == nil {
         return false, ErrAssessmentNotFound
     }
-    
+
     attemptCount, err := s.attemptRepo.CountByStudentAndAssessment(ctx, studentID, assessmentID)
     if err != nil {
         return false, err
     }
-    
+
     return assessment.CanAttempt(attemptCount), nil
 }
 
@@ -167,25 +167,25 @@ func (s *ScoringService) ValidateAndScore(
     if err != nil {
         return nil, 0, err
     }
-    
+
     // 2. Validar cada respuesta contra respuesta correcta
     answers := make([]*entities.Answer, len(userAnswers))
     correctCount := 0
-    
+
     for i, userAnswer := range userAnswers {
         // Buscar pregunta correspondiente
         question := findQuestion(assessment.Questions, userAnswer.QuestionID)
         if question == nil {
             return nil, 0, ErrInvalidQuestionID
         }
-        
+
         // Comparar respuesta del usuario con respuesta correcta
         isCorrect := question.CorrectAnswer == userAnswer.SelectedAnswerID
-        
+
         if isCorrect {
             correctCount++
         }
-        
+
         // Crear entity Answer
         answer, err := entities.NewAnswer(
             uuid.Nil, // Attempt ID se asigna después
@@ -197,13 +197,13 @@ func (s *ScoringService) ValidateAndScore(
         if err != nil {
             return nil, 0, err
         }
-        
+
         answers[i] = answer
     }
-    
+
     // 3. Calcular score (servidor-side)
     score := (correctCount * 100) / len(userAnswers)
-    
+
     return answers, score, nil
 }
 ```
@@ -238,7 +238,7 @@ import (
     "net/http"
     "github.com/gin-gonic/gin"
     "github.com/google/uuid"
-    
+
     "edugo-api-mobile/internal/application/services"
 )
 
@@ -262,7 +262,7 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
         c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid material ID"})
         return
     }
-    
+
     assessment, err := h.assessmentService.GetAssessmentByMaterialID(c.Request.Context(), materialID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -272,7 +272,7 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
         c.JSON(http.StatusNotFound, ErrorResponse{Error: "Assessment not found"})
         return
     }
-    
+
     c.JSON(http.StatusOK, assessment)
 }
 
@@ -290,17 +290,17 @@ func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
         c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
         return
     }
-    
+
     // Obtener student ID del JWT
     studentID := getStudentIDFromContext(c)
-    
+
     // Crear intento
     attempt, err := h.attemptService.CreateAttempt(c.Request.Context(), studentID, req)
     if err != nil {
         c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
         return
     }
-    
+
     c.JSON(http.StatusCreated, attempt)
 }
 
@@ -317,15 +317,15 @@ func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
         c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid attempt ID"})
         return
     }
-    
+
     studentID := getStudentIDFromContext(c)
-    
+
     results, err := h.attemptService.GetAttemptResults(c.Request.Context(), attemptID, studentID)
     if err != nil {
         c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
         return
     }
-    
+
     c.JSON(http.StatusOK, results)
 }
 
@@ -339,16 +339,16 @@ func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
 // @Router /v1/users/me/attempts [get]
 func (h *AssessmentHandler) GetUserAttempts(c *gin.Context) {
     studentID := getStudentIDFromContext(c)
-    
+
     limit := c.DefaultQuery("limit", "10")
     offset := c.DefaultQuery("offset", "0")
-    
+
     attempts, err := h.attemptService.GetUserAttempts(c.Request.Context(), studentID, limit, offset)
     if err != nil {
         c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
         return
     }
-    
+
     c.JSON(http.StatusOK, attempts)
 }
 ```
@@ -379,7 +379,7 @@ package routes
 
 import (
     "github.com/gin-gonic/gin"
-    
+
     "edugo-api-mobile/internal/interfaces/http/handlers"
     "edugo-api-mobile/internal/interfaces/http/middleware"
 )
@@ -387,17 +387,17 @@ import (
 func SetupRoutes(r *gin.Engine, h *handlers.AssessmentHandler) {
     v1 := r.Group("/v1")
     v1.Use(middleware.AuthMiddleware()) // JWT auth requerido
-    
+
     {
         // GET /v1/materials/:id/assessment
         v1.GET("/materials/:id/assessment", h.GetAssessment)
-        
+
         // POST /v1/materials/:id/assessment/attempts
         v1.POST("/materials/:id/assessment/attempts", h.CreateAttempt)
-        
+
         // GET /v1/attempts/:id/results
         v1.GET("/attempts/:id/results", h.GetAttemptResults)
-        
+
         // GET /v1/users/me/attempts
         v1.GET("/users/me/attempts", h.GetUserAttempts)
     }
@@ -453,28 +453,28 @@ import (
     "net/http"
     "net/http/httptest"
     "testing"
-    
+
     "github.com/stretchr/testify/assert"
 )
 
 func TestE2E_AssessmentFlow(t *testing.T) {
     // 1. Setup: Iniciar servidor de test
     router := setupTestRouter()
-    
+
     // 2. GET /v1/materials/:id/assessment
     req, _ := http.NewRequest("GET", "/v1/materials/"+testMaterialID+"/assessment", nil)
     req.Header.Set("Authorization", "Bearer "+testJWT)
-    
+
     w := httptest.NewRecorder()
     router.ServeHTTP(w, req)
-    
+
     assert.Equal(t, http.StatusOK, w.Code)
-    
+
     // Verificar que NO incluye correct_answer
     var response map[string]interface{}
     json.Unmarshal(w.Body.Bytes(), &response)
     assert.NotContains(t, response, "correct_answer")
-    
+
     // 3. POST /v1/materials/:id/assessment/attempts
     attemptReq := map[string]interface{}{
         "answers": []map[string]interface{}{
@@ -483,16 +483,16 @@ func TestE2E_AssessmentFlow(t *testing.T) {
         },
     }
     body, _ := json.Marshal(attemptReq)
-    
+
     req, _ = http.NewRequest("POST", "/v1/materials/"+testMaterialID+"/assessment/attempts", bytes.NewBuffer(body))
     req.Header.Set("Authorization", "Bearer "+testJWT)
     req.Header.Set("Content-Type", "application/json")
-    
+
     w = httptest.NewRecorder()
     router.ServeHTTP(w, req)
-    
+
     assert.Equal(t, http.StatusCreated, w.Code)
-    
+
     // 4. Verificar que score fue calculado en servidor
     var attemptResp map[string]interface{}
     json.Unmarshal(w.Body.Bytes(), &attemptResp)

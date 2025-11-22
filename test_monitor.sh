@@ -90,18 +90,18 @@ if [ -f /tmp/container_monitor.log ]; then
     MAX_CONTAINERS=$(sort -t: -k4 -n /tmp/container_monitor.log | tail -1 | grep -oP '\d+$')
     MIN_CONTAINERS=$(sort -t: -k4 -n /tmp/container_monitor.log | head -1 | grep -oP '\d+$')
     AVG_CONTAINERS=$(awk -F': ' '{sum+=$2; count++} END {printf "%.1f", sum/count}' /tmp/container_monitor.log)
-    
+
     echo "   Máximo simultáneo: ${MAX_CONTAINERS:-0}"
     echo "   Mínimo: ${MIN_CONTAINERS:-0}"
     echo "   Promedio: ${AVG_CONTAINERS:-0}"
-    
+
     # Detectar problema de recreación constante
     SAMPLES=$(wc -l < /tmp/container_monitor.log)
     if [ "$MAX_CONTAINERS" -gt 6 ]; then
         echo "   ⚠️  ADVERTENCIA: Más de 6 contenedores simultáneos detectados"
         echo "   ⚠️  Posible problema: contenedores no se están reutilizando"
     fi
-    
+
     if [ "$SAMPLES" -gt 100 ] && [ "$MAX_CONTAINERS" -gt 3 ]; then
         echo "   ⚠️  ADVERTENCIA: Muchas fluctuaciones en contenedores"
         echo "   ⚠️  Posible problema: contenedores se crean/destruyen constantemente"

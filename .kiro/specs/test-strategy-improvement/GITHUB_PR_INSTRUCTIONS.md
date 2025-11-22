@@ -50,7 +50,7 @@ git push -u origin feature/test-strategy-improvement
 3. Debería aparecer un banner amarillo: "feature/test-strategy-improvement had recent pushes"
 4. Click en **"Compare & pull request"**
 
-**Alternativa**: 
+**Alternativa**:
 - Ir a la pestaña "Pull requests"
 - Click en "New pull request"
 - Seleccionar: base: `main` ← compare: `feature/test-strategy-improvement`

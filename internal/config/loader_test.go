@@ -7,25 +7,25 @@ import (
 
 func TestLoad_WithEnvVars(t *testing.T) {
 	// Setup: Set required environment variables
-	os.Setenv("APP_ENV", "local")
-	os.Setenv("DATABASE_POSTGRES_PASSWORD", "test-password")
-	os.Setenv("DATABASE_MONGODB_URI", "mongodb://test:test@localhost:27017/test")
-	os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://test:test@localhost:5672/")
-	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test-key-id")
-	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test-secret-key")
-	os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
+	_ = os.Setenv("APP_ENV", "local")
+	_ = os.Setenv("DATABASE_POSTGRES_PASSWORD", "test-password")
+	_ = os.Setenv("DATABASE_MONGODB_URI", "mongodb://test:test@localhost:27017/test")
+	_ = os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://test:test@localhost:5672/")
+	_ = os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test-key-id")
+	_ = os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test-secret-key")
+	_ = os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
 	// JWT secret necesario para validación
-	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
+	_ = os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
-		os.Unsetenv("APP_ENV")
-		os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
-		os.Unsetenv("DATABASE_MONGODB_URI")
-		os.Unsetenv("MESSAGING_RABBITMQ_URL")
-		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
-		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
-		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
-		os.Unsetenv("AUTH_JWT_SECRET")
+		_ = os.Unsetenv("APP_ENV")
+		_ = os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
+		_ = os.Unsetenv("DATABASE_MONGODB_URI")
+		_ = os.Unsetenv("MESSAGING_RABBITMQ_URL")
+		_ = os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
+		_ = os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
+		_ = os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		_ = os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute
@@ -59,27 +59,27 @@ func TestLoad_WithEnvVars(t *testing.T) {
 
 func TestLoad_EnvVarsOverrideYAML(t *testing.T) {
 	// Setup: Set environment variables that should override YAML values
-	os.Setenv("APP_ENV", "local")
-	os.Setenv("SERVER_PORT", "9999") // Override default 8080
-	os.Setenv("DATABASE_POSTGRES_PASSWORD", "env-password")
-	os.Setenv("DATABASE_MONGODB_URI", "mongodb://env:env@localhost:27017/env")
-	os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://env:env@localhost:5672/")
-	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "env-key")
-	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "env-secret")
-	os.Setenv("STORAGE_S3_BUCKET_NAME", "env-bucket")
+	_ = os.Setenv("APP_ENV", "local")
+	_ = os.Setenv("SERVER_PORT", "9999") // Override default 8080
+	_ = os.Setenv("DATABASE_POSTGRES_PASSWORD", "env-password")
+	_ = os.Setenv("DATABASE_MONGODB_URI", "mongodb://env:env@localhost:27017/env")
+	_ = os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://env:env@localhost:5672/")
+	_ = os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "env-key")
+	_ = os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "env-secret")
+	_ = os.Setenv("STORAGE_S3_BUCKET_NAME", "env-bucket")
 	// JWT secret necesario para validación
-	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
+	_ = os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
-		os.Unsetenv("APP_ENV")
-		os.Unsetenv("SERVER_PORT")
-		os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
-		os.Unsetenv("DATABASE_MONGODB_URI")
-		os.Unsetenv("MESSAGING_RABBITMQ_URL")
-		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
-		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
-		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
-		os.Unsetenv("AUTH_JWT_SECRET")
+		_ = os.Unsetenv("APP_ENV")
+		_ = os.Unsetenv("SERVER_PORT")
+		_ = os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
+		_ = os.Unsetenv("DATABASE_MONGODB_URI")
+		_ = os.Unsetenv("MESSAGING_RABBITMQ_URL")
+		_ = os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
+		_ = os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
+		_ = os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		_ = os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute
@@ -102,11 +102,11 @@ func TestLoad_EnvVarsOverrideYAML(t *testing.T) {
 
 func TestLoad_MissingRequiredEnvVars(t *testing.T) {
 	// Setup: Clear all environment variables
-	os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
-	os.Unsetenv("DATABASE_MONGODB_URI")
-	os.Unsetenv("MESSAGING_RABBITMQ_URL")
-	os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
-	os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
+	_ = os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
+	_ = os.Unsetenv("DATABASE_MONGODB_URI")
+	_ = os.Unsetenv("MESSAGING_RABBITMQ_URL")
+	_ = os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
+	_ = os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
 
 	// Execute
 	_, err := Load()
@@ -125,23 +125,23 @@ func TestLoad_MissingRequiredEnvVars(t *testing.T) {
 
 func TestLoad_Defaults(t *testing.T) {
 	// Setup: Set only required env vars
-	os.Setenv("DATABASE_POSTGRES_PASSWORD", "test")
-	os.Setenv("DATABASE_MONGODB_URI", "mongodb://test:test@localhost:27017/test")
-	os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://test:test@localhost:5672/")
-	os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test")
-	os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test")
-	os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
+	_ = os.Setenv("DATABASE_POSTGRES_PASSWORD", "test")
+	_ = os.Setenv("DATABASE_MONGODB_URI", "mongodb://test:test@localhost:27017/test")
+	_ = os.Setenv("MESSAGING_RABBITMQ_URL", "amqp://test:test@localhost:5672/")
+	_ = os.Setenv("STORAGE_S3_ACCESS_KEY_ID", "test")
+	_ = os.Setenv("STORAGE_S3_SECRET_ACCESS_KEY", "test")
+	_ = os.Setenv("STORAGE_S3_BUCKET_NAME", "test-bucket")
 	// JWT secret necesario para validación
-	os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
+	_ = os.Setenv("AUTH_JWT_SECRET", "test-jwt-secret")
 
 	defer func() {
-		os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
-		os.Unsetenv("DATABASE_MONGODB_URI")
-		os.Unsetenv("MESSAGING_RABBITMQ_URL")
-		os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
-		os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
-		os.Unsetenv("STORAGE_S3_BUCKET_NAME")
-		os.Unsetenv("AUTH_JWT_SECRET")
+		_ = os.Unsetenv("DATABASE_POSTGRES_PASSWORD")
+		_ = os.Unsetenv("DATABASE_MONGODB_URI")
+		_ = os.Unsetenv("MESSAGING_RABBITMQ_URL")
+		_ = os.Unsetenv("STORAGE_S3_ACCESS_KEY_ID")
+		_ = os.Unsetenv("STORAGE_S3_SECRET_ACCESS_KEY")
+		_ = os.Unsetenv("STORAGE_S3_BUCKET_NAME")
+		_ = os.Unsetenv("AUTH_JWT_SECRET")
 	}()
 
 	// Execute

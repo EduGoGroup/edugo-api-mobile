@@ -62,9 +62,9 @@ Este proyecto sigue la **pirámide de testing** con énfasis en tests unitarios 
 // internal/domain/valueobject/email_test.go
 func TestNewEmail_ValidEmails(t *testing.T) {
     t.Parallel()
-    
+
     email, err := NewEmail("test@example.com")
-    
+
     assert.NoError(t, err)
     assert.Equal(t, "test@example.com", email.String())
 }
@@ -96,10 +96,10 @@ make test-watch             # Watch mode (requiere entr)
 
 func TestAuthFlow_LoginSuccess(t *testing.T) {
     SkipIfIntegrationTestsDisabled(t)
-    
+
     app, cleanup := SetupTestApp(t)
     defer cleanup()
-    
+
     // ... test de flujo completo
 }
 ```
@@ -226,10 +226,10 @@ func TestSomething(t *testing.T) {
     // Arrange - Preparar datos y mocks
     input := "test"
     expected := "TEST"
-    
+
     // Act - Ejecutar función a testear
     result := ToUpper(input)
-    
+
     // Assert - Verificar resultados
     assert.Equal(t, expected, result)
 }
@@ -240,7 +240,7 @@ func TestSomething(t *testing.T) {
 ```go
 func TestSomething(t *testing.T) {
     t.Parallel() // Ejecutar en paralelo
-    
+
     // ... resto del test
 }
 ```
@@ -257,7 +257,7 @@ func TestValidation(t *testing.T) {
         {"valid", "test@example.com", false},
         {"invalid", "invalid", true},
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
@@ -295,7 +295,7 @@ func TestSomething(t *testing.T) {
     t.Cleanup(func() {
         resource.Close()
     })
-    
+
     // ... test code
 }
 ```

@@ -78,7 +78,7 @@ Crear script de migración SQL que agregue índice en la columna `updated_at` de
 
 -- Crear índice descendente en updated_at
 -- DESC porque las queries más comunes ordenan de más reciente a más antiguo
-CREATE INDEX IF NOT EXISTS idx_materials_updated_at 
+CREATE INDEX IF NOT EXISTS idx_materials_updated_at
 ON materials(updated_at DESC);
 
 -- Verificar índice creado:
@@ -91,14 +91,14 @@ El índice optimizará estas queries comunes:
 
 1. **Listar materiales recientes**:
    ```sql
-   SELECT * FROM materials 
-   ORDER BY updated_at DESC 
+   SELECT * FROM materials
+   ORDER BY updated_at DESC
    LIMIT 20;
    ```
 
 2. **Materiales actualizados en rango de fechas**:
    ```sql
-   SELECT * FROM materials 
+   SELECT * FROM materials
    WHERE updated_at >= '2025-01-01'
    ORDER BY updated_at DESC;
    ```

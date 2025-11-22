@@ -188,7 +188,7 @@ func (s *IntegrationTestSuite) cleanDatabase() error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var tables []string
 	for rows.Next() {

@@ -51,7 +51,7 @@ psql -U postgres -d edugo_test_sprint01 < /Users/jhoanmedina/source/EduGo/repos-
 # Listar todas las tablas de assessments
 psql -U postgres -d edugo_test_sprint01 -c "\dt assessment*"
 ```
-**Criterio de éxito:** 
+**Criterio de éxito:**
 - ✅ 4 tablas creadas: `assessment`, `assessment_attempt`, `assessment_attempt_answer`, `material_summary_link`
 
 ```bash
@@ -79,7 +79,7 @@ psql -U postgres -d edugo_test_sprint01 -c "\d assessment_attempt"
 # Listar todos los constraints de assessment
 psql -U postgres -d edugo_test_sprint01 -c "
     SELECT conname, contype, confdeltype
-    FROM pg_constraint 
+    FROM pg_constraint
     WHERE conrelid = 'assessment'::regclass
     ORDER BY conname;
 "
@@ -93,8 +93,8 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Listar constraints de assessment_attempt
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT conname, contype 
-    FROM pg_constraint 
+    SELECT conname, contype
+    FROM pg_constraint
     WHERE conrelid = 'assessment_attempt'::regclass
     ORDER BY conname;
 "
@@ -110,9 +110,9 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Contar índices por tabla
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT tablename, COUNT(*) as num_indexes 
-    FROM pg_indexes 
-    WHERE tablename LIKE 'assessment%' 
+    SELECT tablename, COUNT(*) as num_indexes
+    FROM pg_indexes
+    WHERE tablename LIKE 'assessment%'
     GROUP BY tablename
     ORDER BY tablename;
 "
@@ -127,8 +127,8 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Listar índices de assessment_attempt
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT indexname, indexdef 
-    FROM pg_indexes 
+    SELECT indexname, indexdef
+    FROM pg_indexes
     WHERE tablename = 'assessment_attempt'
     ORDER BY indexname;
 "
@@ -150,10 +150,10 @@ psql -U postgres -d edugo_test_sprint01 < /Users/jhoanmedina/source/EduGo/repos-
 
 # EXPLAIN de query de historial
 psql -U postgres -d edugo_test_sprint01 -c "
-    EXPLAIN (ANALYZE, BUFFERS) 
-    SELECT * FROM assessment_attempt 
+    EXPLAIN (ANALYZE, BUFFERS)
+    SELECT * FROM assessment_attempt
     WHERE student_id = (SELECT id FROM users WHERE role='student' LIMIT 1)
-    ORDER BY created_at DESC 
+    ORDER BY created_at DESC
     LIMIT 10;
 "
 ```
@@ -176,16 +176,16 @@ psql -U postgres -d edugo_test_sprint01 < /Users/jhoanmedina/source/EduGo/repos-
 ```bash
 # Contar registros por tabla
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         'assessment' as tabla, COUNT(*) as filas FROM assessment
     UNION ALL
-    SELECT 
+    SELECT
         'assessment_attempt', COUNT(*) FROM assessment_attempt
     UNION ALL
-    SELECT 
+    SELECT
         'assessment_attempt_answer', COUNT(*) FROM assessment_attempt_answer
     UNION ALL
-    SELECT 
+    SELECT
         'material_summary_link', COUNT(*) FROM material_summary_link;
 "
 ```
@@ -199,16 +199,16 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Verificar que scores calculados coinciden con respuestas
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         aa.attempt_id,
         COUNT(*) as total_answers,
         SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END) as correct_answers,
         (SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(*)::FLOAT * 100)::INTEGER as calculated_score,
         at.score as stored_score,
-        CASE 
-            WHEN (SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(*)::FLOAT * 100)::INTEGER = at.score 
-            THEN '✅ OK' 
-            ELSE '❌ MISMATCH' 
+        CASE
+            WHEN (SUM(CASE WHEN aa.is_correct THEN 1 ELSE 0 END)::FLOAT / COUNT(*)::FLOAT * 100)::INTEGER = at.score
+            THEN '✅ OK'
+            ELSE '❌ MISMATCH'
         END as validation
     FROM assessment_attempt_answer aa
     JOIN assessment_attempt at ON aa.attempt_id = at.id
@@ -301,11 +301,11 @@ psql -U postgres -d edugo_test_sprint01 < /Users/jhoanmedina/source/EduGo/repos-
 ```bash
 # Listar comentarios de tablas
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         relname as table_name,
         obj_description(oid) as comment
-    FROM pg_class 
-    WHERE relname LIKE 'assessment%' 
+    FROM pg_class
+    WHERE relname LIKE 'assessment%'
       AND relkind = 'r'
     ORDER BY relname;
 "
@@ -318,7 +318,7 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Comentarios de columnas críticas
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         a.attname as column_name,
         col_description(a.attrelid, a.attnum) as comment
     FROM pg_attribute a
@@ -336,11 +336,11 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Comentarios de índices
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         indexname,
         obj_description(indexrelid) as comment
     FROM pg_stat_user_indexes
-    WHERE schemaname = 'public' 
+    WHERE schemaname = 'public'
       AND indexrelname LIKE 'idx_attempt_%'
       AND obj_description(indexrelid) IS NOT NULL;
 "
@@ -356,7 +356,7 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Tamaño de tablas
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         schemaname,
         tablename,
         pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -372,7 +372,7 @@ psql -U postgres -d edugo_test_sprint01 -c "
 ```bash
 # Tamaño de índices
 psql -U postgres -d edugo_test_sprint01 -c "
-    SELECT 
+    SELECT
         schemaname,
         tablename,
         indexname,
@@ -400,26 +400,26 @@ DECLARE
     has_gen_uuid_v7 BOOLEAN;
 BEGIN
     RAISE NOTICE '=== VERIFICANDO DEPENDENCIAS SPRINT 01 ===';
-    
+
     SELECT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'gen_uuid_v7') INTO has_gen_uuid_v7;
     IF NOT has_gen_uuid_v7 THEN
         RAISE EXCEPTION '❌ FALTA: Función gen_uuid_v7()';
     ELSE
         RAISE NOTICE '✅ OK: gen_uuid_v7()';
     END IF;
-    
+
     SELECT COUNT(*) INTO materials_count FROM materials;
     RAISE NOTICE '✅ OK: materials (% filas)', materials_count;
-    
+
     SELECT COUNT(*) INTO users_count FROM users WHERE role = 'student';
     RAISE NOTICE '✅ OK: users (% estudiantes)', users_count;
-    
+
     IF (SELECT current_setting('server_version_num')::INTEGER) < 150000 THEN
         RAISE WARNING '⚠️  PostgreSQL < 15';
     ELSE
         RAISE NOTICE '✅ OK: PostgreSQL 15+';
     END IF;
-    
+
     RAISE NOTICE '=== DEPENDENCIAS OK ===';
 END $$;
 EOF

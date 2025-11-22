@@ -91,7 +91,7 @@ import (
     "context"
     "fmt"
     "log"
-    
+
     "github.com/EduGoGroup/edugo-api-mobile/internal/config"
     "github.com/EduGoGroup/edugo-api-mobile/internal/container"
     "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/database"
@@ -104,30 +104,30 @@ import (
 
 func main() {
     ctx := context.Background()
-    
+
     // Cargar configuración
     cfg, err := config.Load()
     if err != nil {
         log.Fatalf("Failed to load config: %v", err)
     }
-    
+
     // Inicializar logger
     appLogger := logger.NewZapLogger(cfg.Logger.Level, cfg.Logger.Format)
-    
+
     // Inicializar PostgreSQL
     pgDB, err := database.InitPostgreSQL(ctx, cfg, appLogger)
     if err != nil {
         appLogger.Fatal("Failed to connect to PostgreSQL", zap.Error(err))
     }
     defer pgDB.Close()
-    
+
     // Inicializar MongoDB
     mongoDB, err := database.InitMongoDB(ctx, cfg, appLogger)
     if err != nil {
         appLogger.Fatal("Failed to connect to MongoDB", zap.Error(err))
     }
     defer mongoDB.Client().Disconnect(ctx)
-    
+
     // Inicializar RabbitMQ
     var publisher rabbitmq.Publisher
     publisher, err = rabbitmq.NewRabbitMQPublisher(
@@ -140,7 +140,7 @@ func main() {
         publisher = rabbitmq.NewNoopPublisher(appLogger)
     }
     defer publisher.Close()
-    
+
     // Inicializar S3
     var s3Client s3.S3Storage
     s3Client, err = s3.NewS3Client(ctx, cfg.Storage.S3, appLogger)
@@ -148,7 +148,7 @@ func main() {
         appLogger.Warn("Failed to initialize S3, using noop storage", zap.Error(err))
         s3Client = s3.NewNoopS3Storage(appLogger)
     }
-    
+
     // Crear container
     c := container.NewContainer(
         appLogger,
@@ -158,10 +158,10 @@ func main() {
         s3Client,
         cfg.Auth.JWTSecret,
     )
-    
+
     // Setup router
     r := router.SetupRouter(c)
-    
+
     // Iniciar servidor
     appLogger.Info("Starting server", zap.Int("port", cfg.Server.Port))
     if err := r.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
@@ -178,7 +178,7 @@ import (
     "context"
     "fmt"
     "log"
-    
+
     "github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap"
     "github.com/EduGoGroup/edugo-api-mobile/internal/config"
     "github.com/EduGoGroup/edugo-api-mobile/internal/container"
@@ -188,13 +188,13 @@ import (
 
 func main() {
     ctx := context.Background()
-    
+
     // Cargar configuración
     cfg, err := config.Load()
     if err != nil {
         log.Fatalf("Failed to load config: %v", err)
     }
-    
+
     // Bootstrap de infraestructura
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -202,13 +202,13 @@ func main() {
         log.Fatalf("Failed to initialize infrastructure: %v", err)
     }
     defer cleanup()
-    
+
     // Crear container
     c := container.NewContainer(resources)
-    
+
     // Setup router
     r := router.SetupRouter(c)
-    
+
     // Iniciar servidor
     resources.Logger.Info("Starting server", zap.Int("port", cfg.Server.Port))
     if err := r.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
@@ -228,7 +228,7 @@ type Container struct {
     RabbitMQPublisher rabbitmq.Publisher
     S3Client         s3.S3Storage
     JWTSecret        string
-    
+
     // Services
     AuthService     *service.AuthService
     MaterialService *service.MaterialService
@@ -251,10 +251,10 @@ func NewContainer(
         S3Client:         s3Client,
         JWTSecret:        jwtSecret,
     }
-    
+
     // Inicializar servicios
     c.initializeServices()
-    
+
     return c
 }
 ```
@@ -263,7 +263,7 @@ func NewContainer(
 ```go
 type Container struct {
     Resources *bootstrap.Resources
-    
+
     // Services
     AuthService     *service.AuthService
     MaterialService *service.MaterialService
@@ -274,10 +274,10 @@ func NewContainer(resources *bootstrap.Resources) *Container {
     c := &Container{
         Resources: resources,
     }
-    
+
     // Inicializar servicios
     c.initializeServices()
-    
+
     return c
 }
 
@@ -337,7 +337,7 @@ func (s *MaterialService) GetMaterial(ctx context.Context, id string) (*Material
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap simple
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -345,7 +345,7 @@ func main() {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // Usar recursos
     container := container.NewContainer(resources)
     router := router.SetupRouter(container)
@@ -359,19 +359,19 @@ func main() {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Marcar RabbitMQ y S3 como opcionales
     b := bootstrap.New(cfg,
         bootstrap.WithOptionalResource("rabbitmq"),
         bootstrap.WithOptionalResource("s3"),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     if err != nil {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // La app funciona sin RabbitMQ ni S3
     container := container.NewContainer(resources)
     router := router.SetupRouter(container)
@@ -385,14 +385,14 @@ func main() {
 func TestMaterialHandler(t *testing.T) {
     ctx := context.Background()
     cfg := testConfig()
-    
+
     // Crear mocks
     mockLogger := logger.NewNoopLogger()
     mockDB := setupMockDB(t)
     mockMongoDB := setupMockMongoDB(t)
     mockPublisher := &MockPublisher{}
     mockS3 := &MockS3Storage{}
-    
+
     // Bootstrap con mocks
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -401,20 +401,20 @@ func TestMaterialHandler(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Crear container y ejecutar tests
     container := container.NewContainer(resources)
     handler := handler.NewMaterialHandler(container)
-    
+
     // Test handler
     req := httptest.NewRequest("GET", "/materials/123", nil)
     w := httptest.NewRecorder()
     handler.GetMaterial(w, req)
-    
+
     assert.Equal(t, http.StatusOK, w.Code)
 }
 ```
@@ -428,7 +428,7 @@ Para tests unitarios, inyecta mocks de todos los recursos:
 ```go
 func TestService(t *testing.T) {
     cfg := &config.Config{}
-    
+
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
         bootstrap.WithPostgreSQL(mockDB),
@@ -436,10 +436,10 @@ func TestService(t *testing.T) {
         bootstrap.WithRabbitMQ(mockPublisher),
         bootstrap.WithS3Client(mockS3),
     )
-    
+
     resources, cleanup, _ := b.InitializeInfrastructure(context.Background())
     defer cleanup()
-    
+
     // Usar resources en tests
 }
 ```
@@ -453,16 +453,16 @@ func TestIntegration(t *testing.T) {
     if testing.Short() {
         t.Skip("Skipping integration test")
     }
-    
+
     ctx := context.Background()
     cfg := loadTestConfig()
-    
+
     // Bootstrap con recursos reales
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
     require.NoError(t, err)
     defer cleanup()
-    
+
     // Tests con recursos reales
 }
 ```
@@ -477,7 +477,7 @@ package helpers
 
 func SetupTestBootstrap(t *testing.T) (*bootstrap.Resources, func()) {
     t.Helper()
-    
+
     cfg := testConfig()
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(logger.NewNoopLogger()),
@@ -486,10 +486,10 @@ func SetupTestBootstrap(t *testing.T) (*bootstrap.Resources, func()) {
         bootstrap.WithRabbitMQ(noop.NewNoopPublisher(logger.NewNoopLogger())),
         bootstrap.WithS3Client(noop.NewNoopS3Storage(logger.NewNoopLogger())),
     )
-    
+
     resources, cleanup, err := b.InitializeInfrastructure(context.Background())
     require.NoError(t, err)
-    
+
     return resources, cleanup
 }
 
@@ -497,7 +497,7 @@ func SetupTestBootstrap(t *testing.T) (*bootstrap.Resources, func()) {
 func TestMyFeature(t *testing.T) {
     resources, cleanup := helpers.SetupTestBootstrap(t)
     defer cleanup()
-    
+
     // Tests...
 }
 ```

@@ -316,11 +316,11 @@ func TestInitPostgreSQL_Success(t *testing.T) {
     ctx := context.Background()
     cfg := &config.Config{ /* ... */ }
     logger := logger.NewZapLogger("debug", "json")
-    
+
     db, err := database.InitPostgreSQL(ctx, cfg, logger)
     require.NoError(t, err)
     require.NotNil(t, db)
-    
+
     // Verificar pool de conexiones
     assert.Equal(t, 10, db.Stats().MaxOpenConnections)
 }
@@ -331,14 +331,14 @@ func TestInitPostgreSQL_Success(t *testing.T) {
 func TestHealthHandler_Check_AllHealthy(t *testing.T) {
     mockDB := &sql.DB{ /* mock */ }
     mockMongo := &mongo.Database{ /* mock */ }
-    
+
     handler := handler.NewHealthHandler(mockDB, mockMongo)
-    
+
     w := httptest.NewRecorder()
     c, _ := gin.CreateTestContext(w)
-    
+
     handler.Check(c)
-    
+
     assert.Equal(t, 200, w.Code)
     assert.Contains(t, w.Body.String(), `"status":"healthy"`)
 }

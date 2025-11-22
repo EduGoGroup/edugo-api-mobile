@@ -92,7 +92,7 @@ type BootstrapOptions struct {
     MongoDB          *mongo.Database
     RabbitMQPublisher rabbitmq.Publisher
     S3Client         S3Storage
-    
+
     // Configuración de recursos opcionales
     OptionalResources map[string]bool
 }
@@ -255,7 +255,7 @@ func (lm *LifecycleManager) Register(name string, cleanup CleanupFunc)
 // Cleanup ejecuta todas las funciones de cleanup en orden inverso
 func (lm *LifecycleManager) Cleanup() error {
     var errors []error
-    
+
     // Ejecutar en orden inverso (LIFO)
     for i := len(lm.cleanupFuncs) - 1; i >= 0; i-- {
         if err := lm.cleanupFuncs[i](); err != nil {
@@ -263,7 +263,7 @@ func (lm *LifecycleManager) Cleanup() error {
             // Continuar con los demás recursos
         }
     }
-    
+
     if len(errors) > 0 {
         return fmt.Errorf("errors during cleanup: %v", errors)
     }
@@ -462,7 +462,7 @@ func TestBootstrapOptions() *BootstrapOptions {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap con configuración por defecto
     b := bootstrap.New(cfg)
     resources, cleanup, err := b.InitializeInfrastructure(ctx)
@@ -470,7 +470,7 @@ func main() {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // Crear container y arrancar servidor
     c := container.NewContainer(resources)
     r := router.SetupRouter(c)
@@ -484,7 +484,7 @@ func main() {
 func main() {
     ctx := context.Background()
     cfg, _ := config.Load()
-    
+
     // Bootstrap con RabbitMQ y S3 opcionales
     b := bootstrap.New(cfg,
         bootstrap.WithOptionalResource("rabbitmq"),
@@ -495,7 +495,7 @@ func main() {
         log.Fatal(err)
     }
     defer cleanup()
-    
+
     // La app funciona sin RabbitMQ ni S3
     c := container.NewContainer(resources)
     r := router.SetupRouter(c)
@@ -509,7 +509,7 @@ func main() {
 func TestAPI(t *testing.T) {
     ctx := context.Background()
     cfg := testConfig()
-    
+
     // Bootstrap con todos los recursos mockeados
     b := bootstrap.New(cfg,
         bootstrap.WithLogger(mockLogger),
@@ -520,7 +520,7 @@ func TestAPI(t *testing.T) {
     )
     resources, cleanup, _ := b.InitializeInfrastructure(ctx)
     defer cleanup()
-    
+
     // Tests con mocks
     c := container.NewContainer(resources)
     // ... tests

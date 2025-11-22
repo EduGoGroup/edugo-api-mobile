@@ -1,6 +1,6 @@
 module github.com/EduGoGroup/edugo-api-mobile
 
-go 1.24.10
+go 1.25
 
 require (
 	github.com/EduGoGroup/edugo-infrastructure/postgres v0.9.0

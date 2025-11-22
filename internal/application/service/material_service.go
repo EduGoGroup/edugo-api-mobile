@@ -87,7 +87,7 @@ func (s *materialService) CreateMaterial(
 		SchoolID:      "00000000-0000-0000-0000-000000000000", // TODO: obtener school_id del contexto
 		TeacherID:     authorID.String(),
 		FileURL:       "s3://edugo/materials/" + material.ID().String() + ".pdf", // TODO: URL real de S3
-		FileSizeBytes: 0, // TODO: obtener tamaño real del archivo
+		FileSizeBytes: 0,                                                         // TODO: obtener tamaño real del archivo
 		FileType:      "application/pdf",
 		Metadata: map[string]interface{}{
 			"title":       material.Title(),

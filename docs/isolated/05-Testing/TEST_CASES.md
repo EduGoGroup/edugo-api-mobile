@@ -112,7 +112,7 @@
 ```go
 func TestSecurity_TC021(t *testing.T) {
     response := getAssessment(materialID)
-    
+
     // Verificar que NO contiene campos sensibles
     assert.NotContains(t, response, "correct_answer")
     assert.NotContains(t, response, "feedback")
@@ -125,12 +125,12 @@ func TestSecurity_TC021(t *testing.T) {
 func TestSecurity_TC022(t *testing.T) {
     // Intentar SQL injection en material_id
     maliciousID := "'; DROP TABLE assessment; --"
-    
+
     response := getAssessment(maliciousID)
-    
+
     // GORM usa prepared statements, debe retornar 400 (UUID inválido)
     assert.Equal(t, 400, response.StatusCode)
-    
+
     // Verificar que tabla sigue existiendo
     var count int
     db.Table("assessment").Count(&count)
@@ -145,10 +145,10 @@ func TestSecurity_TC023(t *testing.T) {
     answers := []Answer{
         {QuestionID: "q1", SelectedAnswerID: "wrong_answer"},
     }
-    
+
     // Cliente intenta mentir con score alto en request (debe ser ignorado)
     response := createAttempt(answers, clientScore: 100)
-    
+
     // Servidor calcula score real = 0%
     assert.Equal(t, 0, response.Score)
 }
@@ -163,7 +163,7 @@ func TestSecurity_TC024(t *testing.T) {
         "GET /v1/attempts/:id/results",
         "GET /v1/users/me/attempts",
     }
-    
+
     for _, endpoint := range endpoints {
         response := callWithoutJWT(endpoint)
         assert.Equal(t, 401, response.StatusCode)
@@ -179,13 +179,13 @@ func TestSecurity_TC024(t *testing.T) {
 ```go
 func TestPerformance_TC030(t *testing.T) {
     samples := make([]time.Duration, 100)
-    
+
     for i := 0; i < 100; i++ {
         start := time.Now()
         getAssessment(materialID)
         samples[i] = time.Since(start)
     }
-    
+
     p95 := calculateP95(samples)
     assert.Less(t, p95.Milliseconds(), int64(500)) // <500ms p95
 }

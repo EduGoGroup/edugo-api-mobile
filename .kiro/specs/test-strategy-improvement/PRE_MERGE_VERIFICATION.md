@@ -35,7 +35,7 @@ go build ./...
 make test-unit
 ```
 
-**Resultado**: 
+**Resultado**:
 - ✅ Todos los tests unitarios pasan
 - ✅ 139+ tests ejecutados
 - ✅ Sin errores
@@ -242,12 +242,12 @@ vim .github/testing-config.yml
 
 ### Al crear PR dev → main:
 - ⚠️ **Cobertura 35.3% < 60%** (umbral configurado)
-  
+
   **Soluciones**:
   1. Agregar label `skip-coverage` al PR
   2. Cambiar umbral en `.github/testing-config.yml` a 35
   3. Cambiar `COVERAGE_THRESHOLD` en `test.yml` a 35
-  
+
   **Recomendación**: Opción 1 (label) para este PR de infraestructura
 
 ### Al hacer manual release:

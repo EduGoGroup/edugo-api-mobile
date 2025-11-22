@@ -453,4 +453,3 @@ Toda la documentación estará en `.github/workflows/docs/`:
 ---
 
 **Última actualización**: 9 de noviembre de 2025
-

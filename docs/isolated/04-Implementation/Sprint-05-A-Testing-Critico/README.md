@@ -58,15 +58,15 @@ Garantizar que el sistema es seguro contra vulnerabilidades comunes.
 1. **Respuestas Correctas NUNCA Expuestas**
    - GET /v1/materials/:id/assessment → NO incluye `correct_answer`
    - GET /v1/attempts/:id/results → Solo indica si es correcta, NO la respuesta
-   
+
 2. **Score Validado en Servidor**
    - Cliente no puede enviar score falso
    - Score calculado SIEMPRE en servidor
-   
+
 3. **Autenticación JWT Requerida**
    - Todos los endpoints protegidos requieren JWT
    - Token inválido → 401
-   
+
 4. **Autorización (Own Resources)**
    - Usuario solo accede a sus propios intentos
    - Intentar acceder a recursos de otro usuario → 403/404

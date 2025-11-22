@@ -51,7 +51,7 @@ print_section() {
 #######################################
 confirm_reset() {
     print_section "⚠️  Development Environment Reset"
-    
+
     print_message "${YELLOW}" "WARNING: This operation will:"
     echo "  • Stop all development containers"
     echo "  • Remove all containers"
@@ -60,21 +60,21 @@ confirm_reset() {
     echo ""
     print_message "${RED}" "This action cannot be undone!"
     echo ""
-    
+
     # Check if -y flag was passed
     if [[ "${1:-}" == "-y" ]] || [[ "${1:-}" == "--yes" ]]; then
         print_message "${YELLOW}" "Auto-confirmation enabled, proceeding with reset..."
         return 0
     fi
-    
+
     read -p "Are you sure you want to continue? (yes/no): " -r
     echo ""
-    
+
     if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
         print_message "${GREEN}" "✓ Reset cancelled"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -85,7 +85,7 @@ confirm_reset() {
 #######################################
 cleanup_environment() {
     print_section "🧹 Cleaning Up Environment"
-    
+
     # Stop containers
     print_message "${YELLOW}" "Stopping containers..."
     if docker-compose -f "${COMPOSE_FILE}" down 2>/dev/null; then
@@ -93,7 +93,7 @@ cleanup_environment() {
     else
         print_message "${YELLOW}" "⚠ No containers to stop or already stopped"
     fi
-    
+
     # Remove containers and volumes
     print_message "${YELLOW}" "Removing containers and volumes..."
     if docker-compose -f "${COMPOSE_FILE}" down -v 2>/dev/null; then
@@ -101,12 +101,12 @@ cleanup_environment() {
     else
         print_message "${YELLOW}" "⚠ No containers or volumes to remove"
     fi
-    
+
     # Additional cleanup: remove any orphaned containers
     print_message "${YELLOW}" "Checking for orphaned containers..."
     local orphaned_containers
     orphaned_containers=$(docker ps -a --filter "name=edugo-" --format "{{.Names}}" 2>/dev/null || true)
-    
+
     if [[ -n "$orphaned_containers" ]]; then
         print_message "${YELLOW}" "Found orphaned containers, removing..."
         echo "$orphaned_containers" | xargs -r docker rm -f 2>/dev/null || true
@@ -114,12 +114,12 @@ cleanup_environment() {
     else
         print_message "${GREEN}" "✓ No orphaned containers found"
     fi
-    
+
     # Additional cleanup: remove any orphaned volumes
     print_message "${YELLOW}" "Checking for orphaned volumes..."
     local orphaned_volumes
     orphaned_volumes=$(docker volume ls --filter "name=edugo" --format "{{.Name}}" 2>/dev/null || true)
-    
+
     if [[ -n "$orphaned_volumes" ]]; then
         print_message "${YELLOW}" "Found orphaned volumes, removing..."
         echo "$orphaned_volumes" | xargs -r docker volume rm 2>/dev/null || true
@@ -127,7 +127,7 @@ cleanup_environment() {
     else
         print_message "${GREEN}" "✓ No orphaned volumes found"
     fi
-    
+
     print_message "${GREEN}" "✓ Environment cleanup complete"
     return 0
 }
@@ -139,23 +139,23 @@ cleanup_environment() {
 #######################################
 reinitialize() {
     print_section "🚀 Reinitializing Environment"
-    
+
     local init_script="${SCRIPT_DIR}/dev-init.sh"
-    
+
     if [[ ! -f "$init_script" ]]; then
         print_message "${RED}" "✗ Error: dev-init.sh not found at ${init_script}"
         print_message "${YELLOW}" "Please ensure the initialization script exists"
         return 1
     fi
-    
+
     if [[ ! -x "$init_script" ]]; then
         print_message "${YELLOW}" "Making dev-init.sh executable..."
         chmod +x "$init_script"
     fi
-    
+
     print_message "${BLUE}" "Running dev-init.sh..."
     echo ""
-    
+
     # Execute the initialization script
     if "$init_script"; then
         echo ""
@@ -201,7 +201,7 @@ EOF
 main() {
     # Parse arguments
     local auto_confirm=""
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             -y|--yes)
@@ -220,21 +220,21 @@ main() {
                 ;;
         esac
     done
-    
+
     # Change to project root
     cd "${PROJECT_ROOT}"
-    
+
     # Step 1: Confirm reset
     if ! confirm_reset "$auto_confirm"; then
         exit 0
     fi
-    
+
     # Step 2: Cleanup environment
     if ! cleanup_environment; then
         print_message "${RED}" "✗ Cleanup failed"
         exit 1
     fi
-    
+
     # Step 3: Reinitialize environment
     if ! reinitialize; then
         print_message "${RED}" "✗ Reset failed during reinitialization"
@@ -245,7 +245,7 @@ main() {
         print_message "${YELLOW}" "  3. Try manual initialization: ./scripts/dev-init.sh"
         exit 1
     fi
-    
+
     # Success!
     print_section "✅ Reset Complete"
     print_message "${GREEN}" "Your development environment has been reset and reinitialized."

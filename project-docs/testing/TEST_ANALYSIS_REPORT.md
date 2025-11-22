@@ -53,7 +53,7 @@ Proyecto edugo-api-mobile/
 
 Las siguientes carpetas solo contienen archivos `.gitkeep` y están vacías:
 
-- `test/unit/application/` 
+- `test/unit/application/`
 - `test/unit/domain/`
 - `test/unit/infrastructure/`
 

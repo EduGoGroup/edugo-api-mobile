@@ -40,10 +40,10 @@ func NewMaterialUploadedEvent(payload MaterialUploadedPayload) Event {
 
 // AssessmentGeneratedPayload representa el payload del evento assessment.generated
 type AssessmentGeneratedPayload struct {
-	MaterialID         string `json:"material_id"`
-	MongoDocumentID    string `json:"mongo_document_id"`
-	QuestionsCount     int    `json:"questions_count"`
-	ProcessingTimeMs   int    `json:"processing_time_ms,omitempty"`
+	MaterialID       string `json:"material_id"`
+	MongoDocumentID  string `json:"mongo_document_id"`
+	QuestionsCount   int    `json:"questions_count"`
+	ProcessingTimeMs int    `json:"processing_time_ms,omitempty"`
 }
 
 // NewAssessmentGeneratedEvent crea un nuevo evento assessment.generated con envelope estándar

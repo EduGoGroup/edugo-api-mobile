@@ -17,13 +17,21 @@ on:
           - patch # 0.0.1 → 0.0.2 (bugfix)
           - minor # 0.0.1 → 0.1.0 (nueva feature)
           - major # 0.0.1 → 1.0.0 (breaking change o producción)
+      enable_auto_release:
+        description: "⚠️ CONFIRMAR: ¿Crear release automáticamente?"
+        required: true
+        type: choice
+        default: "no"
+        options:
+          - "no" # Por defecto NO crear release
+          - "yes" # Confirmar explícitamente para crear
 
 permissions:
   contents: write
   packages: write
 
 env:
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.25"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -33,6 +41,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 🚨 CONTROL DE SEGURIDAD: Prevenir releases accidentales
+      - name: ⚠️ Verificar confirmación de release
+        run: |
+          if [ "${{ inputs.enable_auto_release }}" != "yes" ]; then
+            echo "❌ ERROR: Release no confirmado"
+            echo ""
+            echo "Para crear un release, debes:"
+            echo "1. Seleccionar 'yes' en el campo 'enable_auto_release'"
+            echo "2. Esto previene releases accidentales"
+            echo ""
+            echo "Estado actual: enable_auto_release = '${{ inputs.enable_auto_release }}'"
+            exit 1
+          fi
+
+          echo "✅ Release confirmado explícitamente"
+          echo "Procediendo con la creación de v${{ inputs.version }}"
       # Usar GitHub App Token en lugar de GITHUB_TOKEN porque:
       # - GITHUB_TOKEN NO dispara workflows subsecuentes (limitación de seguridad de GitHub)
       # - App Token SÍ dispara sync-main-to-dev.yml automáticamente después del push

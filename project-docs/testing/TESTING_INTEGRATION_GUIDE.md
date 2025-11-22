@@ -17,11 +17,11 @@ Los tests de integración verifican la interacción entre múltiples componentes
 
 func TestSomething(t *testing.T) {
     SkipIfIntegrationTestsDisabled(t)
-    
+
     // Setup completo de app con testcontainers
     app, cleanup := SetupTestApp(t)
     defer cleanup()
-    
+
     // app.Container - Acceso a servicios
     // app.DB - PostgreSQL real
     // app.MongoDB - MongoDB real
@@ -103,28 +103,28 @@ import (
 func TestAuthFlow_LoginSuccess(t *testing.T) {
     // 1. Skip si tests deshabilitados
     SkipIfIntegrationTestsDisabled(t)
-    
+
     // 2. Setup de app con testcontainers
     app, cleanup := SetupTestApp(t)
     defer cleanup()
-    
+
     // 3. Limpiar datos
     CleanDatabase(t, app.DB)
-    
+
     // 4. Seed de datos de prueba
     userID, email := SeedTestUser(t, app.DB)
-    
+
     // 5. Ejecutar test
     router := app.Container.Router()
     w := httptest.NewRecorder()
-    
+
     reqBody := `{"email":"test@edugo.com","password":"Test1234!"}`
-    req := httptest.NewRequest("POST", "/api/v1/auth/login", 
+    req := httptest.NewRequest("POST", "/api/v1/auth/login",
         strings.NewReader(reqBody))
     req.Header.Set("Content-Type", "application/json")
-    
+
     router.ServeHTTP(w, req)
-    
+
     // 6. Assertions
     assert.Equal(t, 200, w.Code)
     assert.Contains(t, w.Body.String(), "access_token")

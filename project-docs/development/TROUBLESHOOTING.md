@@ -43,7 +43,7 @@ Cannot connect to the Docker daemon at unix:///var/run/docker.sock
    ```bash
    # macOS/Linux
    docker info
-   
+
    # If you see permission errors, add your user to docker group (Linux):
    sudo usermod -aG docker $USER
    newgrp docker  # Or logout and login again
@@ -73,7 +73,7 @@ Cannot connect to the Docker daemon at unix:///var/run/docker.sock
    ```bash
    # If you have Docker Compose V2, use:
    docker compose version
-   
+
    # Update scripts to use 'docker compose' instead of 'docker-compose'
    ```
 
@@ -196,10 +196,10 @@ Container is running but not healthy
    ```bash
    # PostgreSQL
    docker exec edugo-postgres pg_isready -U edugo
-   
+
    # MongoDB
    docker exec edugo-mongodb mongosh --eval "db.adminCommand('ping')"
-   
+
    # RabbitMQ
    curl -u edugo:edugo123 http://localhost:15672/api/overview
    ```
@@ -308,11 +308,11 @@ ERROR: relation "users" already exists
    ```bash
    # Connect to PostgreSQL
    psql "postgresql://edugo:edugo123@localhost:5432/edugo"
-   
+
    # Drop all tables (careful!)
    DROP SCHEMA public CASCADE;
    CREATE SCHEMA public;
-   
+
    # Exit and reinitialize
    \q
    make dev-init
@@ -371,7 +371,7 @@ Connection refused when trying to connect to localhost:5432
    ```bash
    # Get container IP
    CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' edugo-postgres)
-   
+
    # Test connection
    psql "postgresql://edugo:edugo123@${CONTAINER_IP}:5432/edugo"
    ```
@@ -380,7 +380,7 @@ Connection refused when trying to connect to localhost:5432
    ```bash
    # macOS
    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
-   
+
    # Linux
    sudo ufw status
    ```
@@ -433,7 +433,7 @@ Could not resolve hostname
    lsof -i :27017
    lsof -i :5672
    lsof -i :15672
-   
+
    # Or use netstat
    netstat -an | grep LISTEN | grep 5432
    ```
@@ -442,7 +442,7 @@ Could not resolve hostname
    ```bash
    # If it's another PostgreSQL instance
    sudo systemctl stop postgresql
-   
+
    # Or kill specific process
    kill -9 <PID>
    ```
@@ -484,7 +484,7 @@ Service did not become healthy in time
    ```bash
    # Check CPU and memory usage
    docker stats
-   
+
    # Check disk I/O
    iostat -x 1
    ```
@@ -522,7 +522,7 @@ Service did not become healthy in time
    ```bash
    # PostgreSQL
    psql "postgresql://edugo:edugo123@localhost:5432/edugo"
-   
+
    # MongoDB
    mongosh "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin"
    ```
@@ -578,7 +578,7 @@ ERROR: relation "users" does not exist
    ```bash
    # PostgreSQL
    psql "postgresql://edugo:edugo123@localhost:5432/edugo" -f scripts/postgresql/01_create_schema.sql
-   
+
    # MongoDB
    mongosh "mongodb://edugo:edugo123@localhost:27017/edugo?authSource=admin" scripts/mongodb/02_assessment_results.js
    ```

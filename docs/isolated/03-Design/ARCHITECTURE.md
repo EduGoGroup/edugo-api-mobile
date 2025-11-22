@@ -18,25 +18,25 @@ graph TB
         PROF[Profesor]
         TUT[Tutor]
     end
-    
+
     subgraph "Sistema EduGo"
         API[API Mobile<br/>Puerto 8080]
     end
-    
+
     subgraph "Sistemas Externos"
         PG[(PostgreSQL<br/>Datos Relacionales)]
         MONGO[(MongoDB<br/>Documentos)]
         WORKER[Worker<br/>Procesamiento IA]
     end
-    
+
     EST -->|Realiza evaluaciones| API
     PROF -->|Sube materiales| API
     TUT -->|Consulta progreso| API
-    
+
     API -->|Lee/Escribe intentos| PG
     API -->|Lee preguntas| MONGO
     WORKER -->|Genera assessments| MONGO
-    
+
     style API fill:#4CAF50,stroke:#2E7D32,color:#fff
     style PG fill:#2196F3,stroke:#1565C0,color:#fff
     style MONGO fill:#4CAF50,stroke:#2E7D32,color:#fff
@@ -57,29 +57,29 @@ graph TB
     subgraph "Cliente"
         APP[App Móvil<br/>KMP]
     end
-    
+
     subgraph "API Mobile - Puerto 8080"
         HTTP[HTTP Server<br/>Gin Framework]
         AUTH[Auth Middleware<br/>JWT]
         ASSESS[Assessment Module]
     end
-    
+
     subgraph "Persistencia"
         PG[(PostgreSQL 15+<br/>assessment_attempt<br/>assessment_attempt_answer)]
         MONGO[(MongoDB 7.0+<br/>material_assessment)]
     end
-    
+
     subgraph "Shared Library"
         SHARED[edugo-shared<br/>auth, db, logger]
     end
-    
+
     APP -->|HTTPS/JSON| HTTP
     HTTP --> AUTH
     AUTH --> ASSESS
     ASSESS --> PG
     ASSESS --> MONGO
     ASSESS --> SHARED
-    
+
     style HTTP fill:#FF9800,stroke:#E65100,color:#fff
     style AUTH fill:#9C27B0,stroke:#6A1B9A,color:#fff
     style ASSESS fill:#4CAF50,stroke:#2E7D32,color:#fff
@@ -105,25 +105,25 @@ graph LR
         ROUTES[Routes]
         MIDDLEWARE[Middleware Stack]
     end
-    
+
     subgraph "Application Layer"
         SERVICE[AssessmentService]
         SCORING[ScoringService]
         DTO[DTOs]
     end
-    
+
     subgraph "Domain Layer"
         ENTITIES[Entities<br/>Assessment, Attempt, Answer]
         VO[Value Objects<br/>Score, AssessmentID]
         REPO_IF[Repository Interfaces]
     end
-    
+
     subgraph "Infrastructure Layer"
         PG_REPO[PostgresAttemptRepo]
         MONGO_REPO[MongoQuestionRepo]
         DB_CONN[DB Connections]
     end
-    
+
     HANDLER --> SERVICE
     SERVICE --> SCORING
     SERVICE --> REPO_IF
@@ -133,7 +133,7 @@ graph LR
     SERVICE --> ENTITIES
     PG_REPO --> DB_CONN
     MONGO_REPO --> DB_CONN
-    
+
     style HANDLER fill:#FF9800,stroke:#E65100,color:#fff
     style SERVICE fill:#4CAF50,stroke:#2E7D32,color:#fff
     style ENTITIES fill:#9C27B0,stroke:#6A1B9A,color:#fff
@@ -247,7 +247,7 @@ type Attempt struct {
     StartedAt        time.Time
     CompletedAt      time.Time
     CreatedAt        time.Time
-    
+
     // Relaciones
     Answers          []Answer
 }
@@ -390,22 +390,22 @@ func (s *AssessmentService) GetAssessmentForStudent(
     if err != nil {
         return nil, errors.New("invalid material_id")
     }
-    
+
     // 2. Buscar assessment en PostgreSQL
     assessment, err := s.assessmentRepo.FindByMaterialID(ctx, materialUUID)
     if err != nil {
         return nil, err
     }
-    
+
     // 3. Obtener preguntas de MongoDB
     questions, err := s.questionRepo.FindByMaterialID(ctx, materialID)
     if err != nil {
         return nil, err
     }
-    
+
     // 4. ⚠️ CRÍTICO: Sanitizar respuestas correctas
     sanitizedQuestions := sanitizeQuestions(questions)
-    
+
     // 5. Construir DTO de respuesta
     return &dto.AssessmentDTO{
         AssessmentID:         assessment.ID.String(),
@@ -452,27 +452,27 @@ func (s *ScoringService) ScoreAttempt(
     if err != nil {
         return nil, err
     }
-    
+
     // 2. Validar que todas las preguntas tienen respuesta
     if len(answers) != len(questions) {
         return nil, errors.New("incomplete answers")
     }
-    
+
     // 3. Calcular puntaje
     correctCount := 0
     feedback := make([]FeedbackDTO, len(answers))
-    
+
     for i, answer := range answers {
         question := findQuestion(questions, answer.QuestionID)
         if question == nil {
             return nil, errors.New("invalid question_id")
         }
-        
+
         isCorrect := answer.SelectedOption == question.CorrectAnswer
         if isCorrect {
             correctCount++
         }
-        
+
         feedback[i] = FeedbackDTO{
             QuestionID:     answer.QuestionID,
             QuestionText:   question.Text,
@@ -482,9 +482,9 @@ func (s *ScoringService) ScoreAttempt(
             Message:        getFeedbackMessage(question, isCorrect),
         }
     }
-    
+
     score := (correctCount * 100) / len(questions)
-    
+
     return &ScoringResult{
         Score:          score,
         CorrectAnswers: correctCount,
@@ -522,21 +522,21 @@ func (r *PostgresAttemptRepository) Create(
             tx.Rollback()
         }
     }()
-    
+
     // 1. Insertar intento
     attemptModel := toAttemptModel(attempt)
     if err := tx.Create(&attemptModel).Error; err != nil {
         tx.Rollback()
         return err
     }
-    
+
     // 2. Insertar respuestas individuales
     answerModels := toAnswerModels(attempt.Answers, attempt.ID)
     if err := tx.Create(&answerModels).Error; err != nil {
         tx.Rollback()
         return err
     }
-    
+
     // 3. Commit
     return tx.Commit().Error
 }
@@ -546,18 +546,18 @@ func (r *PostgresAttemptRepository) FindByID(
     id uuid.UUID,
 ) (*entities.Attempt, error) {
     var attemptModel AttemptModel
-    
+
     err := r.db.WithContext(ctx).
         Preload("Answers").
         First(&attemptModel, "id = ?", id).Error
-    
+
     if err != nil {
         if errors.Is(err, gorm.ErrRecordNotFound) {
             return nil, ErrNotFound
         }
         return nil, err
     }
-    
+
     return toAttemptEntity(&attemptModel), nil
 }
 ```
@@ -578,9 +578,9 @@ func (r *MongoQuestionRepository) FindByMaterialID(
     materialID string,
 ) ([]Question, error) {
     coll := r.client.Database(r.database).Collection(r.collection)
-    
+
     filter := bson.M{"material_id": materialID}
-    
+
     var result AssessmentDocument
     err := coll.FindOne(ctx, filter).Decode(&result)
     if err != nil {
@@ -589,7 +589,7 @@ func (r *MongoQuestionRepository) FindByMaterialID(
         }
         return nil, err
     }
-    
+
     return result.Questions, nil
 }
 ```
@@ -607,28 +607,28 @@ sequenceDiagram
     participant Service as AssessmentService
     participant PG as PostgreSQL
     participant Mongo as MongoDB
-    
+
     Client->>Handler: GET /v1/materials/:id/assessment
     activate Handler
-    
+
     Handler->>Handler: Validar JWT
     Handler->>Service: GetAssessmentForStudent(materialID, userID)
     activate Service
-    
+
     Service->>PG: FindByMaterialID(materialID)
     activate PG
     PG-->>Service: assessment (metadata)
     deactivate PG
-    
+
     Service->>Mongo: FindByMaterialID(materialID)
     activate Mongo
     Mongo-->>Service: questions (con respuestas correctas)
     deactivate Mongo
-    
+
     Service->>Service: ⚠️ Sanitizar (remover respuestas)
     Service-->>Handler: AssessmentDTO (sin respuestas)
     deactivate Service
-    
+
     Handler-->>Client: 200 OK + JSON
     deactivate Handler
 ```
@@ -647,41 +647,41 @@ sequenceDiagram
     participant Scoring as ScoringService
     participant Mongo as MongoDB
     participant PG as PostgreSQL
-    
+
     Client->>Handler: POST /v1/materials/:id/assessment/attempts<br/>{answers, time_spent}
     activate Handler
-    
+
     Handler->>Handler: Validar JWT + Request Body
     Handler->>Service: CreateAttempt(materialID, studentID, answers)
     activate Service
-    
+
     Service->>Scoring: ScoreAttempt(assessmentID, answers)
     activate Scoring
-    
+
     Scoring->>Mongo: FindByAssessmentID(assessmentID)
     Mongo-->>Scoring: questions (CON respuestas correctas)
-    
+
     Scoring->>Scoring: Validar cada respuesta
     Scoring->>Scoring: Calcular puntaje
     Scoring->>Scoring: Generar feedback
     Scoring-->>Service: ScoringResult
     deactivate Scoring
-    
+
     Service->>Service: Construir Attempt entity
     Service->>PG: Create(attempt + answers)
     activate PG
-    
+
     Note over PG: BEGIN TRANSACTION
     PG->>PG: INSERT assessment_attempt
     PG->>PG: INSERT assessment_attempt_answer (bulk)
     Note over PG: COMMIT
-    
+
     PG-->>Service: Success
     deactivate PG
-    
+
     Service-->>Handler: AttemptResultDTO
     deactivate Service
-    
+
     Handler-->>Client: 201 Created + Resultados
     deactivate Handler
 ```
@@ -698,22 +698,22 @@ sequenceDiagram
     participant Handler as AssessmentHandler
     participant Repo as AttemptRepository
     participant PG as PostgreSQL
-    
+
     Client->>Handler: GET /v1/users/me/attempts?limit=10&offset=0
     activate Handler
-    
+
     Handler->>Handler: Validar JWT → userID
     Handler->>Repo: FindByStudentID(userID, limit, offset)
     activate Repo
-    
+
     Repo->>PG: SELECT ... ORDER BY completed_at DESC
     activate PG
     PG-->>Repo: attempts[]
     deactivate PG
-    
+
     Repo-->>Handler: []*Attempt
     deactivate Repo
-    
+
     Handler->>Handler: Convertir a DTO
     Handler-->>Client: 200 OK + JSON
     deactivate Handler
@@ -854,12 +854,12 @@ func (s *AssessmentService) CreateAttempt(
     if existing != nil {
         return existing, nil // Retornar existente
     }
-    
+
     // Crear nuevo
     attempt := buildAttempt(req)
     attempt.IdempotencyKey = idempotencyKey
     s.attemptRepo.Create(ctx, attempt)
-    
+
     return attempt, nil
 }
 ```
@@ -973,13 +973,13 @@ func (s *AssessmentService) GetAssessment(ctx context.Context, id string) (*Asse
     if cached != nil {
         return cached, nil
     }
-    
+
     // 2. Query BD
     assessment := s.repo.FindByID(ctx, id)
-    
+
     // 3. Guardar en cache (TTL 1 hora)
     s.cache.Set("assessment:"+id, assessment, time.Hour)
-    
+
     return assessment, nil
 }
 ```
@@ -1033,21 +1033,21 @@ func (r *MongoQuestionRepository) FindByMaterialID(ctx context.Context, id strin
 func (r *PostgresAttemptRepository) Create(ctx context.Context, attempt *Attempt) error {
     backoff := time.Second
     maxRetries := 3
-    
+
     for i := 0; i < maxRetries; i++ {
         err := r.db.Create(attempt).Error
         if err == nil {
             return nil
         }
-        
+
         if !isRetryable(err) {
             return err
         }
-        
+
         time.Sleep(backoff)
         backoff *= 2 // Exponencial: 1s, 2s, 4s
     }
-    
+
     return errors.New("max retries exceeded")
 }
 ```
@@ -1058,7 +1058,7 @@ func (r *PostgresAttemptRepository) Create(ctx context.Context, attempt *Attempt
 func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
     ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
     defer cancel()
-    
+
     attempt, err := h.service.CreateAttempt(ctx, req)
     // ...
 }
@@ -1075,12 +1075,12 @@ import "go.opentelemetry.io/otel/trace"
 func (s *AssessmentService) CreateAttempt(ctx context.Context, req CreateAttemptRequest) error {
     ctx, span := tracer.Start(ctx, "AssessmentService.CreateAttempt")
     defer span.End()
-    
+
     span.SetAttributes(
         attribute.String("student_id", req.StudentID),
         attribute.String("assessment_id", req.AssessmentID),
     )
-    
+
     // Business logic
 }
 ```
@@ -1095,7 +1095,7 @@ var (
         },
         []string{"status"},
     )
-    
+
     attemptTotal = prometheus.NewCounterVec(
         prometheus.CounterOpts{
             Name: "assessment_attempt_total",
@@ -1109,7 +1109,7 @@ func recordAttempt(duration time.Duration, passed bool, err error) {
     if err != nil {
         status = "error"
     }
-    
+
     attemptDuration.WithLabelValues(status).Observe(duration.Seconds())
     attemptTotal.WithLabelValues(status, strconv.FormatBool(passed)).Inc()
 }

@@ -54,15 +54,15 @@
 - ❌ **Getters simples**: `ID()`, `Title()`, `Email()`
   - Son triviales, no pueden fallar
   - Si fallan, los tests de integración lo detectarán
-  
+
 - ❌ **Setters simples**: `SetS3Info()`, `MarkProcessingComplete()`
   - Validaciones básicas
   - Ya validadas en uso real (servicios)
-  
+
 - ❌ **Constructores básicos**: `NewMaterial()`, `ReconstructMaterial()`
   - Ya validados en tests de integración
   - Validaciones simples (campo requerido)
-  
+
 - ❌ **Checkers booleanos**: `IsDraft()`, `IsPublished()`
   - Una línea de código
   - No pueden fallar

@@ -1,0 +1,102 @@
+# Pre-commit hooks para edugo-api-mobile
+# Instalación: pip install pre-commit && pre-commit install
+# Ejecución manual: pre-commit run --all-files
+# Desactivar: git config core.hooksPath .git/hooks
+
+repos:
+  # Validaciones generales de archivos
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Prevenir commits a main/dev directamente
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'dev']
+
+      # Remover espacios en blanco al final de líneas
+      - id: trailing-whitespace
+        args: ['--markdown-linebreak-ext=md']
+
+      # Asegurar que archivos terminan con salto de línea
+      - id: end-of-file-fixer
+
+      # Prevenir archivos grandes (>500KB)
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+      # Validar sintaxis YAML
+      - id: check-yaml
+        args: ['--unsafe']  # Permite templates de GitHub Actions
+
+      # Validar sintaxis JSON
+      - id: check-json
+
+      # Detectar merge conflict markers
+      - id: check-merge-conflict
+
+      # Prevenir commits de claves privadas
+      - id: detect-private-key
+
+  # Validaciones específicas de Go
+  - repo: local
+    hooks:
+      # go fmt - Formateo automático de código
+      - id: go-fmt
+        name: go fmt
+        entry: bash -c 'gofmt -w -s .'
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      # go vet - Análisis estático de errores comunes
+      - id: go-vet
+        name: go vet
+        entry: bash -c 'go vet ./...'
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      # go mod tidy - Limpiar dependencias
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: bash -c 'go mod tidy'
+        language: system
+        files: ^go\.(mod|sum)$
+        pass_filenames: false
+
+      # golangci-lint - Linting completo (opcional, puede ser lento)
+      - id: golangci-lint
+        name: golangci-lint
+        entry: bash -c 'golangci-lint run --fast'
+        language: system
+        files: \.go$
+        pass_filenames: false
+        # Opcional: comentar si es muy lento
+        # stages: [manual]
+
+  # Validaciones de archivos de configuración
+  - repo: local
+    hooks:
+      # Validar archivos Dockerfile
+      - id: dockerfile-lint
+        name: dockerfile lint
+        entry: bash -c 'if command -v hadolint >/dev/null 2>&1; then hadolint Dockerfile; else echo "⚠️  hadolint not installed, skipping"; fi'
+        language: system
+        files: ^Dockerfile$
+        pass_filenames: false
+
+# Configuración global
+default_language_version:
+  python: python3
+
+# Omitir archivos/directorios
+exclude: |
+  (?x)^(
+      vendor/|
+      docs/swagger/.*\.json$|
+      \.git/|
+      \.idea/|
+      coverage/
+  )$
+
+# Ejecutar en paralelo para mayor velocidad
+fail_fast: false
