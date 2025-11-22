@@ -129,7 +129,7 @@ jobs:
   # =====================================================
   lint:
     name: Lint & Format Check
-    uses: EduGoGroup/edugo-infrastructure/.github/workflows/reusable/go-lint.yml@main
+    uses: EduGoGroup/edugo-infrastructure/.github/workflows/reusable-go-lint.yml@main
     with:
       go-version: "1.25"
       golangci-lint-version: "v2.4.0"
