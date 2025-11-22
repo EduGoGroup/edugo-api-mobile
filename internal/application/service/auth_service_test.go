@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
@@ -27,20 +27,20 @@ type MockUserReader struct {
 	mock.Mock
 }
 
-func (m *MockUserReader) FindByID(ctx context.Context, id valueobject.UserID) (*entity.User, error) {
+func (m *MockUserReader) FindByID(ctx context.Context, id valueobject.UserID) (*pgentities.User, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.User), args.Error(1)
+	return args.Get(0).(*pgentities.User), args.Error(1)
 }
 
-func (m *MockUserReader) FindByEmail(ctx context.Context, email valueobject.Email) (*entity.User, error) {
+func (m *MockUserReader) FindByEmail(ctx context.Context, email valueobject.Email) (*pgentities.User, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.User), args.Error(1)
+	return args.Get(0).(*pgentities.User), args.Error(1)
 }
 
 type MockRefreshTokenRepository struct {
@@ -131,7 +131,7 @@ func setupAuthServiceTest(t *testing.T) (
 	return service, userReader, refreshTokenRepo, loginAttemptRepo
 }
 
-func createTestUser(t *testing.T, email string, password string, active bool) *entity.User {
+func createTestUser(t *testing.T, email string, password string, active bool) *pgentities.User {
 	t.Helper()
 
 	emailVO, err := valueobject.NewEmail(email)
@@ -141,17 +141,17 @@ func createTestUser(t *testing.T, email string, password string, active bool) *e
 	passwordHash, err := auth.HashPassword(password)
 	require.NoError(t, err)
 
-	user := entity.ReconstructUser(
-		valueobject.NewUserID(),
-		emailVO,
-		passwordHash,
-		"Test",
-		"User",
-		enum.SystemRoleStudent,
-		active,
-		time.Now(),
-		time.Now(),
-	)
+	user := &pgentities.User{
+		ID:           valueobject.NewUserID().UUID().UUID,
+		Email:        emailVO.String(),
+		PasswordHash: passwordHash,
+		FirstName:    "Test",
+		LastName:     "User",
+		Role:         string(enum.SystemRoleStudent),
+		IsActive:     active,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
 
 	return user
 }
@@ -192,7 +192,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 	assert.NotEmpty(t, response.RefreshToken)
 	assert.Equal(t, 900, response.ExpiresIn)
 	assert.Equal(t, "Bearer", response.TokenType)
-	assert.Equal(t, testUser.ID().String(), response.User.ID)
+	assert.Equal(t, testUser.ID.String(), response.User.ID)
 	assert.Equal(t, "test@example.com", response.User.Email)
 
 	userReader.AssertExpectations(t)
@@ -307,14 +307,15 @@ func TestAuthService_RefreshAccessToken_Success(t *testing.T) {
 	tokenData := &repository.RefreshTokenData{
 		ID:        uuid.New(),
 		TokenHash: tokenHash,
-		UserID:    testUser.ID().UUID().UUID,
+		UserID:    testUser.ID,
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 		CreatedAt: time.Now(),
 		RevokedAt: nil,
 	}
 
 	refreshTokenRepo.On("FindByTokenHash", ctx, tokenHash).Return(tokenData, nil)
-	userReader.On("FindByID", ctx, testUser.ID()).Return(testUser, nil)
+	userIDVO, _ := valueobject.UserIDFromString(testUser.ID.String())
+	userReader.On("FindByID", ctx, userIDVO).Return(testUser, nil)
 
 	response, err := service.RefreshAccessToken(ctx, refreshToken)
 

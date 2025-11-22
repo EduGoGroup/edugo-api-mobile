@@ -11,10 +11,10 @@ import (
 	testifySuite "github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
@@ -193,17 +193,17 @@ func (s *UserRepositoryIntegrationSuite) TestUpdate() {
 	s.Require().NoError(err)
 
 	// Reconstruir user con cambios
-	updatedUser := entity.ReconstructUser(
-		userIDValue,
-		email,
-		string(hashedPassword),
-		"Updated",
-		"Name",
-		enum.SystemRoleStudent,
-		false, // Cambiar isActive
-		time.Now(),
-		time.Now(),
-	)
+	updatedUser := pgentities.User{
+		ID:           userIDValue.UUID().UUID,
+		Email:        email,
+		PasswordHash: string(hashedPassword),
+		FirstName:    "Updated",
+		LastName:     "Name",
+		Role:         enum.SystemRoleStudent,
+		IsActive:     false, // Cambiar isActive
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
 
 	// Act
 	err = s.repo.Update(ctx, updatedUser)

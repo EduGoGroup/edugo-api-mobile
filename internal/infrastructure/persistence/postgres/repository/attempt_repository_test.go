@@ -17,9 +17,24 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptrStr crea un puntero a string
+func ptrStr(s string) *string {
+	return &s
+}
+
+// ptrBool crea un puntero a bool
+func ptrBool(b bool) *bool {
+	return &b
+}
+
+// ptrInt crea un puntero a int
+func ptrInt(i int) *int {
+	return &i
+}
 
 func TestNewPostgresAttemptRepository(t *testing.T) {
 	var mockDB *sql.DB
@@ -108,23 +123,48 @@ func TestPostgresAttemptRepository_Save_Success(t *testing.T) {
 
 	// Crear attempt válido con answers
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", true, 25)
+	now := time.Now().UTC()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptrStr("b"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(25),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	startedAt := time.Now().UTC().Add(-5 * time.Minute)
-	completedAt := time.Now().UTC()
+	startedAt := now.Add(-5 * time.Minute)
+	completedAt := now
 
-	attempt, err := entities.NewAttempt(
-		uuid.New(), // assessmentID
-		uuid.New(), // studentID
-		[]*entities.Answer{answer1, answer2},
-		startedAt,
-		completedAt,
-	)
-	require.NoError(t, err)
+	attempt := &pgentities.AssessmentAttempt{
+		ID:               attemptID,
+		AssessmentID:     uuid.New(),
+		StudentID:        uuid.New(),
+		Score:            100, // 2 correctas de 2 = (2*100)/2 = 100
+		MaxScore:         100,
+		TimeSpentSeconds: 55,
+		StartedAt:        startedAt,
+		CompletedAt:      completedAt,
+		CreatedAt:        now,
+		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2},
+		IdempotencyKey:   nil,
+	}
+	err := require.NoError(t, nil)
 
 	// Act
-	err = repo.Save(ctx, attempt)
+	err = repo.Save(ctx, *attempt)
 
 	// Assert
 	assert.NoError(t, err)
@@ -138,7 +178,7 @@ func TestPostgresAttemptRepository_Save_NilAttempt(t *testing.T) {
 	ctx := context.Background()
 
 	// Act
-	err := repo.Save(ctx, nil)
+	err := repo.Save(ctx, pgentities.AssessmentAttempt{})
 
 	// Assert
 	assert.Error(t, err)
@@ -153,7 +193,7 @@ func TestPostgresAttemptRepository_Save_NoAnswers(t *testing.T) {
 	ctx := context.Background()
 
 	// Attempt sin respuestas (inválido)
-	attempt := &entities.Attempt{
+	attempt := pgentities.AssessmentAttempt{
 		ID:               uuid.New(),
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
@@ -163,7 +203,7 @@ func TestPostgresAttemptRepository_Save_NoAnswers(t *testing.T) {
 		StartedAt:        time.Now().UTC().Add(-1 * time.Minute),
 		CompletedAt:      time.Now().UTC(),
 		CreatedAt:        time.Now().UTC(),
-		Answers:          []*entities.Answer{}, // Vacío!
+		Answers:          []*pgentities.AssessmentAttemptAnswer{}, // Vacío!
 	}
 
 	// Act

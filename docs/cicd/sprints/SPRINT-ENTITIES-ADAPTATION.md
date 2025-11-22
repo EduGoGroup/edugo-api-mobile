@@ -238,7 +238,7 @@ internal/domain/entities/attempt_test.go
 
 ## 📋 Tareas del Sprint
 
-### Fase 0: Preparación
+### Etapa 0: Preparación
 
 #### Tarea 0.1: Verificar que infrastructure entities existen
 
@@ -260,7 +260,7 @@ git tag | grep entities
 
 ---
 
-### Fase 1: Actualizar go.mod de api-mobile
+### Etapa 1: Actualizar go.mod de api-mobile
 
 #### Tarea 1.1: Agregar dependencia de infrastructure
 
@@ -278,7 +278,7 @@ go mod tidy
 
 ---
 
-### Fase 2: Crear Domain Services para Lógica de Negocio
+### Etapa 2: Crear Domain Services para Lógica de Negocio
 
 **IMPORTANTE:** Antes de eliminar entities, debemos extraer la lógica de negocio.
 
@@ -625,7 +625,7 @@ func (s *AttemptDomainService) ValidateAnswer(answer *pgentities.AssessmentAnswe
 
 ---
 
-### Fase 3: Actualizar Imports en Archivos Existentes
+### Etapa 3: Actualizar Imports en Archivos Existentes
 
 #### Tarea 3.1: Actualizar imports en repositories (PostgreSQL entities)
 
@@ -666,7 +666,7 @@ find internal/ -name "*.go" -type f -exec sed -i '' \
 
 3. **Application Services:**
    - `internal/application/service/*.go`
-   - Inyectar nuevos domain services creados en Fase 2
+   - Inyectar nuevos domain services creados en Etapa 2
    - Reemplazar llamadas a métodos de entity por llamadas a domain service
 
 **Ejemplo de cambio en MaterialService:**
@@ -747,7 +747,7 @@ func ToMaterialResponse(material *pgentities.Material) *MaterialResponse {
 
 ---
 
-### Fase 4: Eliminar Entities Locales
+### Etapa 4: Eliminar Entities Locales
 
 #### Tarea 4.1: Eliminar entities antiguos
 
@@ -783,7 +783,7 @@ rmdir internal/domain/entities/ 2>/dev/null || true
 
 ---
 
-### Fase 5: Crear Tests de Domain Services
+### Etapa 5: Crear Tests de Domain Services
 
 #### Tarea 5.1: Tests de MaterialDomainService
 
@@ -831,7 +831,7 @@ Migrar lógica de `internal/domain/entities/attempt_test.go` y `answer_test.go`.
 
 ---
 
-### Fase 6: Actualizar Tests de Repositories
+### Etapa 6: Actualizar Tests de Repositories
 
 #### Tarea 6.1: Actualizar repository tests
 
@@ -879,7 +879,7 @@ material := &pgentities.Material{
 
 ---
 
-### Fase 7: Actualizar Tests de Application Services
+### Etapa 7: Actualizar Tests de Application Services
 
 #### Tarea 7.1: Actualizar service tests
 
@@ -900,7 +900,7 @@ internal/application/service/assessment_attempt_service.go (si tiene tests)
 
 ---
 
-### Fase 8: Validación Final
+### Etapa 8: Validación Final
 
 #### Tarea 8.1: Compilación
 
@@ -949,7 +949,7 @@ golangci-lint run
 
 ---
 
-### Fase 9: Documentación
+### Etapa 9: Documentación
 
 #### Tarea 9.1: Actualizar README
 
@@ -976,18 +976,18 @@ Documentar:
 
 ## 📊 Estimación de Esfuerzo
 
-| Fase | Tareas | Tiempo Estimado |
+| Etapa | Tareas | Tiempo Estimado |
 |------|--------|-----------------|
-| Fase 0: Preparación | Verificar infrastructure | 10 min |
-| Fase 1: go.mod | Actualizar dependencies | 10 min |
-| Fase 2: Domain Services | Crear 4 services | 3-4 horas |
-| Fase 3: Actualizar Imports | 31 archivos afectados | 2-3 horas |
-| Fase 4: Eliminar Entities | rm archivos | 5 min |
-| Fase 5: Tests Domain Services | 4 test suites | 2-3 horas |
-| Fase 6: Tests Repositories | 9 archivos | 2 horas |
-| Fase 7: Tests Services | 4 archivos | 1 hora |
-| Fase 8: Validación | Build + tests | 30 min |
-| Fase 9: Documentación | README + doc | 1 hora |
+| Etapa 0: Preparación | Verificar infrastructure | 10 min |
+| Etapa 1: go.mod | Actualizar dependencies | 10 min |
+| Etapa 2: Domain Services | Crear 4 services | 3-4 horas |
+| Etapa 3: Actualizar Imports | 31 archivos afectados | 2-3 horas |
+| Etapa 4: Eliminar Entities | rm archivos | 5 min |
+| Etapa 5: Tests Domain Services | 4 test suites | 2-3 horas |
+| Etapa 6: Tests Repositories | 9 archivos | 2 horas |
+| Etapa 7: Tests Services | 4 archivos | 1 hora |
+| Etapa 8: Validación | Build + tests | 30 min |
+| Etapa 9: Documentación | README + doc | 1 hora |
 | **TOTAL** | | **12-15 horas** |
 
 ---

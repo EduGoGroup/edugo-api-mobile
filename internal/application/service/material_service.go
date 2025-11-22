@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -58,15 +59,41 @@ func (s *materialService) CreateMaterial(
 		return nil, errors.NewValidationError("invalid author_id format")
 	}
 
-	// Crear entidad de dominio
-	material, err := entity.NewMaterial(
-		req.Title,
-		req.Description,
-		authorID,
-		req.SubjectID,
-	)
-	if err != nil {
-		return nil, err
+	// Crear entidad Material manualmente
+	// TODO: Obtener schoolID del contexto de autenticación
+	schoolID := uuid.New() // Temporal
+
+	var description *string
+	if req.Description != "" {
+		description = &req.Description
+	}
+
+	var subject *string
+	if req.Subject != "" {
+		subject = &req.Subject
+	}
+
+	var grade *string
+	if req.Grade != "" {
+		grade = &req.Grade
+	}
+
+	material := &pgentities.Material{
+		ID:                  valueobject.NewMaterialID().UUID().UUID,
+		SchoolID:            schoolID,
+		UploadedByTeacherID: authorID.UUID().UUID,
+		AcademicUnitID:      nil,
+		Title:               req.Title,
+		Description:         description,
+		Subject:             subject,
+		Grade:               grade,
+		FileURL:             "",
+		FileType:            "",
+		FileSizeBytes:       0,
+		Status:              "uploaded",
+		IsPublic:            false,
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
 	}
 
 	// Persistir
@@ -76,22 +103,22 @@ func (s *materialService) CreateMaterial(
 	}
 
 	s.logger.Info("material created",
-		"material_id", material.ID().String(),
+		"material_id", material.ID.String(),
 		"author_id", authorID.String(),
-		"title", material.Title(),
+		"title", material.Title,
 	)
 
 	// Publicar evento de material creado (nuevo formato con envelope)
 	payload := rabbitmq.MaterialUploadedPayload{
-		MaterialID:    material.ID().String(),
-		SchoolID:      "00000000-0000-0000-0000-000000000000", // TODO: obtener school_id del contexto
+		MaterialID:    material.ID.String(),
+		SchoolID:      material.SchoolID.String(),
 		TeacherID:     authorID.String(),
-		FileURL:       "s3://edugo/materials/" + material.ID().String() + ".pdf", // TODO: URL real de S3
-		FileSizeBytes: 0,                                                         // TODO: obtener tamaño real del archivo
+		FileURL:       "s3://edugo/materials/" + material.ID.String() + ".pdf", // TODO: URL real de S3
+		FileSizeBytes: 0,                                                       // TODO: obtener tamaño real del archivo
 		FileType:      "application/pdf",
 		Metadata: map[string]interface{}{
-			"title":       material.Title(),
-			"description": material.Description(),
+			"title":       material.Title,
+			"description": material.Description,
 		},
 	}
 
@@ -99,19 +126,19 @@ func (s *materialService) CreateMaterial(
 	eventJSON, err := event.ToJSON()
 	if err != nil {
 		s.logger.Warn("failed to serialize material uploaded event",
-			zap.String("material_id", material.ID().String()),
+			zap.String("material_id", material.ID.String()),
 			zap.Error(err),
 		)
 	} else {
 		// Publicar evento de forma asíncrona (no bloqueante)
 		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "material.uploaded", eventJSON); err != nil {
 			s.logger.Warn("failed to publish material uploaded event",
-				zap.String("material_id", material.ID().String()),
+				zap.String("material_id", material.ID.String()),
 				zap.Error(err),
 			)
 		} else {
 			s.logger.Info("material uploaded event published",
-				zap.String("material_id", material.ID().String()),
+				zap.String("material_id", material.ID.String()),
 				zap.String("event_id", event.EventID),
 			)
 		}
@@ -155,10 +182,12 @@ func (s *materialService) NotifyUploadComplete(
 		return errors.NewNotFoundError("material")
 	}
 
-	// Actualizar con info de S3
-	if err := material.SetS3Info(req.S3Key, req.S3URL); err != nil {
-		return err
-	}
+	// Actualizar con info de archivo
+	material.FileURL = req.FileURL
+	material.FileType = req.FileType
+	material.FileSizeBytes = req.FileSizeBytes
+	material.Status = "uploaded"
+	material.UpdatedAt = time.Now()
 
 	// Persistir
 	if err := s.materialRepo.Update(ctx, material); err != nil {
@@ -168,7 +197,7 @@ func (s *materialService) NotifyUploadComplete(
 
 	s.logger.Info("upload complete notified",
 		"material_id", materialID.String(),
-		"s3_key", req.S3Key,
+		"file_url", req.FileURL,
 	)
 
 	// TODO: Aquí se debería publicar evento a RabbitMQ

@@ -6,71 +6,77 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	apperrors "github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"github.com/EduGoGroup/edugo-shared/logger"
 )
+
+// Helper function para crear pointer a string
+func stringPtr(s string) *string {
+	return &s
+}
 
 // MockMaterialRepository es un mock del repositorio de materiales
 type MockMaterialRepository struct {
 	mock.Mock
 }
 
-func (m *MockMaterialRepository) Create(ctx context.Context, material *entity.Material) error {
+func (m *MockMaterialRepository) Create(ctx context.Context, material *pgentities.Material) error {
 	args := m.Called(ctx, material)
 	return args.Error(0)
 }
 
-func (m *MockMaterialRepository) FindByID(ctx context.Context, id valueobject.MaterialID) (*entity.Material, error) {
+func (m *MockMaterialRepository) FindByID(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.Material), args.Error(1)
+	return args.Get(0).(*pgentities.Material), args.Error(1)
 }
 
-func (m *MockMaterialRepository) FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*entity.Material, []*entity.MaterialVersion, error) {
+func (m *MockMaterialRepository) FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, []*pgentities.MaterialVersion, error) {
 	args := m.Called(ctx, id)
 
-	var material *entity.Material
+	var material *pgentities.Material
 	if args.Get(0) != nil {
-		material = args.Get(0).(*entity.Material)
+		material = args.Get(0).(*pgentities.Material)
 	}
 
-	var versions []*entity.MaterialVersion
+	var versions []*pgentities.MaterialVersion
 	if args.Get(1) != nil {
-		versions = args.Get(1).([]*entity.MaterialVersion)
+		versions = args.Get(1).([]*pgentities.MaterialVersion)
 	}
 
 	return material, versions, args.Error(2)
 }
 
-func (m *MockMaterialRepository) Update(ctx context.Context, material *entity.Material) error {
+func (m *MockMaterialRepository) Update(ctx context.Context, material *pgentities.Material) error {
 	args := m.Called(ctx, material)
 	return args.Error(0)
 }
 
-func (m *MockMaterialRepository) List(ctx context.Context, filters repository.ListFilters) ([]*entity.Material, error) {
+func (m *MockMaterialRepository) List(ctx context.Context, filters repository.ListFilters) ([]*pgentities.Material, error) {
 	args := m.Called(ctx, filters)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*entity.Material), args.Error(1)
+	return args.Get(0).([]*pgentities.Material), args.Error(1)
 }
 
-func (m *MockMaterialRepository) FindByAuthor(ctx context.Context, authorID valueobject.UserID) ([]*entity.Material, error) {
+func (m *MockMaterialRepository) FindByAuthor(ctx context.Context, authorID valueobject.UserID) ([]*pgentities.Material, error) {
 	args := m.Called(ctx, authorID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*entity.Material), args.Error(1)
+	return args.Get(0).([]*pgentities.Material), args.Error(1)
 }
 
 func (m *MockMaterialRepository) UpdateStatus(ctx context.Context, id valueobject.MaterialID, status enum.MaterialStatus) error {
@@ -156,10 +162,12 @@ func TestMaterialService_CreateMaterial_Success(t *testing.T) {
 	req := dto.CreateMaterialRequest{
 		Title:       "Test Material",
 		Description: "Test Description",
-		SubjectID:   valueobject.NewUserID().String(),
+		Subject:     valueobject.NewUserID().String(),
 	}
 
-	mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Material")).Return(nil)
+	mockRepo.On("Create", ctx, mock.MatchedBy(func(m *pgentities.Material) bool {
+		return m.Title == req.Title
+	})).Return(nil)
 	mockPublisher.On("Publish", ctx, "edugo.materials", "material.uploaded", mock.Anything).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
@@ -170,8 +178,11 @@ func TestMaterialService_CreateMaterial_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, req.Title, result.Title)
-	assert.Equal(t, req.Description, result.Description)
-	assert.Equal(t, authorID.String(), result.AuthorID)
+	// Description es *string en el DTO
+	if result.Description != nil {
+		assert.Equal(t, req.Description, *result.Description)
+	}
+	assert.Equal(t, authorID.String(), result.UploadedByTeacherID)
 
 	mockRepo.AssertExpectations(t)
 }
@@ -278,7 +289,9 @@ func TestMaterialService_CreateMaterial_RepositoryError(t *testing.T) {
 	}
 
 	dbError := errors.New("database connection failed")
-	mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Material")).Return(dbError)
+	mockRepo.On("Create", ctx, mock.MatchedBy(func(m *pgentities.Material) bool {
+		return m != nil
+	})).Return(dbError)
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	// Act
@@ -310,7 +323,7 @@ func TestMaterialService_CreateMaterial_PublishEventFailure(t *testing.T) {
 		Description: "Test Description",
 	}
 
-	mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.Material")).Return(nil)
+	mockRepo.On("Create", ctx, mock.MatchedBy(func(m *pgentities.Material) bool { return m != nil })).Return(nil)
 	mockPublisher.On("Publish", ctx, "edugo.materials", "material.uploaded", mock.Anything).Return(errors.New("rabbitmq connection failed"))
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
@@ -341,19 +354,18 @@ func TestMaterialService_GetMaterial_Success(t *testing.T) {
 	authorID := valueobject.NewUserID()
 
 	now := time.Now()
-	material := entity.ReconstructMaterial(
-		materialID,
-		"Test Material",
-		"Description",
-		authorID,
-		"",
-		"s3://key",
-		"https://s3.url",
-		enum.MaterialStatusPublished,
-		enum.ProcessingStatusCompleted,
-		now,
-		now,
-	)
+	material := &pgentities.Material{
+		ID:                  materialID.UUID().UUID,
+		Title:               "Test Material",
+		Description:         stringPtr("Description"),
+		UploadedByTeacherID: authorID.UUID().UUID,
+		Subject:             stringPtr(""),
+		FileURL:             "https://s3.url",
+		Status:              string(enum.MaterialStatusPublished),
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
 	mockRepo.On("FindByID", ctx, materialID).Return(material, nil)
 
@@ -463,27 +475,27 @@ func TestMaterialService_NotifyUploadComplete_Success(t *testing.T) {
 	authorID := valueobject.NewUserID()
 
 	now := time.Now()
-	material := entity.ReconstructMaterial(
-		materialID,
-		"Test Material",
-		"Description",
-		authorID,
-		"",
-		"",
-		"",
-		enum.MaterialStatusDraft,
-		enum.ProcessingStatusPending,
-		now,
-		now,
-	)
+	material := &pgentities.Material{
+		ID:                  materialID.UUID().UUID,
+		Title:               "Test Material",
+		Description:         stringPtr("Description"),
+		UploadedByTeacherID: authorID.UUID().UUID,
+		Subject:             stringPtr(""),
+		FileURL:             "",
+		Status:              string(enum.MaterialStatusDraft),
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "materials/test.pdf",
-		S3URL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	mockRepo.On("FindByID", ctx, materialID).Return(material, nil)
-	mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Material")).Return(nil)
+	mockRepo.On("Update", ctx, mock.MatchedBy(func(m *pgentities.Material) bool { return m != nil })).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
 	// Act
@@ -507,8 +519,7 @@ func TestMaterialService_NotifyUploadComplete_ValidationError_EmptyS3Key(t *test
 	materialID := valueobject.NewMaterialID()
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "", // Empty
-		S3URL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL: "", // Empty
 	}
 
 	// Act
@@ -533,8 +544,7 @@ func TestMaterialService_NotifyUploadComplete_ValidationError_InvalidURL(t *test
 	materialID := valueobject.NewMaterialID()
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "materials/test.pdf",
-		S3URL: "not-a-valid-url",
+		FileURL: "not-a-valid-url",
 	}
 
 	// Act
@@ -558,8 +568,7 @@ func TestMaterialService_NotifyUploadComplete_InvalidMaterialID(t *testing.T) {
 	ctx := context.Background()
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "materials/test.pdf",
-		S3URL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
 	}
 
 	// Act
@@ -587,8 +596,9 @@ func TestMaterialService_NotifyUploadComplete_MaterialNotFound(t *testing.T) {
 	materialID := valueobject.NewMaterialID()
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "materials/test.pdf",
-		S3URL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	mockRepo.On("FindByID", ctx, materialID).Return(nil, nil)
@@ -620,28 +630,28 @@ func TestMaterialService_NotifyUploadComplete_UpdateError(t *testing.T) {
 	authorID := valueobject.NewUserID()
 
 	now := time.Now()
-	material := entity.ReconstructMaterial(
-		materialID,
-		"Test Material",
-		"Description",
-		authorID,
-		"",
-		"",
-		"",
-		enum.MaterialStatusDraft,
-		enum.ProcessingStatusPending,
-		now,
-		now,
-	)
+	material := &pgentities.Material{
+		ID:                  materialID.UUID().UUID,
+		Title:               "Test Material",
+		Description:         stringPtr("Description"),
+		UploadedByTeacherID: authorID.UUID().UUID,
+		Subject:             stringPtr(""),
+		FileURL:             "",
+		Status:              string(enum.MaterialStatusDraft),
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
 	req := dto.UploadCompleteRequest{
-		S3Key: "materials/test.pdf",
-		S3URL: "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileURL:       "https://s3.amazonaws.com/bucket/materials/test.pdf",
+		FileType:      "application/pdf",
+		FileSizeBytes: 1048576,
 	}
 
 	dbError := errors.New("database error")
 	mockRepo.On("FindByID", ctx, materialID).Return(material, nil)
-	mockRepo.On("Update", ctx, mock.AnythingOfType("*entity.Material")).Return(dbError)
+	mockRepo.On("Update", ctx, mock.MatchedBy(func(m *pgentities.Material) bool { return m != nil })).Return(dbError)
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	// Act
@@ -678,33 +688,31 @@ func TestMaterialService_ListMaterials_Success(t *testing.T) {
 	authorID := valueobject.NewUserID()
 	now := time.Now()
 
-	materials := []*entity.Material{
-		entity.ReconstructMaterial(
-			materialID1,
-			"Material 1",
-			"Description 1",
-			authorID,
-			"",
-			"s3://key1",
-			"https://s3.url1",
-			enum.MaterialStatusPublished,
-			enum.ProcessingStatusCompleted,
-			now,
-			now,
-		),
-		entity.ReconstructMaterial(
-			materialID2,
-			"Material 2",
-			"Description 2",
-			authorID,
-			"",
-			"s3://key2",
-			"https://s3.url2",
-			enum.MaterialStatusPublished,
-			enum.ProcessingStatusCompleted,
-			now,
-			now,
-		),
+	materials := []*pgentities.Material{
+		{
+			ID:                  materialID1.UUID().UUID,
+			Title:               "Material 1",
+			Description:         stringPtr("Description 1"),
+			UploadedByTeacherID: authorID.UUID().UUID,
+			Subject:             stringPtr(""),
+			FileURL:             "https://s3.url1",
+			Status:              string(enum.MaterialStatusPublished),
+			IsPublic:            false,
+			CreatedAt:           now,
+			UpdatedAt:           now,
+		},
+		{
+			ID:                  materialID2.UUID().UUID,
+			Title:               "Material 2",
+			Description:         stringPtr("Description 2"),
+			UploadedByTeacherID: authorID.UUID().UUID,
+			Subject:             stringPtr(""),
+			FileURL:             "https://s3.url2",
+			Status:              string(enum.MaterialStatusPublished),
+			IsPublic:            false,
+			CreatedAt:           now,
+			UpdatedAt:           now,
+		},
 	}
 
 	mockRepo.On("List", ctx, filters).Return(materials, nil)
@@ -736,7 +744,7 @@ func TestMaterialService_ListMaterials_EmptyList(t *testing.T) {
 		Offset: 0,
 	}
 
-	mockRepo.On("List", ctx, filters).Return([]*entity.Material{}, nil)
+	mockRepo.On("List", ctx, filters).Return([]*pgentities.Material{}, nil)
 
 	// Act
 	result, err := service.ListMaterials(ctx, filters)
@@ -798,42 +806,41 @@ func TestMaterialService_GetMaterialWithVersions_Success_WithVersions(t *testing
 
 	// Material de prueba
 	now := time.Now()
-	material := entity.ReconstructMaterial(
-		materialID,
-		"Test Material",
-		"Description",
-		authorID,
-		"",
-		"s3://key",
-		"https://s3.url",
-		enum.MaterialStatusPublished,
-		enum.ProcessingStatusCompleted,
-		now,
-		now,
-	)
+	material := &pgentities.Material{
+		ID:                  materialID.UUID().UUID,
+		Title:               "Test Material",
+		Description:         stringPtr("Description"),
+		UploadedByTeacherID: authorID.UUID().UUID,
+		Subject:             stringPtr(""),
+		FileURL:             "https://s3.url",
+		Status:              string(enum.MaterialStatusPublished),
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
 	// Versiones de prueba (ordenadas por version_number DESC)
-	version1 := entity.ReconstructMaterialVersion(
-		valueobject.NewMaterialVersionID(),
-		materialID,
-		2,
-		"Version 2 Title",
-		"https://s3.url/v2",
-		changedByID,
-		now,
-	)
+	version1 := &pgentities.MaterialVersion{
+		ID:            uuid.New(),
+		MaterialID:    materialID.UUID().UUID,
+		VersionNumber: 2,
+		Title:         "Version 2 Title",
+		ContentURL:    "https://s3.url/v2",
+		ChangedBy:     changedByID.UUID().UUID,
+		CreatedAt:     now,
+	}
 
-	version2 := entity.ReconstructMaterialVersion(
-		valueobject.NewMaterialVersionID(),
-		materialID,
-		1,
-		"Version 1 Title",
-		"https://s3.url/v1",
-		changedByID,
-		now,
-	)
+	version2 := &pgentities.MaterialVersion{
+		ID:            uuid.New(),
+		MaterialID:    materialID.UUID().UUID,
+		VersionNumber: 1,
+		Title:         "Version 1 Title",
+		ContentURL:    "https://s3.url/v1",
+		ChangedBy:     changedByID.UUID().UUID,
+		CreatedAt:     now,
+	}
 
-	versions := []*entity.MaterialVersion{version1, version2}
+	versions := []*pgentities.MaterialVersion{version1, version2}
 
 	// Configurar mock
 	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(material, versions, nil)
@@ -868,21 +875,20 @@ func TestMaterialService_GetMaterialWithVersions_Success_WithoutVersions(t *test
 
 	// Material sin versiones
 	now := time.Now()
-	material := entity.ReconstructMaterial(
-		materialID,
-		"Test Material",
-		"Description",
-		authorID,
-		"",
-		"s3://key",
-		"https://s3.url",
-		enum.MaterialStatusPublished,
-		enum.ProcessingStatusCompleted,
-		now,
-		now,
-	)
+	material := &pgentities.Material{
+		ID:                  materialID.UUID().UUID,
+		Title:               "Test Material",
+		Description:         stringPtr("Description"),
+		UploadedByTeacherID: authorID.UUID().UUID,
+		Subject:             stringPtr(""),
+		FileURL:             "https://s3.url",
+		Status:              string(enum.MaterialStatusPublished),
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
-	versions := []*entity.MaterialVersion{} // Array vacío
+	versions := []*pgentities.MaterialVersion{} // Array vacío
 
 	// Configurar mock
 	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(material, versions, nil)

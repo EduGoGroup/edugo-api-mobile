@@ -7,14 +7,20 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptr crea un puntero a un valor
+func ptr[T any](v T) *T {
+	return &v
+}
 
 // MaterialRepositoryIntegrationSuite tests de integración para MaterialRepository
 type MaterialRepositoryIntegrationSuite struct {
@@ -45,18 +51,39 @@ func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
 
 	// Arrange
 	authorID := valueobject.NewUserID()
-	material, err := entity.NewMaterial("Test Material", "Description", authorID, "subject-1")
-	s.Require().NoError(err)
+	schoolID := valueobject.NewUserID() // Reusar UserID como UUID genérico
+	materialID := valueobject.NewMaterialID()
+	now := time.Now()
+	material := &pgentities.Material{
+		ID:                    materialID.UUID().UUID,
+		SchoolID:              schoolID.UUID().UUID,
+		UploadedByTeacherID:   authorID.UUID().UUID,
+		AcademicUnitID:        nil,
+		Title:                 "Test Material",
+		Description:           ptr("Description"),
+		Subject:               ptr("Mathematics"),
+		Grade:                 ptr("10th"),
+		FileURL:               "",
+		FileType:              "",
+		FileSizeBytes:         0,
+		Status:                "draft",
+		ProcessingStartedAt:   nil,
+		ProcessingCompletedAt: nil,
+		IsPublic:              false,
+		CreatedAt:             now,
+		UpdatedAt:             now,
+		DeletedAt:             nil,
+	}
 
 	// Act
-	err = s.repo.Create(ctx, material)
+	err := s.repo.Create(ctx, material)
 
 	// Assert
 	s.NoError(err, "Create should not return error")
 
 	// Verificar que se creó en DB
 	var count int
-	s.PostgresDB.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID().String()).Scan(&count)
+	s.PostgresDB.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID.String()).Scan(&count)
 	s.Equal(1, count, "Material should be in database")
 }
 
@@ -67,11 +94,12 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
 	// Arrange - Crear material directamente en DB
 	materialID := valueobject.NewMaterialID()
 	authorID := valueobject.NewUserID()
+	schoolID := valueobject.NewUserID()
 
 	_, err := s.PostgresDB.Exec(`
-		INSERT INTO materials (id, title, description, author_id, subject_id, status, processing_status)
-		VALUES ($1, $2, $3, $4, $5, 'published', 'completed')
-	`, materialID.String(), "Test Material", "Test Description", authorID.String(), "subject-1")
+		INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, "Test Material", "Test Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
 	s.Require().NoError(err)
 
 	// Act
@@ -80,8 +108,9 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
 	// Assert
 	s.NoError(err, "FindByID should not return error when material exists")
 	s.NotNil(material)
-	s.Equal("Test Material", material.Title())
-	s.Equal("Test Description", material.Description())
+	s.Equal("Test Material", material.Title)
+	s.NotNil(material.Description)
+	s.Equal("Test Description", *material.Description)
 }
 
 // TestFindByID_MaterialNotFound valida que FindByID retorna nil cuando no existe
@@ -105,14 +134,15 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
 
 	// Arrange
 	authorID := valueobject.NewUserID()
+	schoolID := valueobject.NewUserID()
 
 	// Crear 2 materiales del mismo autor
 	for i := 1; i <= 2; i++ {
 		materialID := valueobject.NewMaterialID()
 		_, err := s.PostgresDB.Exec(`
-			INSERT INTO materials (id, title, description, author_id, status, processing_status)
-			VALUES ($1, $2, $3, $4, 'published', 'completed')
-		`, materialID.String(), fmt.Sprintf("Material %d", i), "Description", authorID.String())
+			INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, fmt.Sprintf("Material %d", i), "Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
 		s.Require().NoError(err)
 	}
 

@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+	"github.com/google/uuid"
 )
 
 type postgresUserRepository struct {
@@ -18,27 +19,27 @@ func NewPostgresUserRepository(db *sql.DB) repository.UserRepository {
 	return &postgresUserRepository{db: db}
 }
 
-func (r *postgresUserRepository) FindByID(ctx context.Context, id valueobject.UserID) (*entity.User, error) {
+func (r *postgresUserRepository) FindByID(ctx context.Context, id valueobject.UserID) (*pgentities.User, error) {
 	query := `
 		SELECT id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at
 		FROM users
-		WHERE id = $1
+		WHERE id = $1 AND deleted_at IS NULL
 	`
 
 	var (
-		idStr        string
+		userID       uuid.UUID
 		email        string
 		passwordHash string
 		firstName    string
 		lastName     string
-		roleStr      string
+		role         string
 		isActive     bool
-		createdAt    sql.NullTime
-		updatedAt    sql.NullTime
+		createdAt    time.Time
+		updatedAt    time.Time
 	)
 
-	err := r.db.QueryRowContext(ctx, query, id.String()).Scan(
-		&idStr, &email, &passwordHash, &firstName, &lastName, &roleStr, &isActive, &createdAt, &updatedAt,
+	err := r.db.QueryRowContext(ctx, query, id.UUID()).Scan(
+		&userID, &email, &passwordHash, &firstName, &lastName, &role, &isActive, &createdAt, &updatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -48,43 +49,40 @@ func (r *postgresUserRepository) FindByID(ctx context.Context, id valueobject.Us
 		return nil, err
 	}
 
-	userID, _ := valueobject.UserIDFromString(idStr)
-	emailVO, _ := valueobject.NewEmail(email)
-
-	return entity.ReconstructUser(
-		userID,
-		emailVO,
-		passwordHash,
-		firstName,
-		lastName,
-		enum.SystemRole(roleStr),
-		isActive,
-		createdAt.Time,
-		updatedAt.Time,
-	), nil
+	return &pgentities.User{
+		ID:           userID,
+		Email:        email,
+		PasswordHash: passwordHash,
+		FirstName:    firstName,
+		LastName:     lastName,
+		Role:         role,
+		IsActive:     isActive,
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
+	}, nil
 }
 
-func (r *postgresUserRepository) FindByEmail(ctx context.Context, email valueobject.Email) (*entity.User, error) {
+func (r *postgresUserRepository) FindByEmail(ctx context.Context, email valueobject.Email) (*pgentities.User, error) {
 	query := `
 		SELECT id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at
 		FROM users
-		WHERE email = $1
+		WHERE email = $1 AND deleted_at IS NULL
 	`
 
 	var (
-		idStr        string
+		userID       uuid.UUID
 		emailStr     string
 		passwordHash string
 		firstName    string
 		lastName     string
-		roleStr      string
+		role         string
 		isActive     bool
-		createdAt    sql.NullTime
-		updatedAt    sql.NullTime
+		createdAt    time.Time
+		updatedAt    time.Time
 	)
 
 	err := r.db.QueryRowContext(ctx, query, email.String()).Scan(
-		&idStr, &emailStr, &passwordHash, &firstName, &lastName, &roleStr, &isActive, &createdAt, &updatedAt,
+		&userID, &emailStr, &passwordHash, &firstName, &lastName, &role, &isActive, &createdAt, &updatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -94,34 +92,33 @@ func (r *postgresUserRepository) FindByEmail(ctx context.Context, email valueobj
 		return nil, err
 	}
 
-	userID, _ := valueobject.UserIDFromString(idStr)
-	emailVO, _ := valueobject.NewEmail(emailStr)
-
-	return entity.ReconstructUser(
-		userID,
-		emailVO,
-		passwordHash,
-		firstName,
-		lastName,
-		enum.SystemRole(roleStr),
-		isActive,
-		createdAt.Time,
-		updatedAt.Time,
-	), nil
+	return &pgentities.User{
+		ID:           userID,
+		Email:        emailStr,
+		PasswordHash: passwordHash,
+		FirstName:    firstName,
+		LastName:     lastName,
+		Role:         role,
+		IsActive:     isActive,
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
+	}, nil
 }
 
-func (r *postgresUserRepository) Update(ctx context.Context, user *entity.User) error {
+func (r *postgresUserRepository) Update(ctx context.Context, user *pgentities.User) error {
 	query := `
 		UPDATE users
-		SET first_name = $1, last_name = $2, updated_at = $3
-		WHERE id = $4
+		SET first_name = $1, last_name = $2, role = $3, is_active = $4, updated_at = $5
+		WHERE id = $6
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		user.FirstName(),
-		user.LastName(),
-		user.UpdatedAt(),
-		user.ID().String(),
+		user.FirstName,
+		user.LastName,
+		user.Role,
+		user.IsActive,
+		user.UpdatedAt,
+		user.ID,
 	)
 
 	return err
