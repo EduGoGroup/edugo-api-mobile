@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -179,7 +180,7 @@ func (r *postgresMaterialRepository) List(ctx context.Context, filters repositor
 	argPos := 1
 
 	if filters.Status != nil {
-		query += ` AND status = $` + string(rune('0'+argPos))
+		query += fmt.Sprintf(` AND status = $%d`, argPos)
 		args = append(args, *filters.Status)
 		// argPos no se incrementa porque no hay más filtros después
 	}
