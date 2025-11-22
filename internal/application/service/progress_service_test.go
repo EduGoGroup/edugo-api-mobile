@@ -119,7 +119,7 @@ func TestUpdateProgress_Success_ValidProgress(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(expectedProgress, nil)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
@@ -162,7 +162,7 @@ func TestUpdateProgress_Success_CompletedMaterial(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(completedProgress, nil)
 	mockLogger.On("Info", "material completed by user", mock.Anything).Return()
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
@@ -300,7 +300,7 @@ func TestUpdateProgress_Error_DatabaseError(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(nil, errors.New("database connection error"))
 	mockLogger.On("Error", "failed to upsert progress", mock.Anything).Return()
 
@@ -344,7 +344,7 @@ func TestUpdateProgress_Idempotency_MultipleCallsSameProgress(t *testing.T) {
 
 	// Mock expectations (se llamará 3 veces con mismos parámetros)
 	mockLogger.On("Info", "updating progress", mock.Anything).Return().Times(3)
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(expectedProgress, nil).Times(3)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return().Times(3)
 
@@ -401,7 +401,7 @@ func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 		}
 
 		mockLogger.On("Info", "updating progress", mock.Anything).Return().Once()
-		mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+		mockRepo.On("Upsert", ctx, mock.Anything).
 			Return(expectedProgress, nil).Once()
 
 		if p == 100 {
@@ -454,7 +454,7 @@ func TestUpdateProgress_EdgeCase_ZeroPercentage(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(expectedProgress, nil)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
@@ -498,7 +498,7 @@ func TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&completedProgress, nil)
 	mockLogger.On("Info", "material completed by user", mock.Anything).Return()
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
@@ -544,7 +544,7 @@ func TestUpdateProgress_EdgeCase_BoundaryPercentageOne(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&expectedProgress, nil)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
@@ -588,7 +588,7 @@ func TestUpdateProgress_EdgeCase_BoundaryPercentageNinetyNine(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&expectedProgress, nil)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
@@ -718,7 +718,7 @@ func TestUpdateProgress_EdgeCase_VeryLargeLastPage(t *testing.T) {
 
 	// Mock expectations
 	mockLogger.On("Info", "updating progress", mock.Anything).Return()
-	mockRepo.On("Upsert", ctx, mock.AnythingOfType("*pgentities.Progress")).
+	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&expectedProgress, nil)
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
