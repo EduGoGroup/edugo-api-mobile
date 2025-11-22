@@ -3,9 +3,8 @@ package services
 import (
 	"time"
 
-	pgentities "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure_stubs/postgres/entities"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 // ProgressDomainService contiene reglas de negocio de Progress
@@ -21,9 +20,9 @@ func NewProgressDomainService() *ProgressDomainService {
 // Reglas de negocio:
 // - Percentage debe estar entre 0-100
 // - Status se determina automáticamente según el percentage
-//   * 0% = not_started
-//   * 1-99% = in_progress
-//   * 100% = completed
+//   - 0% = not_started
+//   - 1-99% = in_progress
+//   - 100% = completed
 func (s *ProgressDomainService) UpdateProgress(progress *pgentities.Progress, percentage, lastPage int) error {
 	// Validar rango de percentage
 	if percentage < 0 || percentage > 100 {
@@ -37,12 +36,13 @@ func (s *ProgressDomainService) UpdateProgress(progress *pgentities.Progress, pe
 	progress.UpdatedAt = time.Now()
 
 	// Determinar status según percentage (regla de negocio)
+	// Valores según infrastructure: not_started, in_progress, completed
 	if percentage == 0 {
-		progress.Status = enum.ProgressStatusNotStarted
+		progress.Status = "not_started"
 	} else if percentage >= 100 {
-		progress.Status = enum.ProgressStatusCompleted
+		progress.Status = "completed"
 	} else {
-		progress.Status = enum.ProgressStatusInProgress
+		progress.Status = "in_progress"
 	}
 
 	return nil
@@ -50,10 +50,15 @@ func (s *ProgressDomainService) UpdateProgress(progress *pgentities.Progress, pe
 
 // IsCompleted indica si el progreso está completado
 func (s *ProgressDomainService) IsCompleted(progress *pgentities.Progress) bool {
-	return progress.Status == enum.ProgressStatusCompleted || progress.Percentage >= 100
+	return progress.Status == "completed" || progress.Percentage >= 100
 }
 
 // IsStarted indica si el progreso fue iniciado
 func (s *ProgressDomainService) IsStarted(progress *pgentities.Progress) bool {
-	return progress.Status != enum.ProgressStatusNotStarted && progress.Percentage > 0
+	return progress.Status != "not_started" && progress.Percentage > 0
+}
+
+// IsInProgress indica si el progreso está en curso
+func (s *ProgressDomainService) IsInProgress(progress *pgentities.Progress) bool {
+	return progress.Status == "in_progress"
 }

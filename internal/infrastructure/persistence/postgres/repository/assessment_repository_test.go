@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 func TestNewPostgresAssessmentRepository(t *testing.T) {
@@ -110,7 +110,7 @@ func TestPostgresAssessmentRepository_Save_Success(t *testing.T) {
 	ctx := context.Background()
 
 	maxAttempts := 5
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
@@ -153,7 +153,7 @@ func TestPostgresAssessmentRepository_Save_InvalidAssessment(t *testing.T) {
 	ctx := context.Background()
 
 	// Assessment inválido (ID nil)
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:             uuid.Nil, // Inválido
 		MaterialID:     uuid.New(),
 		Title:          "Test",

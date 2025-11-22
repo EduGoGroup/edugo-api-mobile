@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.uber.org/zap"
@@ -65,11 +65,26 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 		return errors.NewValidationError("invalid user_id")
 	}
 
+	// Determinar status basado en porcentaje
+	var status string
+	switch {
+	case percentage == 0:
+		status = "not_started"
+	case percentage == 100:
+		status = "completed"
+	default:
+		status = "in_progress"
+	}
+
 	// Crear nueva entidad Progress con valores actualizados
-	progress := entity.NewProgress(matID, userID)
-	if err := progress.UpdateProgress(percentage, lastPage); err != nil {
-		s.logger.Error("failed to update progress entity", zap.Error(err))
-		return err
+	progress := &pgentities.Progress{
+		MaterialID:     matID.UUID().UUID,
+		UserID:         userID.UUID().UUID,
+		Percentage:     percentage,
+		LastPage:       lastPage,
+		Status:         status,
+		LastAccessedAt: time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	// Ejecutar operación UPSERT idempotente
@@ -84,12 +99,12 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 	}
 
 	// Verificar si material fue completado (progress = 100)
-	isCompleted := updatedProgress.Percentage() == 100
+	isCompleted := updatedProgress.Percentage == 100
 	if isCompleted {
 		s.logger.Info("material completed by user",
 			zap.String("material_id", materialID),
 			zap.String("user_id", userIDStr),
-			zap.Time("completed_at", updatedProgress.UpdatedAt()),
+			zap.Time("completed_at", updatedProgress.UpdatedAt),
 		)
 
 		// TODO (Fase futura): Publicar evento "material_completed" a RabbitMQ

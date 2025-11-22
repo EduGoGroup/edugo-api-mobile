@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 // PostgresAssessmentRepository implementa repositories.AssessmentRepository para PostgreSQL
@@ -23,10 +23,10 @@ func NewPostgresAssessmentRepository(db *sql.DB) repositories.AssessmentReposito
 }
 
 // FindByID busca una evaluación por ID
-func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUID) (*entities.Assessment, error) {
+func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUID) (*pgentities.Assessment, error) {
 	query := `
-		SELECT id, material_id, mongo_document_id, title, total_questions,
-		       pass_threshold, max_attempts, time_limit_minutes,
+		SELECT id, material_id, mongo_document_id, questions_count, total_questions,
+		       title, pass_threshold, max_attempts, time_limit_minutes, status,
 		       created_at, updated_at
 		FROM assessment
 		WHERE id = $1
@@ -36,18 +36,21 @@ func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUI
 		idStr          string
 		materialIDStr  string
 		mongoDocID     string
-		title          string
-		totalQuestions int
-		passThreshold  int
+		questionsCount int
+		totalQuestions sql.NullInt32
+		title          sql.NullString
+		passThreshold  sql.NullInt32
 		maxAttempts    sql.NullInt32
 		timeLimitMins  sql.NullInt32
+		status         string
 		createdAt      time.Time
 		updatedAt      time.Time
 	)
 
 	err := r.db.QueryRowContext(ctx, query, id.String()).Scan(
-		&idStr, &materialIDStr, &mongoDocID, &title, &totalQuestions, &passThreshold,
-		&maxAttempts, &timeLimitMins, &createdAt, &updatedAt,
+		&idStr, &materialIDStr, &mongoDocID, &questionsCount, &totalQuestions,
+		&title, &passThreshold, &maxAttempts, &timeLimitMins, &status,
+		&createdAt, &updatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -59,15 +62,28 @@ func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUI
 
 	materialID, _ := uuid.Parse(materialIDStr)
 
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:              id,
 		MaterialID:      materialID,
 		MongoDocumentID: mongoDocID,
-		Title:           title,
-		TotalQuestions:  totalQuestions,
-		PassThreshold:   passThreshold,
+		QuestionsCount:  questionsCount,
+		Status:          status,
 		CreatedAt:       createdAt,
 		UpdatedAt:       updatedAt,
+	}
+
+	if totalQuestions.Valid {
+		val := int(totalQuestions.Int32)
+		assessment.TotalQuestions = &val
+	}
+
+	if title.Valid {
+		assessment.Title = &title.String
+	}
+
+	if passThreshold.Valid {
+		val := int(passThreshold.Int32)
+		assessment.PassThreshold = &val
 	}
 
 	if maxAttempts.Valid {
@@ -84,10 +100,10 @@ func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUI
 }
 
 // FindByMaterialID busca una evaluación por material ID
-func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, materialID uuid.UUID) (*entities.Assessment, error) {
+func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, materialID uuid.UUID) (*pgentities.Assessment, error) {
 	query := `
-		SELECT id, material_id, mongo_document_id, title, total_questions,
-		       pass_threshold, max_attempts, time_limit_minutes,
+		SELECT id, material_id, mongo_document_id, questions_count, total_questions,
+		       title, pass_threshold, max_attempts, time_limit_minutes, status,
 		       created_at, updated_at
 		FROM assessment
 		WHERE material_id = $1
@@ -97,18 +113,21 @@ func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, mat
 		idStr          string
 		materialIDStr  string
 		mongoDocID     string
-		title          string
-		totalQuestions int
-		passThreshold  int
+		questionsCount int
+		totalQuestions sql.NullInt32
+		title          sql.NullString
+		passThreshold  sql.NullInt32
 		maxAttempts    sql.NullInt32
 		timeLimitMins  sql.NullInt32
+		status         string
 		createdAt      time.Time
 		updatedAt      time.Time
 	)
 
 	err := r.db.QueryRowContext(ctx, query, materialID.String()).Scan(
-		&idStr, &materialIDStr, &mongoDocID, &title, &totalQuestions, &passThreshold,
-		&maxAttempts, &timeLimitMins, &createdAt, &updatedAt,
+		&idStr, &materialIDStr, &mongoDocID, &questionsCount, &totalQuestions,
+		&title, &passThreshold, &maxAttempts, &timeLimitMins, &status,
+		&createdAt, &updatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -121,15 +140,28 @@ func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, mat
 	id, _ := uuid.Parse(idStr)
 	parsedMaterialID, _ := uuid.Parse(materialIDStr)
 
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:              id,
 		MaterialID:      parsedMaterialID,
 		MongoDocumentID: mongoDocID,
-		Title:           title,
-		TotalQuestions:  totalQuestions,
-		PassThreshold:   passThreshold,
+		QuestionsCount:  questionsCount,
+		Status:          status,
 		CreatedAt:       createdAt,
 		UpdatedAt:       updatedAt,
+	}
+
+	if totalQuestions.Valid {
+		val := int(totalQuestions.Int32)
+		assessment.TotalQuestions = &val
+	}
+
+	if title.Valid {
+		assessment.Title = &title.String
+	}
+
+	if passThreshold.Valid {
+		val := int(passThreshold.Int32)
+		assessment.PassThreshold = &val
 	}
 
 	if maxAttempts.Valid {
@@ -146,31 +178,39 @@ func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, mat
 }
 
 // Save guarda una evaluación (INSERT o UPDATE)
-func (r *PostgresAssessmentRepository) Save(ctx context.Context, assessment *entities.Assessment) error {
+func (r *PostgresAssessmentRepository) Save(ctx context.Context, assessment *pgentities.Assessment) error {
 	if assessment == nil {
 		return fmt.Errorf("postgres: assessment cannot be nil")
 	}
 
-	// Validar antes de guardar
-	if err := assessment.Validate(); err != nil {
-		return fmt.Errorf("postgres: invalid assessment: %w", err)
-	}
-
 	query := `
 		INSERT INTO assessment (
-			id, material_id, mongo_document_id, title, total_questions,
-			pass_threshold, max_attempts, time_limit_minutes, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			id, material_id, mongo_document_id, questions_count, total_questions,
+			title, pass_threshold, max_attempts, time_limit_minutes, status,
+			created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		ON CONFLICT (id) DO UPDATE SET
-			title = EXCLUDED.title,
+			questions_count = EXCLUDED.questions_count,
 			total_questions = EXCLUDED.total_questions,
+			title = EXCLUDED.title,
 			pass_threshold = EXCLUDED.pass_threshold,
 			max_attempts = EXCLUDED.max_attempts,
 			time_limit_minutes = EXCLUDED.time_limit_minutes,
+			status = EXCLUDED.status,
 			updated_at = EXCLUDED.updated_at
 	`
 
-	var maxAttempts, timeLimitMins interface{}
+	var totalQuestions, title, passThreshold, maxAttempts, timeLimitMins interface{}
+
+	if assessment.TotalQuestions != nil {
+		totalQuestions = *assessment.TotalQuestions
+	}
+	if assessment.Title != nil {
+		title = *assessment.Title
+	}
+	if assessment.PassThreshold != nil {
+		passThreshold = *assessment.PassThreshold
+	}
 	if assessment.MaxAttempts != nil {
 		maxAttempts = *assessment.MaxAttempts
 	}
@@ -182,11 +222,13 @@ func (r *PostgresAssessmentRepository) Save(ctx context.Context, assessment *ent
 		assessment.ID,
 		assessment.MaterialID,
 		assessment.MongoDocumentID,
-		assessment.Title,
-		assessment.TotalQuestions,
-		assessment.PassThreshold,
+		assessment.QuestionsCount,
+		totalQuestions,
+		title,
+		passThreshold,
 		maxAttempts,
 		timeLimitMins,
+		assessment.Status,
 		assessment.CreatedAt,
 		assessment.UpdatedAt,
 	)

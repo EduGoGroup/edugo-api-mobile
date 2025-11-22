@@ -291,7 +291,7 @@ func (h *MaterialHandler) GenerateUploadURL(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.GenerateUploadURLResponse{
 		UploadURL: uploadURL,
-		S3Key:     s3Key,
+		FileURL:   s3Key,
 		ExpiresIn: 900, // 15 minutos en segundos
 	})
 }
@@ -320,8 +320,8 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 		return
 	}
 
-	// Verificar que el material tiene una S3 key (fue subido)
-	if material.S3Key == "" {
+	// Verificar que el material tiene una FileURL (fue subido)
+	if material.FileURL == "" {
 		c.JSON(http.StatusNotFound, ErrorResponse{
 			Error: "material file not uploaded yet",
 			Code:  "FILE_NOT_FOUND",
@@ -332,13 +332,13 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 	// Generar URL presignada para descarga (válida por 1 hora)
 	downloadURL, err := h.s3Storage.GeneratePresignedDownloadURL(
 		c.Request.Context(),
-		material.S3Key,
+		material.FileURL,
 		1*time.Hour,
 	)
 	if err != nil {
 		h.logger.Error("error generating presigned download URL",
 			"material_id", materialID,
-			"s3_key", material.S3Key,
+			"file_url", material.FileURL,
 			"error", err,
 		)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -350,7 +350,7 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 
 	h.logger.Info("presigned download URL generated",
 		"material_id", materialID,
-		"s3_key", material.S3Key,
+		"file_url", material.FileURL,
 	)
 
 	c.JSON(http.StatusOK, dto.GenerateDownloadURLResponse{

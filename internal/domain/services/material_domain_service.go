@@ -3,9 +3,8 @@ package services
 import (
 	"time"
 
-	pgentities "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure_stubs/postgres/entities"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 // MaterialDomainService contiene reglas de negocio de Material
@@ -17,77 +16,102 @@ func NewMaterialDomainService() *MaterialDomainService {
 	return &MaterialDomainService{}
 }
 
-// SetS3Info establece información de S3 (extraído de entity.Material)
-// Valida que los parámetros no estén vacíos y actualiza el material
-func (s *MaterialDomainService) SetS3Info(material *pgentities.Material, s3Key, s3URL string) error {
-	if s3Key == "" || s3URL == "" {
-		return errors.NewValidationError("s3_key and s3_url are required")
+// SetFileInfo establece información del archivo subido
+// Adaptado a la estructura REAL de infrastructure (FileURL, FileType, FileSizeBytes)
+// Status: uploaded → processing
+func (s *MaterialDomainService) SetFileInfo(material *pgentities.Material, fileURL string, fileType string, fileSizeBytes int64) error {
+	if fileURL == "" {
+		return errors.NewValidationError("file_url is required")
+	}
+	if fileType == "" {
+		return errors.NewValidationError("file_type is required")
 	}
 
-	material.S3Key = s3Key
-	material.S3URL = s3URL
-	material.ProcessingStatus = enum.ProcessingStatusProcessing
-	material.UpdatedAt = time.Now()
+	material.FileURL = fileURL
+	material.FileType = fileType
+	material.FileSizeBytes = fileSizeBytes
+	material.Status = "processing" // Valores según migration: uploaded, processing, ready, failed
+	now := time.Now()
+	material.ProcessingStartedAt = &now
+	material.UpdatedAt = now
 
 	return nil
 }
 
 // MarkProcessingComplete marca procesamiento completado
-// Valida que no esté ya procesado antes de cambiar el estado
+// Status: processing → ready
 func (s *MaterialDomainService) MarkProcessingComplete(material *pgentities.Material) error {
-	if material.ProcessingStatus == enum.ProcessingStatusCompleted {
+	if material.Status == "ready" {
 		return errors.NewBusinessRuleError("material already processed")
 	}
 
-	material.ProcessingStatus = enum.ProcessingStatusCompleted
-	material.UpdatedAt = time.Now()
+	material.Status = "ready" // Material listo para usar
+	now := time.Now()
+	material.ProcessingCompletedAt = &now
+	material.UpdatedAt = now
 
 	return nil
 }
 
-// Publish publica el material
-// Regla de negocio: un material debe estar procesado antes de publicarse
+// Publish publica el material (lo hace público)
+// Regla de negocio: un material debe estar procesado (ready) antes de publicarse
 func (s *MaterialDomainService) Publish(material *pgentities.Material) error {
-	if material.Status == enum.MaterialStatusPublished {
+	if material.IsPublic {
 		return errors.NewBusinessRuleError("material is already published")
 	}
 
-	if material.ProcessingStatus != enum.ProcessingStatusCompleted {
+	if material.Status != "ready" {
 		return errors.NewBusinessRuleError("material must be processed before publishing")
 	}
 
-	material.Status = enum.MaterialStatusPublished
+	material.IsPublic = true
 	material.UpdatedAt = time.Now()
 
 	return nil
 }
 
-// Archive archiva el material
-// Valida que no esté ya archivado
+// Archive archiva el material (soft delete)
+// Usa DeletedAt para marcar como archivado
 func (s *MaterialDomainService) Archive(material *pgentities.Material) error {
-	if material.Status == enum.MaterialStatusArchived {
+	if material.DeletedAt != nil {
 		return errors.NewBusinessRuleError("material is already archived")
 	}
 
-	material.Status = enum.MaterialStatusArchived
-	material.UpdatedAt = time.Now()
+	now := time.Now()
+	material.DeletedAt = &now
+	material.UpdatedAt = now
 
 	return nil
 }
 
 // Query helpers - Métodos de consulta que no modifican el material
 
-// IsDraft indica si el material está en estado draft
-func (s *MaterialDomainService) IsDraft(material *pgentities.Material) bool {
-	return material.Status == enum.MaterialStatusDraft
+// IsUploaded indica si el material fue subido (estado inicial)
+func (s *MaterialDomainService) IsUploaded(material *pgentities.Material) bool {
+	return material.Status == "uploaded"
 }
 
-// IsPublished indica si el material está publicado
+// IsProcessing indica si el material está siendo procesado
+func (s *MaterialDomainService) IsProcessing(material *pgentities.Material) bool {
+	return material.Status == "processing"
+}
+
+// IsReady indica si el material está listo (procesado)
+func (s *MaterialDomainService) IsReady(material *pgentities.Material) bool {
+	return material.Status == "ready"
+}
+
+// IsFailed indica si el procesamiento falló
+func (s *MaterialDomainService) IsFailed(material *pgentities.Material) bool {
+	return material.Status == "failed"
+}
+
+// IsPublished indica si el material está publicado (público)
 func (s *MaterialDomainService) IsPublished(material *pgentities.Material) bool {
-	return material.Status == enum.MaterialStatusPublished
+	return material.IsPublic
 }
 
-// IsProcessed indica si el material ya fue procesado
-func (s *MaterialDomainService) IsProcessed(material *pgentities.Material) bool {
-	return material.ProcessingStatus == enum.ProcessingStatusCompleted
+// IsArchived indica si el material está archivado (soft deleted)
+func (s *MaterialDomainService) IsArchived(material *pgentities.Material) bool {
+	return material.DeletedAt != nil
 }

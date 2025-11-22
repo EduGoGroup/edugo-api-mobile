@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 // PostgresAnswerRepository implementa repositories.AnswerRepository para PostgreSQL
@@ -24,13 +24,14 @@ func NewPostgresAnswerRepository(db *sql.DB) repositories.AnswerRepository {
 }
 
 // FindByAttemptID busca todas las respuestas de un intento
-func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptID uuid.UUID) ([]*entities.Answer, error) {
+func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptID uuid.UUID) ([]*pgentities.AssessmentAttemptAnswer, error) {
 	query := `
-		SELECT id, attempt_id, question_id, selected_answer_id,
-		       is_correct, time_spent_seconds, created_at
+		SELECT id, attempt_id, question_index, student_answer,
+		       is_correct, points_earned, max_points, time_spent_seconds,
+		       answered_at, created_at, updated_at
 		FROM assessment_attempt_answer
 		WHERE attempt_id = $1
-		ORDER BY created_at ASC
+		ORDER BY question_index ASC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, attemptID.String())
@@ -39,21 +40,26 @@ func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptI
 	}
 	defer func() { _ = rows.Close() }()
 
-	var answers []*entities.Answer
+	var answers []*pgentities.AssessmentAttemptAnswer
 	for rows.Next() {
 		var (
-			answerIDStr      string
-			attemptIDStr     string
-			questionID       string
-			selectedAnswerID string
-			isCorrect        bool
-			timeSpentSecs    int
-			createdAt        time.Time
+			answerIDStr   string
+			attemptIDStr  string
+			questionIndex int
+			studentAnswer *string
+			isCorrect     *bool
+			pointsEarned  *float64
+			maxPoints     *float64
+			timeSpentSecs *int
+			answeredAt    time.Time
+			createdAt     time.Time
+			updatedAt     time.Time
 		)
 
 		err := rows.Scan(
-			&answerIDStr, &attemptIDStr, &questionID, &selectedAnswerID,
-			&isCorrect, &timeSpentSecs, &createdAt,
+			&answerIDStr, &attemptIDStr, &questionIndex, &studentAnswer,
+			&isCorrect, &pointsEarned, &maxPoints, &timeSpentSecs,
+			&answeredAt, &createdAt, &updatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
@@ -62,14 +68,18 @@ func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptI
 		answerID, _ := uuid.Parse(answerIDStr)
 		attemptIDParsed, _ := uuid.Parse(attemptIDStr)
 
-		answer := &entities.Answer{
+		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               answerID,
 			AttemptID:        attemptIDParsed,
-			QuestionID:       questionID,
-			SelectedAnswerID: selectedAnswerID,
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    studentAnswer,
 			IsCorrect:        isCorrect,
+			PointsEarned:     pointsEarned,
+			MaxPoints:        maxPoints,
 			TimeSpentSeconds: timeSpentSecs,
+			AnsweredAt:       answeredAt,
 			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
 		}
 
 		answers = append(answers, answer)
@@ -83,23 +93,17 @@ func (r *PostgresAnswerRepository) FindByAttemptID(ctx context.Context, attemptI
 }
 
 // Save guarda una o múltiples respuestas (batch insert)
-func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*entities.Answer) error {
+func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*pgentities.AssessmentAttemptAnswer) error {
 	if len(answers) == 0 {
 		return fmt.Errorf("postgres: no answers to save")
 	}
 
-	// Validar cada answer
-	for _, answer := range answers {
-		if err := answer.Validate(); err != nil {
-			return fmt.Errorf("postgres: invalid answer: %w", err)
-		}
-	}
-
 	query := `
 		INSERT INTO assessment_attempt_answer (
-			id, attempt_id, question_id, selected_answer_id,
-			is_correct, time_spent_seconds, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+			id, attempt_id, question_index, student_answer,
+			is_correct, points_earned, max_points, time_spent_seconds,
+			answered_at, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	// Usar transacción para batch insert
@@ -119,11 +123,15 @@ func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*entities
 		_, err := stmt.ExecContext(ctx,
 			answer.ID,
 			answer.AttemptID,
-			answer.QuestionID,
-			answer.SelectedAnswerID,
+			answer.QuestionIndex,
+			answer.StudentAnswer,
 			answer.IsCorrect,
+			answer.PointsEarned,
+			answer.MaxPoints,
 			answer.TimeSpentSeconds,
+			answer.AnsweredAt,
 			answer.CreatedAt,
+			answer.UpdatedAt,
 		)
 
 		if err != nil {
@@ -138,19 +146,22 @@ func (r *PostgresAnswerRepository) Save(ctx context.Context, answers []*entities
 	return nil
 }
 
-// FindByQuestionID busca todas las respuestas para una pregunta específica
+// FindByQuestionID busca todas las respuestas para un índice de pregunta específico
 // Útil para analytics: identificar preguntas difíciles
-func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questionID string, limit, offset int) ([]*entities.Answer, error) {
+func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questionID string, limit, offset int) ([]*pgentities.AssessmentAttemptAnswer, error) {
 	if questionID == "" {
-		return []*entities.Answer{}, domainErrors.ErrInvalidQuestionID
+		return []*pgentities.AssessmentAttemptAnswer{}, domainErrors.ErrInvalidQuestionID
 	}
 
+	// Nota: Esta función debería recibir questionIndex (int) en lugar de questionID (string)
+	// Por ahora mantenemos la firma de la interfaz pero esto es un code smell
 	query := `
-		SELECT id, attempt_id, question_id, selected_answer_id,
-		       is_correct, time_spent_seconds, created_at
+		SELECT id, attempt_id, question_index, student_answer,
+		       is_correct, points_earned, max_points, time_spent_seconds,
+		       answered_at, created_at, updated_at
 		FROM assessment_attempt_answer
-		WHERE question_id = $1
-		ORDER BY created_at DESC
+		WHERE question_index::text = $1
+		ORDER BY answered_at DESC
 		LIMIT $2 OFFSET $3
 	`
 
@@ -160,21 +171,26 @@ func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questio
 	}
 	defer func() { _ = rows.Close() }()
 
-	var answers []*entities.Answer
+	var answers []*pgentities.AssessmentAttemptAnswer
 	for rows.Next() {
 		var (
-			answerIDStr      string
-			attemptIDStr     string
-			qID              string
-			selectedAnswerID string
-			isCorrect        bool
-			timeSpentSecs    int
-			createdAt        time.Time
+			answerIDStr   string
+			attemptIDStr  string
+			questionIndex int
+			studentAnswer *string
+			isCorrect     *bool
+			pointsEarned  *float64
+			maxPoints     *float64
+			timeSpentSecs *int
+			answeredAt    time.Time
+			createdAt     time.Time
+			updatedAt     time.Time
 		)
 
 		err := rows.Scan(
-			&answerIDStr, &attemptIDStr, &qID, &selectedAnswerID,
-			&isCorrect, &timeSpentSecs, &createdAt,
+			&answerIDStr, &attemptIDStr, &questionIndex, &studentAnswer,
+			&isCorrect, &pointsEarned, &maxPoints, &timeSpentSecs,
+			&answeredAt, &createdAt, &updatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
@@ -183,14 +199,18 @@ func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questio
 		answerID, _ := uuid.Parse(answerIDStr)
 		attemptID, _ := uuid.Parse(attemptIDStr)
 
-		answer := &entities.Answer{
+		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               answerID,
 			AttemptID:        attemptID,
-			QuestionID:       qID,
-			SelectedAnswerID: selectedAnswerID,
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    studentAnswer,
 			IsCorrect:        isCorrect,
+			PointsEarned:     pointsEarned,
+			MaxPoints:        maxPoints,
 			TimeSpentSeconds: timeSpentSecs,
+			AnsweredAt:       answeredAt,
 			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
 		}
 
 		answers = append(answers, answer)

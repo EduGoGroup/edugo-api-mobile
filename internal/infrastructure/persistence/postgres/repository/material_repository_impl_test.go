@@ -7,14 +7,20 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptr crea un puntero a un valor
+func ptr[T any](v T) *T {
+	return &v
+}
 
 // MaterialRepositoryIntegrationSuite tests de integración para MaterialRepository
 type MaterialRepositoryIntegrationSuite struct {
@@ -45,18 +51,31 @@ func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
 
 	// Arrange
 	authorID := valueobject.NewUserID()
-	material, err := entity.NewMaterial("Test Material", "Description", authorID, "subject-1")
-	s.Require().NoError(err)
+	now := time.Now()
+	material := &pgentities.Material{
+		ID:                  valueobject.NewMaterialID(),
+		Title:               "Test Material",
+		Description:         ptr("Description"),
+		SchoolID:            nil,
+		UploadedByTeacherID: authorID,
+		FileURL:             "",
+		FileType:            "",
+		FileSizeBytes:       0,
+		Status:              "draft",
+		IsPublic:            false,
+		CreatedAt:           now,
+		UpdatedAt:           now,
+	}
 
 	// Act
-	err = s.repo.Create(ctx, material)
+	err := s.repo.Create(ctx, *material)
 
 	// Assert
 	s.NoError(err, "Create should not return error")
 
 	// Verificar que se creó en DB
 	var count int
-	s.PostgresDB.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID().String()).Scan(&count)
+	s.PostgresDB.QueryRow("SELECT COUNT(*) FROM materials WHERE id = $1", material.ID.String()).Scan(&count)
 	s.Equal(1, count, "Material should be in database")
 }
 

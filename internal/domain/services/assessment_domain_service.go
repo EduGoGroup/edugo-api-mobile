@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	pgentities "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure_stubs/postgres/entities"
-	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
 // AssessmentDomainService contiene reglas de negocio de Assessment
@@ -19,45 +19,43 @@ func NewAssessmentDomainService() *AssessmentDomainService {
 }
 
 // ValidateAssessment valida una entity Assessment
-// Aplica todas las reglas de validación del dominio
+// Adaptado a estructura REAL de infrastructure (Title y PassThreshold son nullable)
 func (s *AssessmentDomainService) ValidateAssessment(a *pgentities.Assessment) error {
 	// Validar IDs
 	if a.ID == uuid.Nil {
-		return domainErrors.ErrInvalidAssessmentID
+		return errors.NewValidationError("invalid assessment id")
 	}
 
 	if a.MaterialID == uuid.Nil {
-		return domainErrors.ErrInvalidMaterialID
+		return errors.NewValidationError("invalid material id")
 	}
 
 	// Validar MongoDB document ID (24 caracteres hexadecimales)
 	if len(a.MongoDocumentID) != 24 {
-		return domainErrors.ErrInvalidMongoDocumentID
+		return errors.NewValidationError("invalid mongo document id - must be 24 hex characters")
 	}
 
-	// Validar título
-	if a.Title == "" {
-		return domainErrors.ErrEmptyTitle
+	// Title es NULLABLE en infrastructure - no validar si es requerido
+	// Si está presente, podría validar longitud, pero según BD es opcional
+
+	// Validar questions count (debe ser >= 1)
+	if a.QuestionsCount < 1 {
+		return errors.NewValidationError("questions count must be >= 1")
 	}
 
-	// Validar total de preguntas (1-100 según schema PostgreSQL)
-	if a.TotalQuestions < 1 || a.TotalQuestions > 100 {
-		return domainErrors.ErrInvalidTotalQuestions
-	}
-
-	// Validar pass threshold (0-100)
-	if a.PassThreshold < 0 || a.PassThreshold > 100 {
-		return domainErrors.ErrInvalidPassThreshold
+	// PassThreshold es NULLABLE - solo validar si está presente
+	if a.PassThreshold != nil && (*a.PassThreshold < 0 || *a.PassThreshold > 100) {
+		return errors.NewValidationError("pass threshold must be between 0 and 100")
 	}
 
 	// Validar max attempts (si está definido, debe ser >= 1)
 	if a.MaxAttempts != nil && *a.MaxAttempts < 1 {
-		return domainErrors.ErrInvalidMaxAttempts
+		return errors.NewValidationError("max attempts must be >= 1")
 	}
 
 	// Validar time limit (si está definido, debe estar entre 1-180 minutos)
 	if a.TimeLimitMinutes != nil && (*a.TimeLimitMinutes < 1 || *a.TimeLimitMinutes > 180) {
-		return domainErrors.ErrInvalidTimeLimit
+		return errors.NewValidationError("time limit must be between 1 and 180 minutes")
 	}
 
 	return nil
@@ -79,10 +77,11 @@ func (s *AssessmentDomainService) IsTimeLimited(assessment *pgentities.Assessmen
 }
 
 // SetMaxAttempts establece máximo de intentos
+// SetMaxAttempts establece límite de intentos
 // Valida que sea >= 1
 func (s *AssessmentDomainService) SetMaxAttempts(assessment *pgentities.Assessment, max int) error {
 	if max < 1 {
-		return domainErrors.ErrInvalidMaxAttempts
+		return errors.NewValidationError("max attempts must be >= 1")
 	}
 
 	assessment.MaxAttempts = &max
@@ -95,7 +94,7 @@ func (s *AssessmentDomainService) SetMaxAttempts(assessment *pgentities.Assessme
 // Valida que esté entre 1-180 minutos
 func (s *AssessmentDomainService) SetTimeLimit(assessment *pgentities.Assessment, minutes int) error {
 	if minutes < 1 || minutes > 180 {
-		return domainErrors.ErrInvalidTimeLimit
+		return errors.NewValidationError("time limit must be between 1 and 180 minutes")
 	}
 
 	assessment.TimeLimitMinutes = &minutes

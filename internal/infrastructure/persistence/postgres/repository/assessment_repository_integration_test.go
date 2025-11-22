@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 // AssessmentRepositoryIntegrationSuite tests de integración para AssessmentRepository
@@ -49,7 +49,7 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Insert() {
 	// Arrange
 	maxAttempts := 3
 	timeLimit := 60
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
@@ -85,7 +85,7 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Update() {
 
 	// Arrange - Insertar assessment inicial
 	maxAttempts := 3
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
@@ -127,7 +127,7 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_WithNullValues() {
 	ctx := context.Background()
 
 	// Arrange - Assessment sin MaxAttempts ni TimeLimitMinutes
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
@@ -172,7 +172,7 @@ func (s *AssessmentRepositoryIntegrationSuite) TestFindByMaterialID_Success() {
 
 	// Arrange - Insertar assessment
 	materialID := uuid.New()
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       materialID,
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
@@ -215,7 +215,7 @@ func (s *AssessmentRepositoryIntegrationSuite) TestDelete_Success() {
 	ctx := context.Background()
 
 	// Arrange - Insertar assessment
-	assessment := &entities.Assessment{
+	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",

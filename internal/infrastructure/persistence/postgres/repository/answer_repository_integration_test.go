@@ -6,14 +6,30 @@ package repository_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
+
+// ptrStr crea un puntero a string
+func ptrStr(s string) *string {
+	return &s
+}
+
+// ptrBool crea un puntero a bool
+func ptrBool(b bool) *bool {
+	return &b
+}
+
+// ptrInt crea un puntero a int
+func ptrInt(i int) *int {
+	return &i
+}
 
 // AnswerRepositoryIntegrationSuite tests de integración para AnswerRepository
 type AnswerRepositoryIntegrationSuite struct {
@@ -46,11 +62,39 @@ func (s *AnswerRepositoryIntegrationSuite) TestSave_BatchInsert() {
 
 	// Arrange
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 30)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", false, 45)
-	answer3, _ := entities.NewAnswer(attemptID, "q3", "c", true, 60)
+	now := time.Now()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptrStr("b"),
+		IsCorrect:        ptrBool(false),
+		TimeSpentSeconds: ptrInt(45),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer3 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q3",
+		StudentAnswer:    ptrStr("c"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(60),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	answers := []*entities.Answer{answer1, answer2, answer3}
+	answers := []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3}
 
 	// Act
 	err := s.repo.Save(ctx, answers)
@@ -69,7 +113,7 @@ func (s *AnswerRepositoryIntegrationSuite) TestSave_EmptyArray() {
 	ctx := context.Background()
 
 	// Act
-	err := s.repo.Save(ctx, []*entities.Answer{})
+	err := s.repo.Save(ctx, []**pgentities.AssessmentAttemptAnswer{})
 
 	// Assert
 	s.Error(err, "Save debe fallar con array vacío")
@@ -81,11 +125,39 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByAttemptID_OrderedByCreatedA
 
 	// Arrange - Guardar answers en orden específico
 	attemptID := uuid.New()
-	answer1, _ := entities.NewAnswer(attemptID, "q1", "a", true, 10)
-	answer2, _ := entities.NewAnswer(attemptID, "q2", "b", false, 20)
-	answer3, _ := entities.NewAnswer(attemptID, "q3", "c", true, 30)
+	now := time.Now()
+	answer1 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q1",
+		StudentAnswer:    ptrStr("a"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(10),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer2 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q2",
+		StudentAnswer:    ptrStr("b"),
+		IsCorrect:        ptrBool(false),
+		TimeSpentSeconds: ptrInt(20),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
+	answer3 := &pgentities.AssessmentAttemptAnswer{
+		ID:               uuid.New(),
+		AttemptID:        attemptID,
+		QuestionID:       "q3",
+		StudentAnswer:    ptrStr("c"),
+		IsCorrect:        ptrBool(true),
+		TimeSpentSeconds: ptrInt(30),
+		AnsweredAt:       now,
+		CreatedAt:        now,
+	}
 
-	err := s.repo.Save(ctx, []*entities.Answer{answer1, answer2, answer3})
+	err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3})
 	s.Require().NoError(err)
 
 	// Act
@@ -118,12 +190,22 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByQuestionID_WithPagination()
 
 	// Arrange - Guardar 5 respuestas para la misma pregunta (diferentes intentos)
 	questionID := "q1"
+	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, questionID, "a", i%2 == 0, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       questionID,
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(i%2 == 0),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		err := s.repo.Save(ctx, []*entities.Answer{answer})
+		err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 
@@ -172,13 +254,23 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_Succes
 
 	// Arrange - Guardar 10 respuestas: 7 correctas, 3 incorrectas
 	questionID := "q1"
+	now := time.Now()
 
 	for i := 0; i < 10; i++ {
 		attemptID := uuid.New()
 		isCorrect := i < 7 // Primeras 7 son correctas
-		answer, _ := entities.NewAnswer(attemptID, questionID, "a", isCorrect, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       questionID,
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(isCorrect),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		err := s.repo.Save(ctx, []*entities.Answer{answer})
+		err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 
@@ -212,12 +304,22 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllCor
 
 	// Arrange - Todas correctas
 	questionID := "q_easy"
+	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, questionID, "a", true, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       questionID,
+			StudentAnswer:    ptrStr("a"),
+			IsCorrect:        ptrBool(true),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		err := s.repo.Save(ctx, []*entities.Answer{answer})
+		err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 
@@ -237,12 +339,22 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllInc
 
 	// Arrange - Todas incorrectas
 	questionID := "q_hard"
+	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
-		answer, _ := entities.NewAnswer(attemptID, questionID, "wrong", false, 30)
+		answer := &pgentities.AssessmentAttemptAnswer{
+			ID:               uuid.New(),
+			AttemptID:        attemptID,
+			QuestionID:       questionID,
+			StudentAnswer:    ptrStr("wrong"),
+			IsCorrect:        ptrBool(false),
+			TimeSpentSeconds: ptrInt(30),
+			AnsweredAt:       now,
+			CreatedAt:        now,
+		}
 
-		err := s.repo.Save(ctx, []*entities.Answer{answer})
+		err := s.repo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 

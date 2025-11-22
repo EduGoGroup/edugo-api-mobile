@@ -11,10 +11,10 @@ import (
 
 	testifySuite "github.com/stretchr/testify/suite"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entity"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
@@ -79,12 +79,20 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CreateNewProgress() {
 	// Arrange
 	userID, materialID := s.seedUserAndMaterial()
 
-	progress := entity.NewProgress(materialID, userID)
-	err := progress.UpdateProgress(25, 5)
-	s.Require().NoError(err)
+	now := time.Now()
+	progress := &pgentities.Progress{
+		MaterialID:     materialID.UUID().UUID,
+		UserID:         userID.UUID().UUID,
+		Percentage:     25,
+		LastPage:       5,
+		Status:         enum.ProgressStatusInProgress,
+		LastAccessedAt: now,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, progress)
+	result, err := s.repo.Upsert(ctx, *progress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when creating new progress")
@@ -113,30 +121,38 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress()
 	userID, materialID := s.seedUserAndMaterial()
 
 	// Crear progreso inicial
-	initialProgress := entity.NewProgress(materialID, userID)
-	err := initialProgress.UpdateProgress(25, 5)
-	s.Require().NoError(err)
+	now := time.Now()
+	initialProgress := &pgentities.Progress{
+		MaterialID:     materialID.UUID().UUID,
+		UserID:         userID.UUID().UUID,
+		Percentage:     25,
+		LastPage:       5,
+		Status:         enum.ProgressStatusInProgress,
+		LastAccessedAt: now,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
-	_, err = s.repo.Upsert(ctx, initialProgress)
+	_, err := s.repo.Upsert(ctx, *initialProgress)
 	s.Require().NoError(err)
 
 	// Esperar un momento para asegurar que updated_at sea diferente
 	time.Sleep(10 * time.Millisecond)
 
 	// Actualizar progreso
-	updatedProgress := entity.ReconstructProgress(
-		materialID,
-		userID,
-		50,
-		10,
-		enum.ProgressStatusInProgress,
-		time.Now(),
-		initialProgress.CreatedAt(),
-		time.Now(),
-	)
+	updatedProgress := &pgentities.Progress{
+		MaterialID:     materialID.UUID().UUID,
+		UserID:         userID.UUID().UUID,
+		Percentage:     50,
+		LastPage:       10,
+		Status:         enum.ProgressStatusInProgress,
+		LastAccessedAt: time.Now(),
+		CreatedAt:      initialProgress.CreatedAt,
+		UpdatedAt:      time.Now(),
+	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, updatedProgress)
+	result, err := s.repo.Upsert(ctx, *updatedProgress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when updating existing progress")
@@ -171,12 +187,20 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CompleteProgress() {
 	// Arrange
 	userID, materialID := s.seedUserAndMaterial()
 
-	progress := entity.NewProgress(materialID, userID)
-	err := progress.UpdateProgress(100, 20)
-	s.Require().NoError(err)
+	now := time.Now()
+	progress := &pgentities.Progress{
+		MaterialID:     materialID.UUID().UUID,
+		UserID:         userID.UUID().UUID,
+		Percentage:     100,
+		LastPage:       20,
+		Status:         enum.ProgressStatusCompleted,
+		LastAccessedAt: now,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
 	// Act
-	result, err := s.repo.Upsert(ctx, progress)
+	result, err := s.repo.Upsert(ctx, *progress)
 
 	// Assert
 	s.NoError(err, "Upsert should not return error when completing progress")

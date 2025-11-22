@@ -8,9 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/entities"
-	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
 // PostgresAttemptRepository implementa repositories.AttemptRepository para PostgreSQL
@@ -24,7 +23,7 @@ func NewPostgresAttemptRepository(db *sql.DB) repositories.AttemptRepository {
 }
 
 // FindByID busca un intento por ID
-func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*entities.Attempt, error) {
+func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*pgentities.AssessmentAttempt, error) {
 	// 1. Query para el attempt
 	attemptQuery := `
 		SELECT id, assessment_id, student_id, score, max_score,
@@ -64,11 +63,12 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 
 	// 2. Query para las respuestas (answers)
 	answersQuery := `
-		SELECT id, attempt_id, question_id, selected_answer_id,
-		       is_correct, time_spent_seconds, created_at
+		SELECT id, attempt_id, question_index, student_answer,
+		       is_correct, points_earned, max_points, time_spent_seconds,
+		       answered_at, created_at, updated_at
 		FROM assessment_attempt_answer
 		WHERE attempt_id = $1
-		ORDER BY created_at ASC
+		ORDER BY question_index ASC
 	`
 
 	rows, err := r.db.QueryContext(ctx, answersQuery, id.String())
@@ -77,21 +77,26 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	}
 	defer func() { _ = rows.Close() }()
 
-	var answers []*entities.Answer
+	var answers []*pgentities.AssessmentAttemptAnswer
 	for rows.Next() {
 		var (
-			answerIDStr      string
-			attemptIDStr     string
-			questionID       string
-			selectedAnswerID string
-			isCorrect        bool
-			timeSpentSecs    int
-			answerCreatedAt  time.Time
+			answerIDStr   string
+			attemptIDStr  string
+			questionIndex int
+			studentAnswer *string
+			isCorrect     *bool
+			pointsEarned  *float64
+			maxPoints     *float64
+			timeSpentSecs *int
+			answeredAt    time.Time
+			createdAt     time.Time
+			updatedAt     time.Time
 		)
 
 		err := rows.Scan(
-			&answerIDStr, &attemptIDStr, &questionID, &selectedAnswerID,
-			&isCorrect, &timeSpentSecs, &answerCreatedAt,
+			&answerIDStr, &attemptIDStr, &questionIndex, &studentAnswer,
+			&isCorrect, &pointsEarned, &maxPoints, &timeSpentSecs,
+			&answeredAt, &createdAt, &updatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("postgres: error scanning answer: %w", err)
@@ -100,14 +105,18 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 		answerID, _ := uuid.Parse(answerIDStr)
 		attemptID, _ := uuid.Parse(attemptIDStr)
 
-		answer := &entities.Answer{
+		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               answerID,
 			AttemptID:        attemptID,
-			QuestionID:       questionID,
-			SelectedAnswerID: selectedAnswerID,
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    studentAnswer,
 			IsCorrect:        isCorrect,
+			PointsEarned:     pointsEarned,
+			MaxPoints:        maxPoints,
 			TimeSpentSeconds: timeSpentSecs,
-			CreatedAt:        answerCreatedAt,
+			AnsweredAt:       answeredAt,
+			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
 		}
 
 		answers = append(answers, answer)
@@ -123,17 +132,33 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 		idempotencyKeyPtr = &idempotencyKey.String
 	}
 
-	attempt := &entities.Attempt{
+	var scorePtr *float64
+	if score > 0 {
+		scoreF := float64(score)
+		scorePtr = &scoreF
+	}
+
+	var maxScorePtr *float64
+	if maxScore > 0 {
+		maxScoreF := float64(maxScore)
+		maxScorePtr = &maxScoreF
+	}
+
+	var timeSpentPtr *int
+	if timeSpent > 0 {
+		timeSpentPtr = &timeSpent
+	}
+
+	attempt := &pgentities.AssessmentAttempt{
 		ID:               id,
 		AssessmentID:     assessmentID,
 		StudentID:        studentID,
-		Score:            score,
-		MaxScore:         maxScore,
-		TimeSpentSeconds: timeSpent,
+		Score:            scorePtr,
+		MaxScore:         maxScorePtr,
+		TimeSpentSeconds: timeSpentPtr,
 		StartedAt:        startedAt,
-		CompletedAt:      completedAt,
+		CompletedAt:      &completedAt,
 		CreatedAt:        createdAt,
-		Answers:          answers,
 		IdempotencyKey:   idempotencyKeyPtr,
 	}
 
@@ -141,7 +166,7 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 }
 
 // FindByStudentAndAssessment busca intentos de un estudiante en una evaluación
-func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Context, studentID, assessmentID uuid.UUID) ([]*entities.Attempt, error) {
+func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Context, studentID, assessmentID uuid.UUID) ([]*pgentities.AssessmentAttempt, error) {
 	query := `
 		SELECT id, assessment_id, student_id, score, max_score,
 		       time_spent_seconds, started_at, completed_at, created_at,
@@ -157,7 +182,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 	}
 	defer func() { _ = rows.Close() }()
 
-	var attempts []*entities.Attempt
+	var attempts []*pgentities.AssessmentAttempt
 	for rows.Next() {
 		var (
 			idStr           string
@@ -191,11 +216,12 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 
 		// Cargar las respuestas para este intento
 		answersQuery := `
-			SELECT id, attempt_id, question_id, selected_answer_id,
-			       is_correct, time_spent_seconds, created_at
+			SELECT id, attempt_id, question_index, student_answer,
+			       is_correct, points_earned, max_points, time_spent_seconds,
+			       answered_at, created_at, updated_at
 			FROM assessment_attempt_answer
 			WHERE attempt_id = $1
-			ORDER BY created_at ASC
+			ORDER BY question_index ASC
 		`
 
 		answerRows, err := r.db.QueryContext(ctx, answersQuery, attemptID.String())
@@ -203,21 +229,26 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 			return nil, fmt.Errorf("postgres: error finding answers: %w", err)
 		}
 
-		var answers []*entities.Answer
+		var answers []*pgentities.AssessmentAttemptAnswer
 		for answerRows.Next() {
 			var (
-				answerIDStr      string
-				attemptIDStr     string
-				questionID       string
-				selectedAnswerID string
-				isCorrect        bool
-				timeSpentSecs    int
-				answerCreatedAt  time.Time
+				answerIDStr   string
+				attemptIDStr  string
+				questionIndex int
+				studentAnswer *string
+				isCorrect     *bool
+				pointsEarned  *float64
+				maxPoints     *float64
+				timeSpentSecs *int
+				answeredAt    time.Time
+				createdAt     time.Time
+				updatedAt     time.Time
 			)
 
 			err := answerRows.Scan(
-				&answerIDStr, &attemptIDStr, &questionID, &selectedAnswerID,
-				&isCorrect, &timeSpentSecs, &answerCreatedAt,
+				&answerIDStr, &attemptIDStr, &questionIndex, &studentAnswer,
+				&isCorrect, &pointsEarned, &maxPoints, &timeSpentSecs,
+				&answeredAt, &createdAt, &updatedAt,
 			)
 			if err != nil {
 				_ = answerRows.Close()
@@ -227,31 +258,51 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 			answerID, _ := uuid.Parse(answerIDStr)
 			answerAttemptID, _ := uuid.Parse(attemptIDStr)
 
-			answer := &entities.Answer{
+			answer := &pgentities.AssessmentAttemptAnswer{
 				ID:               answerID,
 				AttemptID:        answerAttemptID,
-				QuestionID:       questionID,
-				SelectedAnswerID: selectedAnswerID,
+				QuestionIndex:    questionIndex,
+				StudentAnswer:    studentAnswer,
 				IsCorrect:        isCorrect,
+				PointsEarned:     pointsEarned,
+				MaxPoints:        maxPoints,
 				TimeSpentSeconds: timeSpentSecs,
-				CreatedAt:        answerCreatedAt,
+				AnsweredAt:       answeredAt,
+				CreatedAt:        createdAt,
+				UpdatedAt:        updatedAt,
 			}
 
 			answers = append(answers, answer)
 		}
 		_ = answerRows.Close()
 
-		attempt := &entities.Attempt{
+		var scorePtr *float64
+		if score > 0 {
+			scoreF := float64(score)
+			scorePtr = &scoreF
+		}
+
+		var maxScorePtr *float64
+		if maxScore > 0 {
+			maxScoreF := float64(maxScore)
+			maxScorePtr = &maxScoreF
+		}
+
+		var timeSpentPtr *int
+		if timeSpent > 0 {
+			timeSpentPtr = &timeSpent
+		}
+
+		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     parsedAssessmentID,
 			StudentID:        parsedStudentID,
-			Score:            score,
-			MaxScore:         maxScore,
-			TimeSpentSeconds: timeSpent,
+			Score:            scorePtr,
+			MaxScore:         maxScorePtr,
+			TimeSpentSeconds: timeSpentPtr,
 			StartedAt:        startedAt,
-			CompletedAt:      completedAt,
+			CompletedAt:      &completedAt,
 			CreatedAt:        createdAt,
-			Answers:          answers,
 			IdempotencyKey:   idempotencyKeyPtr,
 		}
 
@@ -267,17 +318,9 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 
 // Save guarda un intento (solo INSERT, no UPDATE - inmutable)
 // IMPORTANTE: Debe guardar el attempt Y sus answers en una transacción atómica
-func (r *PostgresAttemptRepository) Save(ctx context.Context, attempt *entities.Attempt) error {
+func (r *PostgresAttemptRepository) Save(ctx context.Context, attempt *pgentities.AssessmentAttempt) error {
 	if attempt == nil {
 		return fmt.Errorf("postgres: attempt cannot be nil")
-	}
-
-	if err := attempt.Validate(); err != nil {
-		return fmt.Errorf("postgres: invalid attempt: %w", err)
-	}
-
-	if len(attempt.Answers) == 0 {
-		return domainErrors.ErrNoAnswersProvided
 	}
 
 	// 1. Iniciar transacción
@@ -318,29 +361,8 @@ func (r *PostgresAttemptRepository) Save(ctx context.Context, attempt *entities.
 		return fmt.Errorf("postgres: error inserting attempt: %w", err)
 	}
 
-	// 3. INSERT de todas las answers (batch)
-	answerQuery := `
-		INSERT INTO assessment_attempt_answer (
-			id, attempt_id, question_id, selected_answer_id,
-			is_correct, time_spent_seconds, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-
-	for _, answer := range attempt.Answers {
-		_, err = tx.ExecContext(ctx, answerQuery,
-			answer.ID,
-			answer.AttemptID,
-			answer.QuestionID,
-			answer.SelectedAnswerID,
-			answer.IsCorrect,
-			answer.TimeSpentSeconds,
-			answer.CreatedAt,
-		)
-
-		if err != nil {
-			return fmt.Errorf("postgres: error inserting answer: %w", err)
-		}
-	}
+	// Note: Answers are managed separately through AnswerRepository
+	// The attempt is saved without its answers relationship
 
 	// 4. Commit de la transacción
 	if err = tx.Commit(); err != nil {
@@ -368,7 +390,7 @@ func (r *PostgresAttemptRepository) CountByStudentAndAssessment(ctx context.Cont
 }
 
 // FindByStudent busca todos los intentos de un estudiante (historial)
-func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID uuid.UUID, limit, offset int) ([]*entities.Attempt, error) {
+func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID uuid.UUID, limit, offset int) ([]*pgentities.AssessmentAttempt, error) {
 	query := `
 		SELECT id, assessment_id, student_id, score, max_score,
 		       time_spent_seconds, started_at, completed_at, created_at,
@@ -385,7 +407,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 	}
 	defer func() { _ = rows.Close() }()
 
-	var attempts []*entities.Attempt
+	var attempts []*pgentities.AssessmentAttempt
 	for rows.Next() {
 		var (
 			idStr           string
@@ -419,11 +441,12 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 
 		// Cargar las respuestas para este intento
 		answersQuery := `
-			SELECT id, attempt_id, question_id, selected_answer_id,
-			       is_correct, time_spent_seconds, created_at
+			SELECT id, attempt_id, question_index, student_answer,
+			       is_correct, points_earned, max_points, time_spent_seconds,
+			       answered_at, created_at, updated_at
 			FROM assessment_attempt_answer
 			WHERE attempt_id = $1
-			ORDER BY created_at ASC
+			ORDER BY question_index ASC
 		`
 
 		answerRows, err := r.db.QueryContext(ctx, answersQuery, attemptID.String())
@@ -431,21 +454,26 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 			return nil, fmt.Errorf("postgres: error finding answers: %w", err)
 		}
 
-		var answers []*entities.Answer
+		var answers []*pgentities.AssessmentAttemptAnswer
 		for answerRows.Next() {
 			var (
-				answerIDStr      string
-				attemptIDStr     string
-				questionID       string
-				selectedAnswerID string
-				isCorrect        bool
-				timeSpentSecs    int
-				answerCreatedAt  time.Time
+				answerIDStr   string
+				attemptIDStr  string
+				questionIndex int
+				studentAnswer *string
+				isCorrect     *bool
+				pointsEarned  *float64
+				maxPoints     *float64
+				timeSpentSecs *int
+				answeredAt    time.Time
+				createdAt     time.Time
+				updatedAt     time.Time
 			)
 
 			err := answerRows.Scan(
-				&answerIDStr, &attemptIDStr, &questionID, &selectedAnswerID,
-				&isCorrect, &timeSpentSecs, &answerCreatedAt,
+				&answerIDStr, &attemptIDStr, &questionIndex, &studentAnswer,
+				&isCorrect, &pointsEarned, &maxPoints, &timeSpentSecs,
+				&answeredAt, &createdAt, &updatedAt,
 			)
 			if err != nil {
 				_ = answerRows.Close()
@@ -455,31 +483,51 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 			answerID, _ := uuid.Parse(answerIDStr)
 			answerAttemptID, _ := uuid.Parse(attemptIDStr)
 
-			answer := &entities.Answer{
+			answer := &pgentities.AssessmentAttemptAnswer{
 				ID:               answerID,
 				AttemptID:        answerAttemptID,
-				QuestionID:       questionID,
-				SelectedAnswerID: selectedAnswerID,
+				QuestionIndex:    questionIndex,
+				StudentAnswer:    studentAnswer,
 				IsCorrect:        isCorrect,
+				PointsEarned:     pointsEarned,
+				MaxPoints:        maxPoints,
 				TimeSpentSeconds: timeSpentSecs,
-				CreatedAt:        answerCreatedAt,
+				AnsweredAt:       answeredAt,
+				CreatedAt:        createdAt,
+				UpdatedAt:        updatedAt,
 			}
 
 			answers = append(answers, answer)
 		}
 		_ = answerRows.Close()
 
-		attempt := &entities.Attempt{
+		var scorePtr *float64
+		if score > 0 {
+			scoreF := float64(score)
+			scorePtr = &scoreF
+		}
+
+		var maxScorePtr *float64
+		if maxScore > 0 {
+			maxScoreF := float64(maxScore)
+			maxScorePtr = &maxScoreF
+		}
+
+		var timeSpentPtr *int
+		if timeSpent > 0 {
+			timeSpentPtr = &timeSpent
+		}
+
+		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     assessmentID,
 			StudentID:        parsedStudentID,
-			Score:            score,
-			MaxScore:         maxScore,
-			TimeSpentSeconds: timeSpent,
+			Score:            scorePtr,
+			MaxScore:         maxScorePtr,
+			TimeSpentSeconds: timeSpentPtr,
 			StartedAt:        startedAt,
-			CompletedAt:      completedAt,
+			CompletedAt:      &completedAt,
 			CreatedAt:        createdAt,
-			Answers:          answers,
 			IdempotencyKey:   idempotencyKeyPtr,
 		}
 
