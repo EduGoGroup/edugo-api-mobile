@@ -67,10 +67,10 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 
 	// Determinar status basado en porcentaje
 	var status string
-	switch {
-	case percentage == 0:
+	switch percentage {
+	case 0:
 		status = "not_started"
-	case percentage == 100:
+	case 100:
 		status = "completed"
 	default:
 		status = "in_progress"

@@ -181,6 +181,7 @@ func (r *postgresMaterialRepository) List(ctx context.Context, filters repositor
 	if filters.Status != nil {
 		query += ` AND status = $` + string(rune('0'+argPos))
 		args = append(args, *filters.Status)
+		_ = argPos // Incremento necesario para mantener posición de argumentos
 		argPos++
 	}
 
