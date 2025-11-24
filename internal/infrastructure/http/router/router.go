@@ -69,6 +69,7 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupAuthProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 	rg.POST("/auth/logout", c.Handlers.AuthHandler.Logout)
 	rg.POST("/auth/revoke-all", c.Handlers.AuthHandler.RevokeAll)
+	rg.GET("/auth/me", c.Handlers.AuthHandler.GetCurrentUser)
 }
 
 // setupMaterialRoutes configura todas las rutas relacionadas con materiales educativos.
