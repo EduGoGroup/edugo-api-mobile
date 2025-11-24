@@ -19,6 +19,7 @@ type AuthService interface {
 	RefreshAccessToken(ctx context.Context, refreshToken string) (*dto.RefreshResponse, error)
 	Logout(ctx context.Context, userID string, refreshToken string) error
 	RevokeAllSessions(ctx context.Context, userID string) error
+	GetCurrentUser(ctx context.Context, userID string) (*dto.UserInfo, error)
 }
 
 type authService struct {
@@ -328,4 +329,39 @@ func extractClientInfo(ctx context.Context) clientInfo {
 	}
 
 	return info
+}
+
+// GetCurrentUser obtiene la información del usuario autenticado actual
+
+// GetCurrentUser obtiene la información del usuario autenticado actual
+func (s *authService) GetCurrentUser(ctx context.Context, userID string) (*dto.UserInfo, error) {
+	s.logger.Debug("getting current user", "user_id", userID)
+
+	// Parsear user ID
+	uid, err := valueobject.UserIDFromString(userID)
+	if err != nil {
+		s.logger.Warn("invalid user id", "error", err, "user_id", userID)
+		return nil, errors.NewValidationError("invalid user ID")
+	}
+
+	// Obtener usuario de la base de datos
+	user, err := s.userReader.FindByID(ctx, uid)
+	if err != nil {
+		s.logger.Error("failed to get user", "error", err, "user_id", userID)
+		return nil, errors.NewDatabaseError("find user", err)
+	}
+
+	// Convertir a DTO
+	userInfo := &dto.UserInfo{
+		ID:        user.ID.String(),
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		FullName:  user.FirstName + " " + user.LastName,
+		Role:      user.Role,
+	}
+
+	s.logger.Info("current user retrieved successfully", "user_id", userID)
+
+	return userInfo, nil
 }

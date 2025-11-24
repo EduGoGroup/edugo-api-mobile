@@ -83,6 +83,7 @@ type MockAuthService struct {
 	RefreshAccessTokenFunc func(ctx context.Context, refreshToken string) (*dto.RefreshResponse, error)
 	LogoutFunc             func(ctx context.Context, userID, refreshToken string) error
 	RevokeAllSessionsFunc  func(ctx context.Context, userID string) error
+	GetCurrentUserFunc     func(ctx context.Context, userID string) (*dto.UserInfo, error)
 }
 
 func (m *MockAuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
@@ -123,6 +124,20 @@ func (m *MockAuthService) RevokeAllSessions(ctx context.Context, userID string) 
 		return m.RevokeAllSessionsFunc(ctx, userID)
 	}
 	return nil
+}
+
+func (m *MockAuthService) GetCurrentUser(ctx context.Context, userID string) (*dto.UserInfo, error) {
+	if m.GetCurrentUserFunc != nil {
+		return m.GetCurrentUserFunc(ctx, userID)
+	}
+	return &dto.UserInfo{
+		ID:        userID,
+		Email:     "test@example.com",
+		FirstName: "Test",
+		LastName:  "User",
+		FullName:  "Test User",
+		Role:      "student",
+	}, nil
 }
 
 // MockAssessmentService para tests de assessment_handler

@@ -175,3 +175,39 @@ func (h *AuthHandler) RevokeAll(c *gin.Context) {
 	h.logger.Info("all sessions revoked", "user_id", userID)
 	c.Status(http.StatusNoContent)
 }
+
+// GetCurrentUser godoc
+// @Summary Get current authenticated user
+// @Description Obtiene la información del usuario autenticado actual desde el JWT token
+// @Tags auth
+// @Produce json
+// @Success 200 {object} dto.UserInfo "User information"
+// @Failure 401 {object} ErrorResponse "User not authenticated"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /v1/auth/me [get]
+// @Security BearerAuth
+func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
+	// Extraer user_id del contexto (seteado por middleware de auth)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "user not authenticated", Code: "UNAUTHORIZED"})
+		return
+	}
+
+	userInfo, err := h.authService.GetCurrentUser(c.Request.Context(), userID.(string))
+	if err != nil {
+		if appErr, ok := errors.GetAppError(err); ok {
+			h.logger.Warn("get current user failed", "error", appErr.Message)
+			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
+			return
+		}
+
+		h.logger.Error("unexpected error", "error", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal server error", Code: "INTERNAL_ERROR"})
+		return
+	}
+
+	h.logger.Info("current user retrieved", "user_id", userID)
+	c.JSON(http.StatusOK, userInfo)
+}
