@@ -2,7 +2,7 @@
 # Sobrescribe valores de config.yaml para desarrollo local
 
 server:
-  port: 9090 # Puerto diferente para desarrollo local
+  port: 9091 # Puerto diferente para desarrollo local (9090 ocupado por Codeium)
 
 database:
   postgres:
@@ -36,3 +36,13 @@ bootstrap:
     # La aplicación funcionará sin ellos usando implementaciones noop
     rabbitmq: true
     s3: true
+
+# Configuración de autenticación centralizada
+auth:
+  jwt:
+    secret: "dev-secret-key-change-in-production"
+  api_admin:
+    base_url: "http://localhost:8081"  # URL de api-admin en desarrollo local
+    timeout: 5s
+    cache_ttl: 60s
+    cache_enabled: true

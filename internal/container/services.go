@@ -8,7 +8,6 @@ import (
 // Responsabilidad: Gestionar la lógica de negocio de la aplicación
 // Implementa casos de uso y orquesta repositorios
 type ServiceContainer struct {
-	AuthService              service.AuthService
 	MaterialService          service.MaterialService
 	ProgressService          service.ProgressService
 	SummaryService           service.SummaryService
@@ -26,16 +25,6 @@ type ServiceContainer struct {
 // Cada servicio recibe sus dependencias específicas según el principio DIP
 func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContainer) *ServiceContainer {
 	return &ServiceContainer{
-		// AuthService gestiona autenticación, tokens JWT y sesiones
-		// ISP: Usa UserReader (solo lectura) en lugar de UserRepository completo
-		AuthService: service.NewAuthService(
-			repos.UserRepository, // También es UserReader
-			repos.RefreshTokenRepository,
-			repos.LoginAttemptRepository,
-			infra.JWTManager,
-			infra.Logger,
-		),
-
 		// MaterialService gestiona materiales educativos y versionado
 		MaterialService: service.NewMaterialService(
 			repos.MaterialRepository,

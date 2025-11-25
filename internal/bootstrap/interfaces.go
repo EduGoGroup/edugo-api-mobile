@@ -52,6 +52,7 @@ type Resources struct {
 	RabbitMQPublisher rabbitmq.Publisher
 	S3Client          S3Storage
 	JWTSecret         string
+	AuthConfig        config.AuthConfig // Configuración de autenticación (api-admin)
 }
 
 // BootstrapOptions permite configurar el comportamiento del bootstrap

@@ -30,6 +30,7 @@ func bridgeToSharedBootstrap(
 			RabbitMQPublisher: opts.RabbitMQPublisher,
 			S3Client:          opts.S3Client,
 			JWTSecret:         cfg.Auth.JWT.Secret,
+			AuthConfig:        cfg.Auth,
 		}
 		// Crear lifecycle manager vacío para mocks
 		lifecycleManager := lifecycle.NewManager(opts.Logger)
@@ -188,6 +189,7 @@ func adaptSharedResources(
 		RabbitMQPublisher: rabbitMQPublisher,
 		S3Client:          s3Storage,
 		JWTSecret:         cfg.Auth.JWT.Secret,
+		AuthConfig:        cfg.Auth,
 	}
 
 	return resources, nil
