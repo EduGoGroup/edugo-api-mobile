@@ -77,54 +77,6 @@ func (m *MockS3Storage) GeneratePresignedDownloadURL(ctx context.Context, key st
 	return "https://mock-s3-url.com/presigned-download", nil
 }
 
-// MockAuthService para tests de auth_handler
-type MockAuthService struct {
-	LoginFunc              func(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error)
-	RefreshAccessTokenFunc func(ctx context.Context, refreshToken string) (*dto.RefreshResponse, error)
-	LogoutFunc             func(ctx context.Context, userID, refreshToken string) error
-	RevokeAllSessionsFunc  func(ctx context.Context, userID string) error
-}
-
-func (m *MockAuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
-	if m.LoginFunc != nil {
-		return m.LoginFunc(ctx, req)
-	}
-	return &dto.LoginResponse{
-		AccessToken:  "mock-access-token",
-		RefreshToken: "mock-refresh-token",
-		User: dto.UserInfo{
-			ID:        "user-123",
-			Email:     req.Email,
-			FirstName: "Test",
-			LastName:  "User",
-			FullName:  "Test User",
-		},
-	}, nil
-}
-
-func (m *MockAuthService) RefreshAccessToken(ctx context.Context, refreshToken string) (*dto.RefreshResponse, error) {
-	if m.RefreshAccessTokenFunc != nil {
-		return m.RefreshAccessTokenFunc(ctx, refreshToken)
-	}
-	return &dto.RefreshResponse{
-		AccessToken: "new-access-token",
-	}, nil
-}
-
-func (m *MockAuthService) Logout(ctx context.Context, userID, refreshToken string) error {
-	if m.LogoutFunc != nil {
-		return m.LogoutFunc(ctx, userID, refreshToken)
-	}
-	return nil
-}
-
-func (m *MockAuthService) RevokeAllSessions(ctx context.Context, userID string) error {
-	if m.RevokeAllSessionsFunc != nil {
-		return m.RevokeAllSessionsFunc(ctx, userID)
-	}
-	return nil
-}
-
 // MockAssessmentService para tests de assessment_handler
 type MockAssessmentService struct {
 	GetAssessmentFunc  func(ctx context.Context, materialID string) (*repository.MaterialAssessment, error)

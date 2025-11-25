@@ -8,7 +8,6 @@ import (
 // Responsabilidad: Gestionar la capa de presentación HTTP (REST API)
 // Implementa el patrón Adapter entre HTTP y servicios de aplicación
 type HandlerContainer struct {
-	AuthHandler       *handler.AuthHandler
 	MaterialHandler   *handler.MaterialHandler
 	ProgressHandler   *handler.ProgressHandler
 	SummaryHandler    *handler.SummaryHandler
@@ -25,12 +24,6 @@ type HandlerContainer struct {
 // Cada handler actúa como adaptador entre Gin y los servicios
 func NewHandlerContainer(infra *InfrastructureContainer, services *ServiceContainer) *HandlerContainer {
 	return &HandlerContainer{
-		// AuthHandler gestiona endpoints de autenticación (login, logout, refresh)
-		AuthHandler: handler.NewAuthHandler(
-			services.AuthService,
-			infra.Logger,
-		),
-
 		// MaterialHandler gestiona CRUD de materiales y URLs presignadas de S3
 		MaterialHandler: handler.NewMaterialHandler(
 			services.MaterialService,

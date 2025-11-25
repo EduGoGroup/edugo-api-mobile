@@ -47,6 +47,7 @@ func NewContainer(resources *bootstrap.Resources) *Container {
 		resources.RabbitMQPublisher,
 		resources.S3Client,
 		resources.JWTSecret,
+		resources.AuthConfig,
 		resources.Logger,
 	)
 

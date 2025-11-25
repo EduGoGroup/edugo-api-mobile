@@ -15,89 +15,6 @@ import (
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
 
-// BenchmarkAuthHandler_Login mide el rendimiento del endpoint de login
-func BenchmarkAuthHandler_Login(b *testing.B) {
-	mockService := &MockAuthService{
-		LoginFunc: func(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
-			// Simular operación de DB con pequeño delay
-			time.Sleep(10 * time.Millisecond)
-			return &dto.LoginResponse{
-				AccessToken:  "benchmark_access_token",
-				RefreshToken: "benchmark_refresh_token",
-				User: dto.UserInfo{
-					ID:        "user-123",
-					Email:     req.Email,
-					FirstName: "Benchmark",
-					LastName:  "User",
-					FullName:  "Benchmark User",
-				},
-			}, nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewAuthHandler(mockService, logger)
-
-	router := SetupTestRouter()
-	router.POST("/auth/login", handler.Login)
-
-	reqBody := `{"email":"benchmark@test.com","password":"password123"}`
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/auth/login", strings.NewReader(reqBody))
-		req.Header.Set("Content-Type", "application/json")
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			b.Fatalf("Expected status 200, got %d", w.Code)
-		}
-	}
-}
-
-// BenchmarkAuthHandler_Login_Parallel mide el rendimiento con concurrencia
-func BenchmarkAuthHandler_Login_Parallel(b *testing.B) {
-	mockService := &MockAuthService{
-		LoginFunc: func(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
-			time.Sleep(10 * time.Millisecond)
-			return &dto.LoginResponse{
-				AccessToken:  "benchmark_access_token",
-				RefreshToken: "benchmark_refresh_token",
-				User: dto.UserInfo{
-					ID:        "user-123",
-					Email:     req.Email,
-					FirstName: "Benchmark",
-					LastName:  "User",
-					FullName:  "Benchmark User",
-				},
-			}, nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewAuthHandler(mockService, logger)
-
-	router := SetupTestRouter()
-	router.POST("/auth/login", handler.Login)
-
-	reqBody := `{"email":"benchmark@test.com","password":"password123"}`
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("POST", "/auth/login", strings.NewReader(reqBody))
-			req.Header.Set("Content-Type", "application/json")
-			router.ServeHTTP(w, req)
-
-			if w.Code != http.StatusOK {
-				b.Fatalf("Expected status 200, got %d", w.Code)
-			}
-		}
-	})
-}
-
 // BenchmarkMaterialHandler_CreateMaterial mide el rendimiento de creación de materiales
 func BenchmarkMaterialHandler_CreateMaterial(b *testing.B) {
 	mockService := &MockMaterialService{
@@ -276,38 +193,6 @@ func BenchmarkMaterialHandler_GetMaterial(b *testing.B) {
 	}
 }
 
-// BenchmarkAuthHandler_Refresh mide el rendimiento del refresh de tokens
-func BenchmarkAuthHandler_Refresh(b *testing.B) {
-	mockService := &MockAuthService{
-		RefreshAccessTokenFunc: func(ctx context.Context, refreshToken string) (*dto.RefreshResponse, error) {
-			time.Sleep(12 * time.Millisecond)
-			return &dto.RefreshResponse{
-				AccessToken: "new_access_token",
-			}, nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewAuthHandler(mockService, logger)
-
-	router := SetupTestRouter()
-	router.POST("/auth/refresh", handler.Refresh)
-
-	reqBody := `{"refresh_token":"valid_refresh_token"}`
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/auth/refresh", strings.NewReader(reqBody))
-		req.Header.Set("Content-Type", "application/json")
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			b.Fatalf("Expected status 200, got %d", w.Code)
-		}
-	}
-}
-
 // BenchmarkHealthHandler_Check_Minimal mide el rendimiento del health check (sin DB)
 func BenchmarkHealthHandler_Check_Minimal(b *testing.B) {
 	// Este benchmark está simplificado porque HealthHandler requiere conexiones reales
@@ -317,16 +202,10 @@ func BenchmarkHealthHandler_Check_Minimal(b *testing.B) {
 
 // BenchmarkJSONSerialization mide el overhead de serialización JSON
 func BenchmarkJSONSerialization(b *testing.B) {
-	response := dto.LoginResponse{
-		AccessToken:  "benchmark_access_token_very_long_string_to_simulate_real_jwt",
-		RefreshToken: "benchmark_refresh_token_very_long_string_to_simulate_real_jwt",
-		User: dto.UserInfo{
-			ID:        "user-123",
-			Email:     "benchmark@test.com",
-			FirstName: "Benchmark",
-			LastName:  "User",
-			FullName:  "Benchmark User",
-		},
+	response := dto.MaterialResponse{
+		ID:          "material-benchmark",
+		Title:       "Benchmark Material",
+		Description: nil,
 	}
 
 	b.ResetTimer()
