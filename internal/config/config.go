@@ -97,13 +97,23 @@ type LoggingConfig struct {
 }
 
 // AuthConfig configuración de autenticación
+// AuthConfig configuración de autenticación
 type AuthConfig struct {
-	JWT JWTConfig `mapstructure:"jwt"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	APIAdmin APIAdminConfig `mapstructure:"api_admin"`
 }
 
 // JWTConfig configuración de JWT
 type JWTConfig struct {
 	Secret string `mapstructure:"secret"` // ENV: AUTH_JWT_SECRET (mapeado desde auth.jwt.secret)
+}
+
+// APIAdminConfig configuración del cliente de autenticación remota (api-admin)
+type APIAdminConfig struct {
+	BaseURL      string        `mapstructure:"base_url"`      // ENV: AUTH_API_ADMIN_BASE_URL (URL de api-admin)
+	Timeout      time.Duration `mapstructure:"timeout"`       // Timeout para requests HTTP (default: 5s)
+	CacheTTL     time.Duration `mapstructure:"cache_ttl"`     // TTL del cache de validaciones (default: 60s)
+	CacheEnabled bool          `mapstructure:"cache_enabled"` // Habilitar cache de validaciones
 }
 
 // BootstrapConfig configuración del sistema de bootstrap

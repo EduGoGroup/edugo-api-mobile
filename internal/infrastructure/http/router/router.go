@@ -4,7 +4,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
-	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +12,7 @@ import (
 //
 // NOTA: Las rutas de autenticación (login, refresh, logout, etc.) han sido migradas
 // a api-admin como parte de la centralización de autenticación (Sprint 3).
-// Este servicio ahora valida tokens contra api-admin.
+// Este servicio valida tokens contra api-admin usando RemoteAuthMiddleware.
 func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *gin.Engine {
 	r := gin.Default()
 
@@ -39,10 +38,17 @@ func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *
 }
 
 // setupProtectedRoutes configura todas las rutas que requieren autenticación JWT.
-// Los tokens son validados localmente con JWTManager (que acepta tokens de api-admin).
+// Los tokens son validados remotamente contra api-admin usando AuthClient.
 func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 	protected := rg.Group("")
-	protected.Use(ginmiddleware.JWTAuthMiddleware(c.Infrastructure.JWTManager))
+
+	// Middleware de autenticación remota con api-admin
+	// Reemplaza la validación local de JWT por validación centralizada
+	protected.Use(middleware.RemoteAuthMiddleware(middleware.RemoteAuthConfig{
+		AuthClient: c.Infrastructure.AuthClient,
+		Logger:     c.Infrastructure.Logger,
+		SkipPaths:  []string{}, // Todas las rutas en este grupo requieren auth
+	}))
 	{
 		// Rutas de materiales
 		setupMaterialRoutes(protected, c)
