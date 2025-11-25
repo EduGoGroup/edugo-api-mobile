@@ -10,6 +10,10 @@ import (
 
 // SetupRouter configura todas las rutas de la aplicación con sus respectivos handlers y middleware.
 // Separa las rutas públicas de las protegidas y organiza los endpoints por recursos.
+//
+// NOTA: Las rutas de autenticación (login, refresh, logout, etc.) han sido migradas
+// a api-admin como parte de la centralización de autenticación (Sprint 3).
+// Este servicio ahora valida tokens contra api-admin.
 func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *gin.Engine {
 	r := gin.Default()
 
@@ -27,30 +31,19 @@ func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *
 	// Grupo de rutas API v1
 	v1 := r.Group("/v1")
 	{
-		// Rutas públicas de autenticación
-		setupAuthPublicRoutes(v1, c)
-
-		// Rutas protegidas (requieren JWT)
+		// Rutas protegidas (requieren JWT validado contra api-admin)
 		setupProtectedRoutes(v1, c)
 	}
 
 	return r
 }
 
-// setupAuthPublicRoutes configura las rutas públicas de autenticación.
-func setupAuthPublicRoutes(rg *gin.RouterGroup, c *container.Container) {
-	rg.POST("/auth/login", c.Handlers.AuthHandler.Login)
-	rg.POST("/auth/refresh", c.Handlers.AuthHandler.Refresh)
-}
-
 // setupProtectedRoutes configura todas las rutas que requieren autenticación JWT.
+// Los tokens son validados localmente con JWTManager (que acepta tokens de api-admin).
 func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 	protected := rg.Group("")
 	protected.Use(ginmiddleware.JWTAuthMiddleware(c.Infrastructure.JWTManager))
 	{
-		// Rutas de autenticación protegidas
-		setupAuthProtectedRoutes(protected, c)
-
 		// Rutas de materiales
 		setupMaterialRoutes(protected, c)
 
@@ -63,13 +56,6 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 		// Rutas de estadísticas globales
 		setupStatsRoutes(protected, c)
 	}
-}
-
-// setupAuthProtectedRoutes configura las rutas de autenticación que requieren JWT.
-func setupAuthProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
-	rg.POST("/auth/logout", c.Handlers.AuthHandler.Logout)
-	rg.POST("/auth/revoke-all", c.Handlers.AuthHandler.RevokeAll)
-	rg.GET("/auth/me", c.Handlers.AuthHandler.GetCurrentUser)
 }
 
 // setupMaterialRoutes configura todas las rutas relacionadas con materiales educativos.

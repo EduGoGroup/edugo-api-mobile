@@ -2,7 +2,7 @@
 # Sobrescribe valores de config.yaml para desarrollo local
 
 server:
-  port: 9090 # Puerto diferente para desarrollo local
+  port: 9091 # Puerto diferente para desarrollo local (9090 ocupado por Codeium)
 
 database:
   postgres:

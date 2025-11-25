@@ -1,13 +1,136 @@
 basePath: /
 definitions:
+  dto.AnswerFeedbackDTO:
+    properties:
+      correct_answer:
+        type: string
+      is_correct:
+        type: boolean
+      message:
+        type: string
+      question_id:
+        type: string
+      question_text:
+        type: string
+      selected_option:
+        type: string
+    type: object
+  dto.AssessmentResponse:
+    properties:
+      assessment_id:
+        type: string
+      estimated_time_minutes:
+        type: integer
+      material_id:
+        type: string
+      max_attempts:
+        type: integer
+      pass_threshold:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/dto.QuestionDTO'
+        type: array
+      time_limit_minutes:
+        type: integer
+      title:
+        type: string
+      total_questions:
+        type: integer
+    type: object
+  dto.AttemptHistoryResponse:
+    properties:
+      attempts:
+        items:
+          $ref: '#/definitions/dto.AttemptSummaryDTO'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  dto.AttemptResultResponse:
+    properties:
+      assessment_id:
+        type: string
+      attempt_id:
+        type: string
+      can_retake:
+        type: boolean
+      completed_at:
+        type: string
+      correct_answers:
+        type: integer
+      feedback:
+        items:
+          $ref: '#/definitions/dto.AnswerFeedbackDTO'
+        type: array
+      max_score:
+        type: integer
+      pass_threshold:
+        type: integer
+      passed:
+        type: boolean
+      previous_best_score:
+        type: integer
+      score:
+        type: integer
+      started_at:
+        type: string
+      time_spent_seconds:
+        type: integer
+      total_questions:
+        type: integer
+    type: object
+  dto.AttemptSummaryDTO:
+    properties:
+      assessment_id:
+        type: string
+      attempt_id:
+        type: string
+      completed_at:
+        type: string
+      material_id:
+        type: string
+      material_title:
+        type: string
+      max_score:
+        type: integer
+      passed:
+        type: boolean
+      score:
+        type: integer
+      time_spent_seconds:
+        type: integer
+    type: object
+  dto.CreateAttemptRequest:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/dto.UserAnswerDTO'
+        minItems: 1
+        type: array
+      time_spent_seconds:
+        maximum: 7200
+        minimum: 1
+        type: integer
+    required:
+    - answers
+    - time_spent_seconds
+    type: object
   dto.CreateMaterialRequest:
     properties:
       description:
         example: A comprehensive guide to differential and integral calculus
         maxLength: 1000
         type: string
-      subject_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
+      grade:
+        example: 12th Grade
+        type: string
+      subject:
+        example: Mathematics
         type: string
       title:
         example: Introduction to Calculus
@@ -20,7 +143,7 @@ definitions:
   dto.GenerateDownloadURLResponse:
     properties:
       download_url:
-        example: https://s3.amazonaws.com/bucket/materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf?X-Amz-Algorithm=...
+        example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf?X-Amz-Algorithm=...
         type: string
       expires_in:
         description: En segundos
@@ -45,11 +168,11 @@ definitions:
         description: En segundos
         example: 900
         type: integer
-      s3_key:
-        example: materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf
+      file_url:
+        example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf
         type: string
       upload_url:
-        example: https://s3.amazonaws.com/bucket/materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf?X-Amz-Algorithm=...
+        example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf?X-Amz-Algorithm=...
         type: string
     type: object
   dto.LoginRequest:
@@ -90,38 +213,59 @@ definitions:
     type: object
   dto.MaterialResponse:
     properties:
-      author_id:
-        example: 660e8400-e29b-41d4-a716-446655440001
+      academic_unit_id:
+        example: 880e8400-e29b-41d4-a716-446655440003
         type: string
       created_at:
         example: "2024-01-15T10:30:00Z"
         type: string
+      deleted_at:
+        type: string
       description:
         example: A comprehensive guide to differential and integral calculus
+        type: string
+      file_size_bytes:
+        example: 1048576
+        type: integer
+      file_type:
+        example: application/pdf
+        type: string
+      file_url:
+        example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf
+        type: string
+      grade:
+        example: 12th Grade
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
-      processing_status:
-        example: completed
+      is_public:
+        example: false
+        type: boolean
+      processing_completed_at:
+        example: "2024-01-15T10:35:00Z"
         type: string
-      s3_key:
-        example: materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf
+      processing_started_at:
+        example: "2024-01-15T10:30:00Z"
         type: string
-      s3_url:
-        example: https://s3.amazonaws.com/bucket/materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf
+      school_id:
+        example: 660e8400-e29b-41d4-a716-446655440001
         type: string
       status:
-        example: published
+        description: uploaded, processing, ready, failed
+        example: uploaded
         type: string
-      subject_id:
-        example: 770e8400-e29b-41d4-a716-446655440002
+      subject:
+        example: Mathematics
         type: string
       title:
         example: Introduction to Calculus
         type: string
       updated_at:
         example: "2024-01-15T10:30:00Z"
+        type: string
+      uploaded_by_teacher_id:
+        example: 770e8400-e29b-41d4-a716-446655440002
         type: string
     type: object
   dto.MaterialVersionResponse:
@@ -130,13 +274,16 @@ definitions:
         example: 660e8400-e29b-41d4-a716-446655440001
         type: string
       content_url:
-        example: https://s3.amazonaws.com/bucket/materials/550e8400-e29b-41d4-a716-446655440000/calculus-v2.pdf
+        example: https://s3.amazonaws.com/bucket/materials/file-v2.pdf
         type: string
       created_at:
         example: "2024-01-20T14:30:00Z"
         type: string
       id:
         example: 880e8400-e29b-41d4-a716-446655440003
+        type: string
+      material_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       title:
         example: Introduction to Calculus - Updated
@@ -153,6 +300,26 @@ definitions:
         items:
           $ref: '#/definitions/dto.MaterialVersionResponse'
         type: array
+    type: object
+  dto.OptionDTO:
+    properties:
+      id:
+        type: string
+      text:
+        type: string
+    type: object
+  dto.QuestionDTO:
+    properties:
+      id:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/dto.OptionDTO'
+        type: array
+      text:
+        type: string
+      type:
+        type: string
     type: object
   dto.RefreshRequest:
     properties:
@@ -179,12 +346,29 @@ definitions:
     type: object
   dto.UploadCompleteRequest:
     properties:
-      s3_key:
-        example: materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf
+      file_size_bytes:
+        example: 1048576
+        type: integer
+      file_type:
+        example: application/pdf
         type: string
-      s3_url:
-        example: https://s3.amazonaws.com/bucket/materials/550e8400-e29b-41d4-a716-446655440000/calculus.pdf
+      file_url:
+        example: https://s3.amazonaws.com/bucket/materials/file.pdf
         type: string
+    type: object
+  dto.UserAnswerDTO:
+    properties:
+      question_id:
+        type: string
+      selected_answer_id:
+        type: string
+      time_spent_seconds:
+        minimum: 0
+        type: integer
+    required:
+    - question_id
+    - selected_answer_id
+    - time_spent_seconds
     type: object
   dto.UserInfo:
     properties:
@@ -349,6 +533,46 @@ paths:
       summary: Submit assessment with automatic scoring and detailed feedback
       tags:
       - assessments
+  /v1/attempts/{id}/results:
+    get:
+      description: Retorna los resultados detallados de un intento, incluyendo feedback
+        por pregunta
+      parameters:
+      - description: Attempt ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Resultados obtenidos exitosamente
+          schema:
+            $ref: '#/definitions/dto.AttemptResultResponse'
+        "400":
+          description: Invalid attempt ID
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden - attempt does not belong to user
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Attempt not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener resultados de un intento específico
+      tags:
+      - Evaluaciones
   /v1/auth/login:
     post:
       consumes:
@@ -417,6 +641,34 @@ paths:
       security:
       - BearerAuth: []
       summary: User logout
+      tags:
+      - auth
+  /v1/auth/me:
+    get:
+      description: Obtiene la información del usuario autenticado actual desde el
+        JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User information
+          schema:
+            $ref: '#/definitions/dto.UserInfo'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current authenticated user
       tags:
       - auth
   /v1/auth/refresh:
@@ -568,72 +820,25 @@ paths:
       - materials
   /v1/materials/{id}/assessment:
     get:
-      description: Retrieves the assessment (quiz/test) associated with a specific
-        material
+      description: Retorna las preguntas de evaluación de un material sin exponer
+        las respuestas correctas
       parameters:
-      - description: Material ID (UUID format)
+      - description: Material ID (UUID)
         in: path
         name: id
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
-          description: Assessment retrieved successfully
+          description: Assessment obtenido exitosamente
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.AssessmentResponse'
         "400":
-          description: Invalid material ID format
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "404":
-          description: Assessment not found for this material
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Get material assessment/quiz
-      tags:
-      - assessments
-  /v1/materials/{id}/assessment/attempts:
-    post:
-      consumes:
-      - application/json
-      description: Records a user's attempt at completing an assessment with their
-        answers
-      parameters:
-      - description: Material ID (UUID format)
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: User answers (question_id -> answer mapping)
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties: true
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Attempt recorded successfully with score
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid request body or material ID
+          description: Invalid material ID
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "401":
-          description: User not authenticated
+          description: Unauthorized
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "404":
@@ -646,9 +851,51 @@ paths:
             $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Record assessment attempt
+      summary: Obtener cuestionario de un material (SIN respuestas correctas)
       tags:
-      - assessments
+      - Evaluaciones
+  /v1/materials/{id}/assessment/attempts:
+    post:
+      description: Crea un intento, valida respuestas en servidor, calcula score y
+        retorna resultados con feedback
+      parameters:
+      - description: Material ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Respuestas del estudiante
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAttemptRequest'
+      responses:
+        "201":
+          description: Attempt creado exitosamente
+          schema:
+            $ref: '#/definitions/dto.AttemptResultResponse'
+        "400":
+          description: Invalid request or material ID
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Assessment not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Crear intento de evaluación y obtener calificación
+      tags:
+      - Evaluaciones
   /v1/materials/{id}/download-url:
     get:
       description: Generate a presigned URL for downloading a material file from S3
@@ -960,6 +1207,43 @@ paths:
       summary: Get global system statistics
       tags:
       - stats
+  /v1/users/me/attempts:
+    get:
+      description: Retorna todos los intentos de evaluación del usuario, ordenados
+        por fecha descendente
+      parameters:
+      - default: 10
+        description: Número máximo de resultados
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Número de resultados a saltar
+        in: query
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: Historial obtenido exitosamente
+          schema:
+            $ref: '#/definitions/dto.AttemptHistoryResponse'
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obtener historial de intentos del usuario autenticado
+      tags:
+      - Evaluaciones
 securityDefinitions:
   BearerAuth:
     description: 'JWT token con formato: Bearer {token}'

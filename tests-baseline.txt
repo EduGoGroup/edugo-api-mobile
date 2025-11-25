@@ -1,0 +1,25 @@
+?   	github.com/EduGoGroup/edugo-api-mobile/cmd	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/docs	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/application/dto	[no test files]
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/application/service	1.254s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/application/service/scoring	0.995s
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap	[no test files]
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap/adapter	1.306s
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap/noop	[no test files]
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/config	1.687s
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/container	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/domain/services	[no test files]
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject	1.891s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobjects	2.199s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler	2.508s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware	2.061s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/router	2.480s
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq	2.023s
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository	[no test files]
+ok  	github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3	2.632s
+?   	github.com/EduGoGroup/edugo-api-mobile/scripts	[no test files]
+?   	github.com/EduGoGroup/edugo-api-mobile/tools/configctl	[no test files]
