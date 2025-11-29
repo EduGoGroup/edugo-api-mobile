@@ -31,6 +31,7 @@ func bridgeToSharedBootstrap(
 			S3Client:          opts.S3Client,
 			JWTSecret:         cfg.Auth.JWT.Secret,
 			AuthConfig:        cfg.Auth,
+			Config:            cfg,
 		}
 		// Crear lifecycle manager vacío para mocks
 		lifecycleManager := lifecycle.NewManager(opts.Logger)
@@ -190,6 +191,7 @@ func adaptSharedResources(
 		S3Client:          s3Storage,
 		JWTSecret:         cfg.Auth.JWT.Secret,
 		AuthConfig:        cfg.Auth,
+		Config:            cfg,
 	}
 
 	return resources, nil
