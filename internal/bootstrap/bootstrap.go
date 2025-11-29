@@ -110,6 +110,7 @@ func (b *Bootstrapper) initializeMockMode(ctx context.Context, startTime time.Ti
 		S3Client:          nil, // No inicializar S3
 		JWTSecret:         b.config.Auth.JWT.Secret,
 		AuthConfig:        b.config.Auth,
+		Config:            b.config, // Configuración completa para factory
 	}
 
 	duration := time.Since(startTime)
