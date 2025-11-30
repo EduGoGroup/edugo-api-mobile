@@ -10,14 +10,15 @@ import (
 // Se llena desde `loader.Load()` usando la variable de entorno APP_ENV y permite
 // que el resto de la aplicación consulte el ambiente desde el objeto `Config`.
 type Config struct {
-	Server      ServerConfig    `mapstructure:"server"`
-	Database    DatabaseConfig  `mapstructure:"database"`
-	Messaging   MessagingConfig `mapstructure:"messaging"`
-	Storage     StorageConfig   `mapstructure:"storage"`
-	Logging     LoggingConfig   `mapstructure:"logging"`
-	Environment string          `mapstructure:"environment"`
-	Auth        AuthConfig      `mapstructure:"auth"`
-	Bootstrap   BootstrapConfig `mapstructure:"bootstrap"`
+	Server      ServerConfig      `mapstructure:"server"`
+	Database    DatabaseConfig    `mapstructure:"database"`
+	Messaging   MessagingConfig   `mapstructure:"messaging"`
+	Storage     StorageConfig     `mapstructure:"storage"`
+	Logging     LoggingConfig     `mapstructure:"logging"`
+	Environment string            `mapstructure:"environment"`
+	Auth        AuthConfig        `mapstructure:"auth"`
+	Bootstrap   BootstrapConfig   `mapstructure:"bootstrap"`
+	Development DevelopmentConfig `mapstructure:"development"`
 }
 
 // ServerConfig configuración del servidor HTTP
@@ -97,7 +98,6 @@ type LoggingConfig struct {
 }
 
 // AuthConfig configuración de autenticación
-// AuthConfig configuración de autenticación
 type AuthConfig struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	APIAdmin APIAdminConfig `mapstructure:"api_admin"`
@@ -127,6 +127,11 @@ type BootstrapConfig struct {
 type OptionalResourcesConfig struct {
 	RabbitMQ bool `mapstructure:"rabbitmq"` // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ
 	S3       bool `mapstructure:"s3"`       // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_S3
+}
+
+// DevelopmentConfig configuración para modo desarrollo
+type DevelopmentConfig struct {
+	UseMockRepositories bool `mapstructure:"use_mock_repositories"` // ENV: DEVELOPMENT_USE_MOCK_REPOSITORIES
 }
 
 // GetPostgresConnectionString construye la cadena de conexión PostgreSQL

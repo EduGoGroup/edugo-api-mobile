@@ -31,7 +31,7 @@ type Container struct {
 //
 // Flujo de inicialización:
 //  1. Infrastructure → Recursos externos (DB, Logger, Messaging, Storage, Auth)
-//  2. Repositories   → Persistencia (depende de Infrastructure)
+//  2. Repositories   → Persistencia (depende de Infrastructure y Config)
 //  3. Services       → Lógica de negocio (depende de Repositories e Infrastructure)
 //  4. Handlers       → Presentación HTTP (depende de Services e Infrastructure)
 //
@@ -51,8 +51,9 @@ func NewContainer(resources *bootstrap.Resources) *Container {
 		resources.Logger,
 	)
 
-	// Paso 2: Inicializar repositorios (dependen de infraestructura)
-	repos := NewRepositoryContainer(infra)
+	// Paso 2: Inicializar repositorios (dependen de infraestructura y config)
+	// NOTA: Ahora recibe Config para determinar si usar mocks o implementaciones reales
+	repos := NewRepositoryContainer(infra, resources.Config)
 
 	// Paso 3: Inicializar servicios (dependen de repositorios e infraestructura)
 	services := NewServiceContainer(infra, repos)

@@ -52,3 +52,11 @@ bootstrap:
     # S3 is optional by default to facilitate local development
     # Set to false to make it required (will fail if unavailable)
     s3: true
+
+# Development mode configuration
+development:
+  # Use mock repositories instead of real database connections
+  # Perfect for frontend development without Docker
+  # Set via DEVELOPMENT_USE_MOCK_REPOSITORIES environment variable
+  # Values: true (mock) | false (real databases)
+  use_mock_repositories: false

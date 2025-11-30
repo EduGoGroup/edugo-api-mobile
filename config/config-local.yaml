@@ -46,3 +46,7 @@ auth:
     timeout: 5s
     cache_ttl: 60s
     cache_enabled: true
+
+# Configuración para modo desarrollo (mocks)
+development:
+  use_mock_repositories: false  # Cambiar a true para usar repositorios mock en lugar de PostgreSQL/MongoDB

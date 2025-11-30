@@ -45,16 +45,22 @@ type HealthResponse struct {
 func (h *HealthHandler) Check(c *gin.Context) {
 	// Verificar PostgreSQL
 	pgStatus := "healthy"
-	if err := h.db.Ping(); err != nil {
+	if h.db == nil {
+		pgStatus = "mock"
+	} else if err := h.db.Ping(); err != nil {
 		pgStatus = "unhealthy"
 	}
 
 	// Verificar MongoDB
 	mongoStatus := "healthy"
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	if err := h.mongoDB.Client().Ping(ctx, nil); err != nil {
-		mongoStatus = "unhealthy"
+	if h.mongoDB == nil {
+		mongoStatus = "mock"
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := h.mongoDB.Client().Ping(ctx, nil); err != nil {
+			mongoStatus = "unhealthy"
+		}
 	}
 
 	// Determinar estado general del sistema
