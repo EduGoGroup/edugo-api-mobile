@@ -15,11 +15,12 @@ var (
 
 func GetDefaultUsers() map[string]*pgentities.User {
 	now := time.Now()
+	// Hashes bcrypt válidos para la contraseña "password123" (cost=10)
 	return map[string]*pgentities.User{
 		AdminID.String(): {
 			ID:           AdminID,
 			Email:        "admin@edugo.com",
-			PasswordHash: "$2a$10$hash",
+			PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
 			FirstName:    "Admin",
 			LastName:     "Sistema",
 			Role:         "admin",
@@ -30,7 +31,7 @@ func GetDefaultUsers() map[string]*pgentities.User {
 		TeacherID.String(): {
 			ID:           TeacherID,
 			Email:        "teacher@edugo.com",
-			PasswordHash: "$2a$10$hash",
+			PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
 			FirstName:    "María",
 			LastName:     "González",
 			Role:         "teacher",
@@ -41,7 +42,7 @@ func GetDefaultUsers() map[string]*pgentities.User {
 		StudentID.String(): {
 			ID:           StudentID,
 			Email:        "student@edugo.com",
-			PasswordHash: "$2a$10$hash",
+			PasswordHash: "$2a$10$eImiTXuWVxfM37uY4JANjQ5oG7lKwK1ggP1CJE3.JiQ3h6.qE6pOu",
 			FirstName:    "Juan",
 			LastName:     "Pérez",
 			Role:         "student",

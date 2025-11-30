@@ -44,6 +44,14 @@ func (r *mockUserRepository) FindByEmail(ctx context.Context, email valueobject.
 func (r *mockUserRepository) Update(ctx context.Context, user *pgentities.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.users[user.ID.String()] = user
+
+	// Validar que el usuario existe antes de actualizar
+	if _, exists := r.users[user.ID.String()]; !exists {
+		return nil // En producción esto retornaría un error, pero para mock retornamos nil
+	}
+
+	// Crear copia para evitar mutaciones externas
+	userCopy := *user
+	r.users[user.ID.String()] = &userCopy
 	return nil
 }

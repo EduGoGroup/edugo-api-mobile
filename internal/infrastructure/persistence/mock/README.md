@@ -65,14 +65,17 @@ mock/
 
 ### Thread-Safe
 
-Todos los mocks usan `sync.RWMutex` para operaciones concurrentes seguras:
+Los mocks con estado (como UserRepository) usan `sync.RWMutex` para operaciones concurrentes seguras:
 
 ```go
-type MockUserRepository struct {
+type mockUserRepository struct {
     users map[string]*pgentities.User
     mu    sync.RWMutex  // Protección de concurrencia
 }
 ```
+
+**Nota**: Solo los mocks con estado mutable (actualmente UserRepository) implementan sincronización.
+Los stubs sin estado no requieren protección de concurrencia.
 
 ### Datos Predefinidos (Fixtures)
 
@@ -89,16 +92,15 @@ studentID := uuid.MustParse("00000000-0000-0000-0000-000000000002")
 Los mocks retornan copias de los datos para evitar mutaciones externas:
 
 ```go
-func (r *MockUserRepository) FindByID(ctx context.Context, id valueobject.UserID) (*pgentities.User, error) {
+func (r *mockUserRepository) FindByID(ctx context.Context, id valueobject.UserID) (*pgentities.User, error) {
     r.mu.RLock()
     defer r.mu.RUnlock()
 
-    user, exists := r.users[id.String()]
-    if !exists {
-        return nil, nil
+    if u, ok := r.users[id.UUID().String()]; ok {
+        c := *u  // Crear copia por valor
+        return &c, nil
     }
-
-    return cloneUser(user), nil  // Retornar copia
+    return nil, nil
 }
 ```
 
@@ -108,8 +110,9 @@ func (r *MockUserRepository) FindByID(ctx context.Context, id valueobject.UserID
 
 | Email | Password | Rol | ID |
 |-------|----------|-----|-----|
-| `docente@edugo.com` | `password123` | teacher | `00000000-0000-0000-0000-000000000001` |
-| `estudiante@edugo.com` | `password123` | student | `00000000-0000-0000-0000-000000000002` |
+| `admin@edugo.com` | `password123` | admin | `11111111-1111-1111-1111-111111111111` |
+| `teacher@edugo.com` | `password123` | teacher | `22222222-2222-2222-2222-222222222222` |
+| `student@edugo.com` | `password123` | student | `33333333-3333-3333-3333-333333333333` |
 
 ### Materiales
 
