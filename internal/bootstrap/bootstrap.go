@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
+	mockmessaging "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/mock"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -101,13 +102,16 @@ func (b *Bootstrapper) initializeMockMode(ctx context.Context, startTime time.Ti
 		"startup_improvement", "~30s → ~1.5s",
 	)
 
-	// Crear recursos mínimos (sin DB, sin messaging, sin storage)
+	// Crear mock publisher para RabbitMQ (loguea mensajes sin enviarlos)
+	mockPublisher := mockmessaging.NewMockPublisher(log)
+
+	// Crear recursos mínimos (sin DB real, con mock messaging, sin storage)
 	resources := &Resources{
 		Logger:            log,
-		PostgreSQL:        nil, // No inicializar PostgreSQL
-		MongoDB:           nil, // No inicializar MongoDB
-		RabbitMQPublisher: nil, // No inicializar RabbitMQ
-		S3Client:          nil, // No inicializar S3
+		PostgreSQL:        nil,           // No inicializar PostgreSQL
+		MongoDB:           nil,           // No inicializar MongoDB
+		RabbitMQPublisher: mockPublisher, // Mock publisher (loguea sin enviar)
+		S3Client:          nil,           // No inicializar S3
 		JWTSecret:         b.config.Auth.JWT.Secret,
 		AuthConfig:        b.config.Auth,
 		Config:            b.config, // Configuración completa para factory
