@@ -53,6 +53,7 @@ type Resources struct {
 	S3Client          S3Storage
 	JWTSecret         string
 	AuthConfig        config.AuthConfig // Configuración de autenticación (api-admin)
+	Config            *config.Config    // Configuración completa de la aplicación
 }
 
 // BootstrapOptions permite configurar el comportamiento del bootstrap

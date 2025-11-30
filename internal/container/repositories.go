@@ -1,10 +1,10 @@
 package container
 
 import (
+	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
-	postgresRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/postgres/repository"
 )
 
 // RepositoryContainer encapsula todos los repositorios de dominio
@@ -30,29 +30,32 @@ type RepositoryContainer struct {
 }
 
 // NewRepositoryContainer crea y configura todos los repositorios
+// Usa RepositoryFactory para crear implementaciones reales o mock según configuración
+//
 // Parámetros:
 //   - infra: Contenedor de infraestructura con conexiones a bases de datos
+//   - cfg: Configuración de la aplicación (determina si usar mocks)
 //
 // Retorna un contenedor con todos los repositorios inicializados
-// Los repositorios de PostgreSQL usan infra.DB
-// Los repositorios de MongoDB usan infra.MongoDB
-func NewRepositoryContainer(infra *InfrastructureContainer) *RepositoryContainer {
+func NewRepositoryContainer(infra *InfrastructureContainer, cfg *config.Config) *RepositoryContainer {
+	factory := NewRepositoryFactory(cfg, infra)
+
 	return &RepositoryContainer{
-		// PostgreSQL repositories
-		UserRepository:         postgresRepo.NewPostgresUserRepository(infra.DB),
-		MaterialRepository:     postgresRepo.NewPostgresMaterialRepository(infra.DB),
-		ProgressRepository:     postgresRepo.NewPostgresProgressRepository(infra.DB),
-		RefreshTokenRepository: postgresRepo.NewPostgresRefreshTokenRepository(infra.DB),
-		LoginAttemptRepository: postgresRepo.NewPostgresLoginAttemptRepository(infra.DB),
+		// PostgreSQL repositories - creados vía factory
+		UserRepository:         factory.CreateUserRepository(),
+		MaterialRepository:     factory.CreateMaterialRepository(),
+		ProgressRepository:     factory.CreateProgressRepository(),
+		RefreshTokenRepository: factory.CreateRefreshTokenRepository(),
+		LoginAttemptRepository: factory.CreateLoginAttemptRepository(),
 
-		// Sprint-03: Assessment System Repositories (PostgreSQL)
-		AssessmentRepoV2: postgresRepo.NewPostgresAssessmentRepository(infra.DB),
-		AttemptRepo:      postgresRepo.NewPostgresAttemptRepository(infra.DB),
-		AnswerRepo:       postgresRepo.NewPostgresAnswerRepository(infra.DB),
+		// Sprint-03: Assessment System Repositories (PostgreSQL) - creados vía factory
+		AssessmentRepoV2: factory.CreateAssessmentRepository(),
+		AttemptRepo:      factory.CreateAttemptRepository(),
+		AnswerRepo:       factory.CreateAnswerRepository(),
 
-		// MongoDB repositories
-		SummaryRepository:      mongoRepo.NewMongoSummaryRepository(infra.MongoDB),
-		AssessmentRepository:   mongoRepo.NewMongoAssessmentRepository(infra.MongoDB), // Legacy
-		AssessmentDocumentRepo: mongoRepo.NewMongoAssessmentDocumentRepository(infra.MongoDB),
+		// MongoDB repositories - creados vía factory
+		SummaryRepository:      factory.CreateSummaryRepository(),
+		AssessmentRepository:   factory.CreateLegacyAssessmentRepository(),
+		AssessmentDocumentRepo: factory.CreateAssessmentDocumentRepository(),
 	}
 }

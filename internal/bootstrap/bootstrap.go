@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
+	mockmessaging "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/mock"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -45,11 +46,19 @@ func New(cfg *config.Config, opts ...BootstrapOption) *Bootstrapper {
 // InitializeInfrastructure inicializa todos los recursos de infraestructura
 // Retorna los recursos inicializados, una función de cleanup, y un error si algo falla
 //
-// REFACTORIZADO: Ahora delega a shared/bootstrap vía bridgeToSharedBootstrap()
+// MODO MOCK: Si development.use_mock_repositories=true, salta la inicialización de DB
+// y retorna recursos mínimos (solo logger). Perfecto para desarrollo frontend sin Docker.
+//
+// MODO REAL: Delega a shared/bootstrap vía bridgeToSharedBootstrap()
 func (b *Bootstrapper) InitializeInfrastructure(ctx context.Context) (*Resources, func() error, error) {
 	startTime := time.Now()
 
-	// Llamar al bridge que se conecta con shared/bootstrap
+	// NUEVO: Verificar si estamos en modo mock
+	if b.config.Development.UseMockRepositories {
+		return b.initializeMockMode(ctx, startTime)
+	}
+
+	// Flujo normal: Llamar al bridge que se conecta con shared/bootstrap
 	resources, lifecycleManager, err := bridgeToSharedBootstrap(ctx, b.config, b.options)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to initialize infrastructure via shared/bootstrap: %w", err)
@@ -75,6 +84,48 @@ func (b *Bootstrapper) InitializeInfrastructure(ctx context.Context) (*Resources
 		}
 
 		resources.Logger.Info("infrastructure cleanup completed successfully")
+		return nil
+	}
+
+	return resources, cleanup, nil
+}
+
+// initializeMockMode inicializa recursos mínimos para modo mock (sin bases de datos)
+// Solo crea logger y retorna recursos nil para DB/Messaging/Storage
+func (b *Bootstrapper) initializeMockMode(ctx context.Context, startTime time.Time) (*Resources, func() error, error) {
+	// Crear logger básico
+	log := logger.NewZapLogger(b.config.Logging.Level, b.config.Logging.Format)
+
+	log.Info("🎭 MODO MOCK ACTIVADO - Iniciando sin conexiones de base de datos",
+		"use_mock_repositories", true,
+		"ram_saving", "~4GB → ~200MB",
+		"startup_improvement", "~30s → ~1.5s",
+	)
+
+	// Crear mock publisher para RabbitMQ (loguea mensajes sin enviarlos)
+	mockPublisher := mockmessaging.NewMockPublisher(log)
+
+	// Crear recursos mínimos (sin DB real, con mock messaging, sin storage)
+	resources := &Resources{
+		Logger:            log,
+		PostgreSQL:        nil,           // No inicializar PostgreSQL
+		MongoDB:           nil,           // No inicializar MongoDB
+		RabbitMQPublisher: mockPublisher, // Mock publisher (loguea sin enviar)
+		S3Client:          nil,           // No inicializar S3
+		JWTSecret:         b.config.Auth.JWT.Secret,
+		AuthConfig:        b.config.Auth,
+		Config:            b.config, // Configuración completa para factory
+	}
+
+	duration := time.Since(startTime)
+	log.Info("mock mode initialization completed",
+		"duration", duration.String(),
+		"mode", "mock",
+	)
+
+	// Cleanup no-op para modo mock
+	cleanup := func() error {
+		log.Info("mock mode cleanup (no-op)")
 		return nil
 	}
 
