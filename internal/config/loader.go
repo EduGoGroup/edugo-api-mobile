@@ -175,4 +175,8 @@ func bindEnvVars(v *viper.Viper) {
 	// Bootstrap - Optional resources
 	_ = v.BindEnv("bootstrap.optional_resources.rabbitmq")
 	_ = v.BindEnv("bootstrap.optional_resources.s3")
+
+	// Development - Mock repositories
+	// Binding explícito para compatibilidad con USE_MOCK_REPOSITORIES
+	_ = v.BindEnv("development.use_mock_repositories", "USE_MOCK_REPOSITORIES")
 }
