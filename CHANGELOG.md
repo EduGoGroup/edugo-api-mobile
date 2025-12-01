@@ -5,6 +5,14 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2025-12-01
+
+### Tipo de Release: minor
+
+- feat(auth): Implementar validación local de JWT (#84)
+
+---
+
 ## [0.12.0] - 2025-12-01
 
 ### Tipo de Release: minor
