@@ -44,6 +44,21 @@ logging:
   level: "info"
   format: "json"
 
+# Autenticación JWT
+# IMPORTANTE: El secret e issuer DEBEN coincidir con api-admin para validación local
+auth:
+  jwt:
+    # secret: Set via AUTH_JWT_SECRET environment variable (DEBE ser el mismo que api-admin)
+    issuer: "edugo-central"  # Issuer del token JWT (DEBE ser el mismo que api-admin)
+  api_admin:
+    # Validación remota DESHABILITADA por defecto - se usa validación local con JWT
+    # base_url: Set via AUTH_API_ADMIN_BASE_URL if remote validation is needed
+    timeout: 5s
+    cache_ttl: 60s
+    cache_enabled: true
+    remote_enabled: false      # Validación remota deshabilitada por defecto
+    fallback_enabled: false    # Fallback remoto deshabilitado por defecto
+
 bootstrap:
   optional_resources:
     # RabbitMQ is optional by default to facilitate local development

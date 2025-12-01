@@ -1,5 +1,6 @@
 // Package client proporciona clientes HTTP para comunicación con otros servicios.
-// AuthClient permite validar tokens JWT contra api-admin como autoridad central.
+// AuthClient valida tokens JWT de forma local usando el mismo secret que api-admin,
+// con fallback opcional a validación remota.
 package client
 
 import (
@@ -14,10 +15,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/sony/gobreaker"
 )
 
-// TokenInfo contiene la información de un token validado por api-admin
+// TokenInfo contiene la información de un token validado
 type TokenInfo struct {
 	Valid     bool      `json:"valid"`
 	UserID    string    `json:"user_id,omitempty"`
@@ -29,24 +31,34 @@ type TokenInfo struct {
 
 // AuthClientConfig configuración del cliente de autenticación
 type AuthClientConfig struct {
-	BaseURL           string               // URL base de api-admin (ej: http://localhost:8081)
-	Timeout           time.Duration        // Timeout para requests HTTP (default: 5s)
-	CacheTTL          time.Duration        // TTL del cache de validaciones (default: 60s)
-	CacheEnabled      bool                 // Habilitar cache de validaciones
-	CircuitBreaker    CircuitBreakerConfig // Configuración del circuit breaker
-	FallbackEnabled   bool                 // Habilitar fallback si api-admin no responde
-	FallbackJWTSecret string               // Secret para validación local (fallback)
+	// Configuración para validación LOCAL (preferida)
+	JWTSecret string // Secret para validación JWT local (MISMO que api-admin)
+	JWTIssuer string // Issuer esperado (debe ser "edugo-central" para compatibilidad con api-admin)
+
+	// Configuración para validación REMOTA (fallback opcional)
+	BaseURL         string        // URL base de api-admin (ej: http://localhost:8082)
+	Timeout         time.Duration // Timeout para requests HTTP (default: 5s)
+	RemoteEnabled   bool          // Habilitar validación remota como fallback
+	CircuitBreaker  CircuitBreakerConfig
+	FallbackEnabled bool // Si falla validación local, intentar remota
+
+	// Cache
+	CacheTTL     time.Duration // TTL del cache de validaciones (default: 60s)
+	CacheEnabled bool          // Habilitar cache de validaciones
 }
 
-// CircuitBreakerConfig configuración del circuit breaker
+// CircuitBreakerConfig configuración del circuit breaker para llamadas remotas
 type CircuitBreakerConfig struct {
 	MaxRequests uint32        // Máximo de requests en estado half-open
 	Interval    time.Duration // Intervalo para resetear contadores
 	Timeout     time.Duration // Tiempo que permanece abierto antes de half-open
 }
 
-// AuthClient cliente para validar tokens con api-admin
+// AuthClient cliente para validar tokens JWT
+// Prioriza validación LOCAL usando el mismo JWT secret que api-admin
+// Opcionalmente puede usar validación REMOTA como fallback
 type AuthClient struct {
+	jwtManager     *auth.JWTManager // Para validación local
 	baseURL        string
 	httpClient     *http.Client
 	cache          *tokenCache
@@ -55,6 +67,7 @@ type AuthClient struct {
 }
 
 // NewAuthClient crea una nueva instancia del cliente de autenticación
+// Requiere JWTSecret y JWTIssuer para validación local
 func NewAuthClient(config AuthClientConfig) *AuthClient {
 	// Valores por defecto
 	if config.Timeout == 0 {
@@ -63,47 +76,63 @@ func NewAuthClient(config AuthClientConfig) *AuthClient {
 	if config.CacheTTL == 0 {
 		config.CacheTTL = 60 * time.Second
 	}
-
-	// Configurar circuit breaker
-	cbSettings := gobreaker.Settings{
-		Name:        "auth-service",
-		MaxRequests: config.CircuitBreaker.MaxRequests,
-		Interval:    config.CircuitBreaker.Interval,
-		Timeout:     config.CircuitBreaker.Timeout,
-		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			// Abrir circuito si hay 60% de fallos con al menos 3 requests
-			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 3 && failureRatio >= 0.6
-		},
-		OnStateChange: func(name string, from, to gobreaker.State) {
-			fmt.Printf("[AuthClient] Circuit breaker '%s': %s -> %s\n", name, from, to)
-		},
+	if config.JWTIssuer == "" {
+		config.JWTIssuer = "edugo-central" // Issuer por defecto compatible con api-admin
 	}
 
-	// Valores por defecto del circuit breaker
-	if cbSettings.MaxRequests == 0 {
-		cbSettings.MaxRequests = 3
+	// Crear JWTManager para validación local
+	var jwtManager *auth.JWTManager
+	if config.JWTSecret != "" {
+		jwtManager = auth.NewJWTManager(config.JWTSecret, config.JWTIssuer)
 	}
-	if cbSettings.Interval == 0 {
-		cbSettings.Interval = 10 * time.Second
-	}
-	if cbSettings.Timeout == 0 {
-		cbSettings.Timeout = 30 * time.Second
+
+	// Configurar circuit breaker para llamadas remotas (solo si RemoteEnabled)
+	var cb *gobreaker.CircuitBreaker
+	if config.RemoteEnabled && config.BaseURL != "" {
+		cbSettings := gobreaker.Settings{
+			Name:        "auth-service",
+			MaxRequests: config.CircuitBreaker.MaxRequests,
+			Interval:    config.CircuitBreaker.Interval,
+			Timeout:     config.CircuitBreaker.Timeout,
+			ReadyToTrip: func(counts gobreaker.Counts) bool {
+				failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+				return counts.Requests >= 3 && failureRatio >= 0.6
+			},
+			OnStateChange: func(name string, from, to gobreaker.State) {
+				fmt.Printf("[AuthClient] Circuit breaker '%s': %s -> %s\n", name, from, to)
+			},
+		}
+
+		if cbSettings.MaxRequests == 0 {
+			cbSettings.MaxRequests = 3
+		}
+		if cbSettings.Interval == 0 {
+			cbSettings.Interval = 10 * time.Second
+		}
+		if cbSettings.Timeout == 0 {
+			cbSettings.Timeout = 30 * time.Second
+		}
+
+		cb = gobreaker.NewCircuitBreaker(cbSettings)
 	}
 
 	return &AuthClient{
-		baseURL: config.BaseURL,
+		jwtManager: jwtManager,
+		baseURL:    config.BaseURL,
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
 		},
 		cache:          newTokenCache(config.CacheTTL),
-		circuitBreaker: gobreaker.NewCircuitBreaker(cbSettings),
+		circuitBreaker: cb,
 		config:         config,
 	}
 }
 
-// ValidateToken valida un token JWT con api-admin
-// Utiliza cache y circuit breaker para resiliencia
+// ValidateToken valida un token JWT
+// Estrategia:
+// 1. Si hay cache habilitado, verificar cache primero
+// 2. Validar localmente usando JWTManager (preferido)
+// 3. Si falla y FallbackEnabled, intentar validación remota
 func (c *AuthClient) ValidateToken(ctx context.Context, token string) (*TokenInfo, error) {
 	// 1. Verificar cache primero
 	cacheKey := c.hashToken(token)
@@ -113,41 +142,95 @@ func (c *AuthClient) ValidateToken(ctx context.Context, token string) (*TokenInf
 		}
 	}
 
-	// 2. Llamar a api-admin con circuit breaker
-	result, err := c.circuitBreaker.Execute(func() (interface{}, error) {
-		return c.doValidateToken(ctx, token)
-	})
-
-	if err != nil {
-		// 3. Fallback si está habilitado y api-admin no responde
-		if c.config.FallbackEnabled {
-			return c.fallbackValidation(token)
+	// 2. Validar localmente (método preferido)
+	if c.jwtManager != nil {
+		info, err := c.validateTokenLocally(token)
+		if err == nil && info.Valid {
+			// Token válido localmente
+			if c.config.CacheEnabled {
+				c.cache.Set(cacheKey, info)
+			}
+			return info, nil
 		}
-		return &TokenInfo{Valid: false, Error: fmt.Sprintf("auth service error: %v", err)}, nil
+
+		// Si la validación local falló y no hay fallback, retornar el error
+		if !c.config.FallbackEnabled || !c.config.RemoteEnabled {
+			if info != nil {
+				return info, nil
+			}
+			return &TokenInfo{
+				Valid: false,
+				Error: fmt.Sprintf("validación local falló: %v", err),
+			}, nil
+		}
 	}
 
-	info := result.(*TokenInfo)
+	// 3. Fallback a validación remota (si está habilitada)
+	if c.config.RemoteEnabled && c.baseURL != "" && c.circuitBreaker != nil {
+		result, err := c.circuitBreaker.Execute(func() (interface{}, error) {
+			return c.doValidateTokenRemote(ctx, token)
+		})
 
-	// 4. Guardar en cache si el token es válido
-	if c.config.CacheEnabled && info.Valid {
-		c.cache.Set(cacheKey, info)
+		if err != nil {
+			return &TokenInfo{
+				Valid: false,
+				Error: fmt.Sprintf("validación remota falló: %v", err),
+			}, nil
+		}
+
+		info := result.(*TokenInfo)
+		if c.config.CacheEnabled && info.Valid {
+			c.cache.Set(cacheKey, info)
+		}
+		return info, nil
 	}
 
-	return info, nil
+	// No hay forma de validar el token
+	return &TokenInfo{
+		Valid: false,
+		Error: "no hay método de validación disponible (JWTSecret no configurado y RemoteEnabled=false)",
+	}, nil
 }
 
-// doValidateToken realiza la llamada HTTP a api-admin /v1/auth/verify
-func (c *AuthClient) doValidateToken(ctx context.Context, token string) (*TokenInfo, error) {
+// validateTokenLocally valida el token usando el JWTManager local
+func (c *AuthClient) validateTokenLocally(token string) (*TokenInfo, error) {
+	if c.jwtManager == nil {
+		return nil, fmt.Errorf("JWTManager no configurado")
+	}
+
+	claims, err := c.jwtManager.ValidateToken(token)
+	if err != nil {
+		return &TokenInfo{
+			Valid: false,
+			Error: err.Error(),
+		}, err
+	}
+
+	// Extraer ExpiresAt de los claims
+	var expiresAt time.Time
+	if claims.ExpiresAt != nil {
+		expiresAt = claims.ExpiresAt.Time
+	}
+
+	return &TokenInfo{
+		Valid:     true,
+		UserID:    claims.UserID,
+		Email:     claims.Email,
+		Role:      string(claims.Role),
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+// doValidateTokenRemote realiza la llamada HTTP a api-admin /v1/auth/verify
+func (c *AuthClient) doValidateTokenRemote(ctx context.Context, token string) (*TokenInfo, error) {
 	url := c.baseURL + "/v1/auth/verify"
 
-	// Preparar request body
 	reqBody := map[string]string{"token": token}
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %w", err)
 	}
 
-	// Crear request con contexto
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
@@ -155,25 +238,21 @@ func (c *AuthClient) doValidateToken(ctx context.Context, token string) (*TokenI
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Ejecutar request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error calling auth service: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Leer response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %w", err)
 	}
 
-	// Verificar status code
 	if resp.StatusCode >= 500 {
 		return nil, fmt.Errorf("auth service error: status %d", resp.StatusCode)
 	}
 
-	// Parsear response
 	var info TokenInfo
 	if err := json.Unmarshal(body, &info); err != nil {
 		return nil, fmt.Errorf("error parsing response: %w", err)
@@ -182,19 +261,7 @@ func (c *AuthClient) doValidateToken(ctx context.Context, token string) (*TokenI
 	return &info, nil
 }
 
-// fallbackValidation validación local básica si api-admin no responde
-// NOTA: Esta es una validación de emergencia con funcionalidad limitada
-func (c *AuthClient) fallbackValidation(token string) (*TokenInfo, error) {
-	// En modo fallback, rechazamos el token por seguridad
-	// En producción, se podría implementar validación JWT local si se comparte el secret
-	return &TokenInfo{
-		Valid: false,
-		Error: "auth service unavailable, fallback validation denied",
-	}, nil
-}
-
 // hashToken genera un hash SHA256 del token para usar como cache key
-// Esto evita almacenar el token completo en memoria
 func (c *AuthClient) hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
@@ -221,13 +288,11 @@ func newTokenCache(ttl time.Duration) *tokenCache {
 		ttl:     ttl,
 	}
 
-	// Iniciar limpieza periódica de entries expirados
 	go cache.cleanupLoop()
 
 	return cache
 }
 
-// Get obtiene un entry del cache si existe y no ha expirado
 func (c *tokenCache) Get(key string) (*TokenInfo, bool) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
@@ -244,7 +309,6 @@ func (c *tokenCache) Get(key string) (*TokenInfo, bool) {
 	return entry.info, true
 }
 
-// Set guarda un entry en el cache con el TTL configurado
 func (c *tokenCache) Set(key string, info *TokenInfo) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -255,7 +319,6 @@ func (c *tokenCache) Set(key string, info *TokenInfo) {
 	}
 }
 
-// cleanupLoop limpia entries expirados cada minuto
 func (c *tokenCache) cleanupLoop() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
@@ -265,7 +328,6 @@ func (c *tokenCache) cleanupLoop() {
 	}
 }
 
-// cleanup elimina todos los entries expirados
 func (c *tokenCache) cleanup() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -278,7 +340,7 @@ func (c *tokenCache) cleanup() {
 	}
 }
 
-// Stats retorna estadísticas del cache (para métricas)
+// Stats retorna estadísticas del cache
 func (c *tokenCache) Stats() (total int, expired int) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()

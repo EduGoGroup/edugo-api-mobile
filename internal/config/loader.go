@@ -122,6 +122,16 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")
 
+	// Auth - JWT defaults
+	v.SetDefault("auth.jwt.issuer", "edugo-central") // DEBE coincidir con api-admin
+
+	// Auth - API Admin defaults (validación remota deshabilitada por defecto)
+	v.SetDefault("auth.api_admin.timeout", "5s")
+	v.SetDefault("auth.api_admin.cache_ttl", "60s")
+	v.SetDefault("auth.api_admin.cache_enabled", true)
+	v.SetDefault("auth.api_admin.remote_enabled", false)   // Validación local preferida
+	v.SetDefault("auth.api_admin.fallback_enabled", false) // Fallback deshabilitado por defecto
+
 	// Bootstrap - Optional resources (default: true for RabbitMQ and S3)
 	v.SetDefault("bootstrap.optional_resources.rabbitmq", true)
 	v.SetDefault("bootstrap.optional_resources.s3", true)
@@ -168,9 +178,21 @@ func bindEnvVars(v *viper.Viper) {
 	_ = v.BindEnv("logging.level")
 	_ = v.BindEnv("logging.format")
 
-	// Auth - JWT secret
-	// Mapeado explícitamente a JWT_SECRET (sin prefijo AUTH_)
+	// Auth - JWT
+	// JWT_SECRET mapeado a auth.jwt.secret (compatibilidad con docker-compose)
 	_ = v.BindEnv("auth.jwt.secret", "JWT_SECRET")
+	// AUTH_JWT_SECRET también es válido (formato automático)
+	_ = v.BindEnv("auth.jwt.secret", "AUTH_JWT_SECRET")
+	// AUTH_JWT_ISSUER para el issuer
+	_ = v.BindEnv("auth.jwt.issuer", "AUTH_JWT_ISSUER")
+
+	// Auth - API Admin (validación remota opcional)
+	_ = v.BindEnv("auth.api_admin.base_url", "AUTH_API_ADMIN_BASE_URL")
+	_ = v.BindEnv("auth.api_admin.timeout", "AUTH_API_ADMIN_TIMEOUT")
+	_ = v.BindEnv("auth.api_admin.cache_ttl", "AUTH_API_ADMIN_CACHE_TTL")
+	_ = v.BindEnv("auth.api_admin.cache_enabled", "AUTH_API_ADMIN_CACHE_ENABLED")
+	_ = v.BindEnv("auth.api_admin.remote_enabled", "AUTH_API_ADMIN_REMOTE_ENABLED")
+	_ = v.BindEnv("auth.api_admin.fallback_enabled", "AUTH_API_ADMIN_FALLBACK_ENABLED")
 
 	// Bootstrap - Optional resources
 	_ = v.BindEnv("bootstrap.optional_resources.rabbitmq")

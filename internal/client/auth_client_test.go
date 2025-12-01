@@ -8,47 +8,46 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/EduGoGroup/edugo-shared/auth"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
-func TestAuthClient_ValidateToken_Success(t *testing.T) {
-	// Crear servidor mock
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/auth/verify" {
-			t.Errorf("Path incorrecto: %s", r.URL.Path)
-		}
-		if r.Method != "POST" {
-			t.Errorf("Método incorrecto: %s", r.Method)
-		}
-		if r.Header.Get("Content-Type") != "application/json" {
-			t.Errorf("Content-Type incorrecto: %s", r.Header.Get("Content-Type"))
-		}
+const (
+	testJWTSecret = "test-secret-key-at-least-32-chars-long-for-security"
+	testJWTIssuer = "edugo-central"
+)
 
-		response := TokenInfo{
-			Valid:  true,
-			UserID: "user-123",
-			Email:  "test@test.com",
-			Role:   "teacher",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-	}))
-	defer server.Close()
+// generateTestToken genera un token JWT válido para pruebas
+func generateTestToken(t *testing.T, userID, email string, role enum.SystemRole, expiresIn time.Duration) string {
+	t.Helper()
+	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
+	token, err := manager.GenerateToken(userID, email, role, expiresIn)
+	if err != nil {
+		t.Fatalf("Error generando token de prueba: %v", err)
+	}
+	return token
+}
 
-	// Crear cliente
+func TestAuthClient_ValidateToken_Local_Success(t *testing.T) {
+	// Crear cliente con validación local
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		Timeout:      5 * time.Second,
+		JWTSecret:    testJWTSecret,
+		JWTIssuer:    testJWTIssuer,
 		CacheEnabled: false,
 	})
 
+	// Generar token válido
+	token := generateTestToken(t, "user-123", "test@test.com", enum.SystemRoleTeacher, 15*time.Minute)
+
 	// Validar token
-	info, err := client.ValidateToken(context.Background(), "valid-token")
+	info, err := client.ValidateToken(context.Background(), token)
 	if err != nil {
 		t.Fatalf("Error inesperado: %v", err)
 	}
 
 	if !info.Valid {
-		t.Error("Token debería ser válido")
+		t.Errorf("Token debería ser válido, error: %s", info.Error)
 	}
 	if info.UserID != "user-123" {
 		t.Errorf("UserID incorrecto: esperado 'user-123', obtenido '%s'", info.UserID)
@@ -61,109 +60,221 @@ func TestAuthClient_ValidateToken_Success(t *testing.T) {
 	}
 }
 
-func TestAuthClient_ValidateToken_Invalid(t *testing.T) {
+func TestAuthClient_ValidateToken_Local_Expired(t *testing.T) {
+	client := NewAuthClient(AuthClientConfig{
+		JWTSecret:    testJWTSecret,
+		JWTIssuer:    testJWTIssuer,
+		CacheEnabled: false,
+	})
+
+	// Generar token que ya expiró (duración negativa)
+	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
+	token, _ := manager.GenerateToken("user-123", "test@test.com", enum.SystemRoleStudent, -1*time.Hour)
+
+	info, err := client.ValidateToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Error inesperado: %v", err)
+	}
+
+	if info.Valid {
+		t.Error("Token expirado debería ser inválido")
+	}
+	if info.Error == "" {
+		t.Error("Debería tener mensaje de error")
+	}
+}
+
+func TestAuthClient_ValidateToken_Local_InvalidSecret(t *testing.T) {
+	// Cliente con un secret diferente
+	client := NewAuthClient(AuthClientConfig{
+		JWTSecret:    "different-secret-at-least-32-characters-long",
+		JWTIssuer:    testJWTIssuer,
+		CacheEnabled: false,
+	})
+
+	// Token generado con el secret original
+	token := generateTestToken(t, "user-123", "test@test.com", enum.SystemRoleStudent, 15*time.Minute)
+
+	info, err := client.ValidateToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Error inesperado: %v", err)
+	}
+
+	if info.Valid {
+		t.Error("Token con secret diferente debería ser inválido")
+	}
+}
+
+func TestAuthClient_ValidateToken_NoJWTSecret(t *testing.T) {
+	// Cliente sin JWT secret configurado
+	client := NewAuthClient(AuthClientConfig{
+		CacheEnabled: false,
+		// Sin JWTSecret ni RemoteEnabled
+	})
+
+	info, err := client.ValidateToken(context.Background(), "any-token")
+	if err != nil {
+		t.Fatalf("Error inesperado: %v", err)
+	}
+
+	if info.Valid {
+		t.Error("Sin método de validación, token debería ser inválido")
+	}
+	if info.Error == "" {
+		t.Error("Debería indicar que no hay método de validación disponible")
+	}
+}
+
+func TestAuthClient_ValidateToken_Remote_Success(t *testing.T) {
+	// Crear servidor mock para validación remota
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/auth/verify" {
+			t.Errorf("Path incorrecto: %s", r.URL.Path)
+		}
+		if r.Method != "POST" {
+			t.Errorf("Método incorrecto: %s", r.Method)
+		}
+
 		response := TokenInfo{
-			Valid: false,
-			Error: "token expirado",
+			Valid:  true,
+			UserID: "user-456",
+			Email:  "remote@test.com",
+			Role:   "admin",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
+	// Cliente con validación remota habilitada (sin JWT secret)
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		CacheEnabled: false,
+		BaseURL:       server.URL,
+		RemoteEnabled: true,
+		Timeout:       5 * time.Second,
+		CacheEnabled:  false,
 	})
 
-	info, err := client.ValidateToken(context.Background(), "expired-token")
+	info, err := client.ValidateToken(context.Background(), "remote-token")
 	if err != nil {
 		t.Fatalf("Error inesperado: %v", err)
 	}
 
-	if info.Valid {
-		t.Error("Token debería ser inválido")
+	if !info.Valid {
+		t.Errorf("Token debería ser válido (remoto), error: %s", info.Error)
 	}
-	if info.Error != "token expirado" {
-		t.Errorf("Error incorrecto: esperado 'token expirado', obtenido '%s'", info.Error)
+	if info.UserID != "user-456" {
+		t.Errorf("UserID incorrecto: esperado 'user-456', obtenido '%s'", info.UserID)
 	}
 }
 
-func TestAuthClient_Cache_HitAndMiss(t *testing.T) {
-	var callCount int32
+func TestAuthClient_ValidateToken_Fallback_ToRemote(t *testing.T) {
+	var remoteCallCount int32
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&callCount, 1)
-		response := TokenInfo{Valid: true, UserID: "user-123"}
+		atomic.AddInt32(&remoteCallCount, 1)
+		response := TokenInfo{
+			Valid:  true,
+			UserID: "fallback-user",
+			Email:  "fallback@test.com",
+			Role:   "student",
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
+	// Cliente con validación local (secret incorrecto) y fallback remoto
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
+		JWTSecret:       "wrong-secret-at-least-32-characters-long",
+		JWTIssuer:       testJWTIssuer,
+		BaseURL:         server.URL,
+		RemoteEnabled:   true,
+		FallbackEnabled: true,
+		Timeout:         5 * time.Second,
+		CacheEnabled:    false,
+	})
+
+	// Token generado con el secret correcto (diferente al del cliente)
+	token := generateTestToken(t, "user-123", "test@test.com", enum.SystemRoleTeacher, 15*time.Minute)
+
+	info, err := client.ValidateToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("Error inesperado: %v", err)
+	}
+
+	// Debería usar fallback remoto y ser válido
+	if !info.Valid {
+		t.Errorf("Token debería ser válido via fallback, error: %s", info.Error)
+	}
+	if atomic.LoadInt32(&remoteCallCount) != 1 {
+		t.Errorf("Debería haber llamado al servidor remoto como fallback")
+	}
+	if info.UserID != "fallback-user" {
+		t.Errorf("Debería tener datos del servidor remoto")
+	}
+}
+
+func TestAuthClient_Cache_Local_HitAndMiss(t *testing.T) {
+	client := NewAuthClient(AuthClientConfig{
+		JWTSecret:    testJWTSecret,
+		JWTIssuer:    testJWTIssuer,
 		CacheTTL:     5 * time.Second,
 		CacheEnabled: true,
 	})
 
-	// Primera llamada - debe ir al servidor
-	_, _ = client.ValidateToken(context.Background(), "cached-token")
-	if atomic.LoadInt32(&callCount) != 1 {
-		t.Errorf("Primera llamada: esperado 1 call, obtenido %d", callCount)
+	token := generateTestToken(t, "cache-user", "cache@test.com", enum.SystemRoleStudent, 15*time.Minute)
+
+	// Primera llamada
+	info1, _ := client.ValidateToken(context.Background(), token)
+	if !info1.Valid {
+		t.Fatalf("Primera validación debería ser exitosa")
 	}
 
-	// Segunda llamada con mismo token - debe usar cache
-	_, _ = client.ValidateToken(context.Background(), "cached-token")
-	if atomic.LoadInt32(&callCount) != 1 {
-		t.Errorf("Segunda llamada (cache hit): esperado 1 call, obtenido %d", callCount)
+	// Segunda llamada con mismo token - debería usar cache
+	info2, _ := client.ValidateToken(context.Background(), token)
+	if !info2.Valid {
+		t.Error("Segunda validación (cache hit) debería ser exitosa")
 	}
 
-	// Tercera llamada con token diferente - debe ir al servidor
-	_, _ = client.ValidateToken(context.Background(), "different-token")
-	if atomic.LoadInt32(&callCount) != 2 {
-		t.Errorf("Tercera llamada (cache miss): esperado 2 calls, obtenido %d", callCount)
+	// Token diferente - cache miss
+	token2 := generateTestToken(t, "other-user", "other@test.com", enum.SystemRoleTeacher, 15*time.Minute)
+	info3, _ := client.ValidateToken(context.Background(), token2)
+	if !info3.Valid {
+		t.Error("Tercera validación (cache miss) debería ser exitosa")
 	}
 }
 
 func TestAuthClient_Cache_Disabled(t *testing.T) {
-	var callCount int32
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&callCount, 1)
-		response := TokenInfo{Valid: true, UserID: "user-123"}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-	}))
-	defer server.Close()
-
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		CacheEnabled: false, // Cache deshabilitado
+		JWTSecret:    testJWTSecret,
+		JWTIssuer:    testJWTIssuer,
+		CacheEnabled: false,
 	})
 
-	// Ambas llamadas deben ir al servidor
-	_, _ = client.ValidateToken(context.Background(), "token")
-	_, _ = client.ValidateToken(context.Background(), "token")
+	token := generateTestToken(t, "no-cache-user", "nocache@test.com", enum.SystemRoleStudent, 15*time.Minute)
 
-	if atomic.LoadInt32(&callCount) != 2 {
-		t.Errorf("Con cache deshabilitado: esperado 2 calls, obtenido %d", callCount)
+	// Ambas llamadas deberían funcionar sin cache
+	info1, _ := client.ValidateToken(context.Background(), token)
+	info2, _ := client.ValidateToken(context.Background(), token)
+
+	if !info1.Valid || !info2.Valid {
+		t.Error("Ambas validaciones deberían ser exitosas")
 	}
 }
 
-func TestAuthClient_CircuitBreaker_OpensOnFailures(t *testing.T) {
+func TestAuthClient_CircuitBreaker_Remote(t *testing.T) {
 	var callCount int32
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&callCount, 1)
-		// Siempre retorna error 500
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer server.Close()
 
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		CacheEnabled: false,
+		BaseURL:       server.URL,
+		RemoteEnabled: true,
+		CacheEnabled:  false,
 		CircuitBreaker: CircuitBreakerConfig{
 			MaxRequests: 1,
 			Interval:    100 * time.Millisecond,
@@ -176,8 +287,6 @@ func TestAuthClient_CircuitBreaker_OpensOnFailures(t *testing.T) {
 		_, _ = client.ValidateToken(context.Background(), "test-token")
 	}
 
-	// El circuit breaker debería estar abierto después de 3+ fallos
-	// Las llamadas después de que se abre no deberían llegar al servidor
 	count := atomic.LoadInt32(&callCount)
 	if count >= 10 {
 		t.Errorf("Circuit breaker no funcionó: se esperaban menos de 10 calls, obtenido %d", count)
@@ -185,9 +294,8 @@ func TestAuthClient_CircuitBreaker_OpensOnFailures(t *testing.T) {
 	t.Logf("Circuit breaker funcionó: solo %d llamadas llegaron al servidor", count)
 }
 
-func TestAuthClient_Timeout(t *testing.T) {
+func TestAuthClient_Timeout_Remote(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Simular latencia excesiva
 		time.Sleep(500 * time.Millisecond)
 		response := TokenInfo{Valid: true}
 		_ = json.NewEncoder(w).Encode(response)
@@ -195,14 +303,14 @@ func TestAuthClient_Timeout(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		Timeout:      100 * time.Millisecond, // Timeout corto
-		CacheEnabled: false,
+		BaseURL:       server.URL,
+		RemoteEnabled: true,
+		Timeout:       100 * time.Millisecond,
+		CacheEnabled:  false,
 	})
 
 	info, _ := client.ValidateToken(context.Background(), "test-token")
 
-	// Debe fallar por timeout
 	if info.Valid {
 		t.Error("Debería haber fallado por timeout")
 	}
@@ -211,73 +319,12 @@ func TestAuthClient_Timeout(t *testing.T) {
 	}
 }
 
-func TestAuthClient_ServerError500(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Internal Server Error"))
-	}))
-	defer server.Close()
-
-	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
-		CacheEnabled: false,
-		CircuitBreaker: CircuitBreakerConfig{
-			MaxRequests: 100, // Alto para que no se abra el circuito
-			Interval:    1 * time.Hour,
-			Timeout:     1 * time.Hour,
-		},
-	})
-
-	info, _ := client.ValidateToken(context.Background(), "test-token")
-
-	if info.Valid {
-		t.Error("Token no debería ser válido con error 500")
-	}
-}
-
-func TestAuthClient_FallbackValidation(t *testing.T) {
-	// Servidor que siempre falla
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	server.Close() // Cerrar inmediatamente para simular servicio no disponible
-
-	client := NewAuthClient(AuthClientConfig{
-		BaseURL:         server.URL,
-		CacheEnabled:    false,
-		FallbackEnabled: true,
-		CircuitBreaker: CircuitBreakerConfig{
-			MaxRequests: 1,
-			Interval:    10 * time.Millisecond,
-			Timeout:     10 * time.Millisecond,
-		},
-	})
-
-	// Forzar apertura del circuit breaker
-	for i := 0; i < 5; i++ {
-		_, _ = client.ValidateToken(context.Background(), "token")
-	}
-
-	// Ahora con circuit breaker abierto, debería usar fallback
-	info, _ := client.ValidateToken(context.Background(), "test-token")
-
-	// Fallback actual rechaza tokens por seguridad
-	if info.Valid {
-		t.Error("Fallback debería rechazar tokens por seguridad")
-	}
-	if info.Error == "" {
-		t.Error("Fallback debería indicar que el servicio no está disponible")
-	}
-}
-
 func TestTokenCache_GetSet(t *testing.T) {
 	cache := newTokenCache(1 * time.Second)
 
-	// Set
 	info := &TokenInfo{Valid: true, UserID: "test-user"}
 	cache.Set("key1", info)
 
-	// Get existente
 	result, found := cache.Get("key1")
 	if !found {
 		t.Error("Debería encontrar el entry en cache")
@@ -286,7 +333,6 @@ func TestTokenCache_GetSet(t *testing.T) {
 		t.Errorf("UserID incorrecto: %s", result.UserID)
 	}
 
-	// Get no existente
 	_, found = cache.Get("nonexistent")
 	if found {
 		t.Error("No debería encontrar entry inexistente")
@@ -294,21 +340,18 @@ func TestTokenCache_GetSet(t *testing.T) {
 }
 
 func TestTokenCache_Expiration(t *testing.T) {
-	cache := newTokenCache(50 * time.Millisecond) // TTL muy corto
+	cache := newTokenCache(50 * time.Millisecond)
 
 	info := &TokenInfo{Valid: true, UserID: "test-user"}
 	cache.Set("key1", info)
 
-	// Debería estar en cache inmediatamente
 	_, found := cache.Get("key1")
 	if !found {
 		t.Error("Debería encontrar el entry recién agregado")
 	}
 
-	// Esperar a que expire
 	time.Sleep(100 * time.Millisecond)
 
-	// Ya no debería estar
 	_, found = cache.Get("key1")
 	if found {
 		t.Error("Entry debería haber expirado")
@@ -333,70 +376,51 @@ func TestTokenCache_Stats(t *testing.T) {
 
 func TestAuthClient_HashToken(t *testing.T) {
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL: "http://localhost",
+		JWTSecret: testJWTSecret,
 	})
 
 	hash1 := client.hashToken("token123")
 	hash2 := client.hashToken("token123")
 	hash3 := client.hashToken("different-token")
 
-	// Mismo token = mismo hash
 	if hash1 != hash2 {
 		t.Error("Mismo token debería producir mismo hash")
 	}
 
-	// Diferente token = diferente hash
 	if hash1 == hash3 {
 		t.Error("Diferente token debería producir diferente hash")
 	}
 
-	// Hash debería ser hexadecimal de 64 caracteres (SHA256)
 	if len(hash1) != 64 {
 		t.Errorf("Hash debería tener 64 caracteres, tiene %d", len(hash1))
 	}
 }
 
-func TestAuthClient_ConcurrentAccess(t *testing.T) {
-	var callCount int32
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&callCount, 1)
-		time.Sleep(10 * time.Millisecond) // Simular latencia
-		response := TokenInfo{Valid: true, UserID: "user-123"}
-		_ = json.NewEncoder(w).Encode(response)
-	}))
-	defer server.Close()
-
+func TestAuthClient_ConcurrentAccess_Local(t *testing.T) {
 	client := NewAuthClient(AuthClientConfig{
-		BaseURL:      server.URL,
+		JWTSecret:    testJWTSecret,
+		JWTIssuer:    testJWTIssuer,
 		CacheEnabled: true,
 		CacheTTL:     5 * time.Second,
 	})
 
-	// Lanzar múltiples goroutines concurrentes
+	token := generateTestToken(t, "concurrent-user", "concurrent@test.com", enum.SystemRoleTeacher, 15*time.Minute)
+
 	done := make(chan bool, 100)
 	for i := 0; i < 100; i++ {
 		go func() {
-			_, err := client.ValidateToken(context.Background(), "concurrent-token")
+			info, err := client.ValidateToken(context.Background(), token)
 			if err != nil {
 				t.Errorf("Error en validación concurrente: %v", err)
+			}
+			if !info.Valid {
+				t.Errorf("Token debería ser válido en validación concurrente")
 			}
 			done <- true
 		}()
 	}
 
-	// Esperar a que todas terminen
 	for i := 0; i < 100; i++ {
 		<-done
-	}
-
-	// Con cache habilitado, no deberían ser 100 llamadas al servidor
-	count := atomic.LoadInt32(&callCount)
-	t.Logf("Llamadas al servidor con 100 requests concurrentes: %d", count)
-
-	// Debería haber menos llamadas gracias al cache
-	// (aunque no exactamente 1 debido a race conditions antes de que se cache)
-	if count > 50 {
-		t.Logf("Advertencia: Cache podría no estar funcionando óptimamente bajo carga")
 	}
 }
