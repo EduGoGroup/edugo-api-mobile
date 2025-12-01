@@ -1,13 +1,12 @@
 # Multi-stage Dockerfile para API Mobile (EduGo)
 # - Builder: compila la aplicación con Go
-# - Final: imagen ligera basada en Alpine con scripts de entrypoint
+# - Final: imagen ligera basada en Alpine
 #
 # Notas:
 # - Usa variables de entorno proporcionadas por docker-compose o el entorno.
-# - Copia los scripts en /scripts y establece ENTRYPOINT al script de entrada.
-# - Instala netcat (nc) en la imagen final para que wait-for.sh pueda usarlo.
-#
-# Recomendación: construir con --no-cache si cambias dependencias o scripts.
+# - La orquestación de dependencias (esperar postgres, mongo, rabbit) es
+#   responsabilidad de docker-compose via depends_on: condition: service_healthy
+# - Incluye archivos de configuración en /root/config/ (patrón Viper)
 
 FROM golang:1.25-alpine AS builder
 
@@ -38,8 +37,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main ./cmd/m
 # -------------------------
 FROM alpine:latest
 
-# Instalar utilidades necesarias (certificados, netcat para wait-for, y bash para entrypoint)
-RUN apk add --no-cache ca-certificates netcat-openbsd bash
+# Instalar utilidades necesarias (certificados)
+RUN apk add --no-cache ca-certificates
 
 # Crear directorios esperados
 WORKDIR /root/
@@ -47,19 +46,15 @@ WORKDIR /root/
 # Copiar binario desde la etapa builder
 COPY --from=builder /app/main /root/main
 
-# Copiar scripts directamente del contexto de build (no desde builder)
-# Esto evita problemas de caché cuando los scripts se agregan después del COPY . .
-COPY scripts/wait-for.sh /scripts/wait-for.sh
-COPY scripts/docker-entrypoint.sh /scripts/docker-entrypoint.sh
+# Copiar archivos de configuración (patrón Viper - igual que api-admin)
+COPY config/ /root/config/
 
 # Permisos de ejecución
-RUN chmod +x /scripts/wait-for.sh /scripts/docker-entrypoint.sh /root/main
+RUN chmod +x /root/main
 
 # Exponer el puerto que usa la aplicación dentro del contenedor
 EXPOSE 8080
 
-# Usar el entrypoint que espera por dependencias y luego arranca la app
-ENTRYPOINT ["/scripts/docker-entrypoint.sh"]
-
-# Comando por defecto (puede ser sobreescrito al ejecutar el contenedor)
+# Comando directo (sin entrypoint)
+# La orquestación de dependencias es responsabilidad de docker-compose
 CMD ["./main"]
