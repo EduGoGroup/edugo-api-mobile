@@ -5,73 +5,13 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"github.com/google/uuid"
 )
 
-// Material Repository Stub
-type mockMaterialRepository struct{}
-
-func NewMockMaterialRepository() repository.MaterialRepository { return &mockMaterialRepository{} }
-func (r *mockMaterialRepository) FindByID(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, error) {
-	return nil, nil
-}
-func (r *mockMaterialRepository) FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, []*pgentities.MaterialVersion, error) {
-	return nil, nil, nil
-}
-func (r *mockMaterialRepository) List(ctx context.Context, filters repository.ListFilters) ([]*pgentities.Material, error) {
-	return []*pgentities.Material{}, nil
-}
-func (r *mockMaterialRepository) FindByAuthor(ctx context.Context, authorID valueobject.UserID) ([]*pgentities.Material, error) {
-	return []*pgentities.Material{}, nil
-}
-func (r *mockMaterialRepository) Create(ctx context.Context, material *pgentities.Material) error {
-	return nil
-}
-func (r *mockMaterialRepository) Update(ctx context.Context, material *pgentities.Material) error {
-	return nil
-}
-func (r *mockMaterialRepository) UpdateStatus(ctx context.Context, id valueobject.MaterialID, status enum.MaterialStatus) error {
-	return nil
-}
-func (r *mockMaterialRepository) UpdateProcessingStatus(ctx context.Context, id valueobject.MaterialID, status enum.ProcessingStatus) error {
-	return nil
-}
-func (r *mockMaterialRepository) CountPublishedMaterials(ctx context.Context) (int64, error) {
-	return 0, nil
-}
-
-// Progress Repository Stub
-type mockProgressRepository struct{}
-
-func NewMockProgressRepository() repository.ProgressRepository { return &mockProgressRepository{} }
-func (r *mockProgressRepository) FindByUserAndMaterial(ctx context.Context, userID valueobject.UserID, materialID valueobject.MaterialID) (*pgentities.Progress, error) {
-	return nil, nil
-}
-func (r *mockProgressRepository) FindByMaterialAndUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*pgentities.Progress, error) {
-	return nil, nil
-}
-func (r *mockProgressRepository) FindByUser(ctx context.Context, userID valueobject.UserID) ([]*pgentities.Progress, error) {
-	return []*pgentities.Progress{}, nil
-}
-func (r *mockProgressRepository) Create(ctx context.Context, progress *pgentities.Progress) error {
-	return nil
-}
-func (r *mockProgressRepository) Save(ctx context.Context, progress *pgentities.Progress) error {
-	return nil
-}
-func (r *mockProgressRepository) Update(ctx context.Context, progress *pgentities.Progress) error {
-	return nil
-}
-func (r *mockProgressRepository) Upsert(ctx context.Context, progress *pgentities.Progress) (*pgentities.Progress, error) {
-	return progress, nil
-}
-func (r *mockProgressRepository) CalculateAverageProgress(ctx context.Context) (float64, error) {
-	return 0.0, nil
-}
-func (r *mockProgressRepository) CountActiveUsers(ctx context.Context) (int64, error) { return 0, nil }
+// NOTA: Material y Progress tienen implementaciones mock reales en:
+// - material_repository_mock.go (usar NewMaterialRepositoryMock)
+// - progress_repository_mock.go (usar NewProgressRepositoryMock)
 
 // RefreshToken Repository Stub
 type mockRefreshTokenRepository struct{}
