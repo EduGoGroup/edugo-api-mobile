@@ -104,16 +104,21 @@ type AuthConfig struct {
 }
 
 // JWTConfig configuración de JWT
+// El Secret e Issuer deben coincidir con los de api-admin para validación local
 type JWTConfig struct {
-	Secret string `mapstructure:"secret"` // ENV: AUTH_JWT_SECRET (mapeado desde auth.jwt.secret)
+	Secret string `mapstructure:"secret"` // ENV: AUTH_JWT_SECRET (DEBE ser el mismo que api-admin)
+	Issuer string `mapstructure:"issuer"` // ENV: AUTH_JWT_ISSUER (default: "edugo-central", DEBE ser el mismo que api-admin)
 }
 
 // APIAdminConfig configuración del cliente de autenticación remota (api-admin)
+// La validación remota es OPCIONAL - por defecto se usa validación local con JWT
 type APIAdminConfig struct {
-	BaseURL      string        `mapstructure:"base_url"`      // ENV: AUTH_API_ADMIN_BASE_URL (URL de api-admin)
-	Timeout      time.Duration `mapstructure:"timeout"`       // Timeout para requests HTTP (default: 5s)
-	CacheTTL     time.Duration `mapstructure:"cache_ttl"`     // TTL del cache de validaciones (default: 60s)
-	CacheEnabled bool          `mapstructure:"cache_enabled"` // Habilitar cache de validaciones
+	BaseURL         string        `mapstructure:"base_url"`         // ENV: AUTH_API_ADMIN_BASE_URL (URL de api-admin, solo si RemoteEnabled=true)
+	Timeout         time.Duration `mapstructure:"timeout"`          // Timeout para requests HTTP (default: 5s)
+	CacheTTL        time.Duration `mapstructure:"cache_ttl"`        // TTL del cache de validaciones (default: 60s)
+	CacheEnabled    bool          `mapstructure:"cache_enabled"`    // Habilitar cache de validaciones
+	RemoteEnabled   bool          `mapstructure:"remote_enabled"`   // ENV: AUTH_API_ADMIN_REMOTE_ENABLED (default: false, validación local preferida)
+	FallbackEnabled bool          `mapstructure:"fallback_enabled"` // ENV: AUTH_API_ADMIN_FALLBACK_ENABLED (usar remoto si falla local)
 }
 
 // BootstrapConfig configuración del sistema de bootstrap

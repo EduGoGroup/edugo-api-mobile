@@ -19,7 +19,7 @@ type InfrastructureContainer struct {
 	MongoDB          *mongo.Database
 	Logger           logger.Logger
 	JWTManager       *auth.JWTManager
-	AuthClient       *client.AuthClient // Cliente para validar tokens con api-admin
+	AuthClient       *client.AuthClient // Cliente para validar tokens JWT (local + fallback remoto opcional)
 	MessagePublisher rabbitmq.Publisher
 	S3Client         bootstrap.S3Storage
 }
@@ -30,8 +30,8 @@ type InfrastructureContainer struct {
 //   - mongoDB: Conexión a MongoDB
 //   - publisher: Cliente de RabbitMQ para mensajería
 //   - s3Client: Cliente de AWS S3 para almacenamiento (interfaz S3Storage)
-//   - jwtSecret: Secret para generación de tokens JWT
-//   - authConfig: Configuración de autenticación (incluye api-admin)
+//   - jwtSecret: Secret para generación de tokens JWT (DEBE ser el mismo que api-admin)
+//   - authConfig: Configuración de autenticación (incluye JWT issuer y api-admin opcional)
 //   - logger: Logger compartido de la aplicación
 func NewInfrastructureContainer(
 	db *sql.DB,
@@ -42,10 +42,26 @@ func NewInfrastructureContainer(
 	authConfig config.AuthConfig,
 	logger logger.Logger,
 ) *InfrastructureContainer {
-	// Crear AuthClient para validación remota de tokens con api-admin
+	// Determinar el issuer JWT - debe coincidir con api-admin ("edugo-central")
+	jwtIssuer := authConfig.JWT.Issuer
+	if jwtIssuer == "" {
+		jwtIssuer = "edugo-central" // Issuer por defecto compatible con api-admin
+	}
+
+	// Crear AuthClient con validación LOCAL preferida
+	// La validación remota es opcional y se usa como fallback si está habilitada
 	authClient := client.NewAuthClient(client.AuthClientConfig{
-		BaseURL:      authConfig.APIAdmin.BaseURL,
-		Timeout:      authConfig.APIAdmin.Timeout,
+		// Validación LOCAL (preferida)
+		JWTSecret: jwtSecret,
+		JWTIssuer: jwtIssuer,
+
+		// Validación REMOTA (fallback opcional)
+		BaseURL:         authConfig.APIAdmin.BaseURL,
+		Timeout:         authConfig.APIAdmin.Timeout,
+		RemoteEnabled:   authConfig.APIAdmin.RemoteEnabled,
+		FallbackEnabled: authConfig.APIAdmin.FallbackEnabled,
+
+		// Cache
 		CacheTTL:     authConfig.APIAdmin.CacheTTL,
 		CacheEnabled: authConfig.APIAdmin.CacheEnabled,
 	})
@@ -54,7 +70,7 @@ func NewInfrastructureContainer(
 		DB:               db,
 		MongoDB:          mongoDB,
 		Logger:           logger,
-		JWTManager:       auth.NewJWTManager(jwtSecret, "edugo-mobile"),
+		JWTManager:       auth.NewJWTManager(jwtSecret, jwtIssuer),
 		AuthClient:       authClient,
 		MessagePublisher: publisher,
 		S3Client:         s3Client,
