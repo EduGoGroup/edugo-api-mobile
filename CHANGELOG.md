@@ -5,6 +5,25 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-12-01
+
+### Tipo de Release: minor
+
+- fix: homologar configuración USE_MOCK_REPOSITORIES y users_loader (#82)
+- feat(tools): agregar herramienta generate_dataset y dataset (#81)
+- feat: implementar mock repositories funcionales para Material y Progress (#80)
+- feat: Sistema de repositorios mock para desarrollo sin Docker (#78)
+- test(integration): agregar tests de integración para autenticación remota
+- feat(auth): integrar RemoteAuthMiddleware y configuración api-admin
+- feat(middleware): implementar RemoteAuthMiddleware para validación centralizada
+- feat(client): implementar AuthClient para validación remota de tokens
+- refactor(auth): eliminar código de autenticación duplicado
+- docs: inventariar archivos de auth a eliminar
+- feat(auth): implementar GET /v1/auth/me endpoint
+- chore: actualizar infraestructura a v0.10.1
+
+---
+
 ## [0.11.0] - 2025-11-25
 
 ### Tipo de Release: patch
