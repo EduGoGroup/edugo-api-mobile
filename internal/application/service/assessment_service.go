@@ -97,39 +97,8 @@ func (s *assessmentService) RecordAttempt(ctx context.Context, materialID string
 
 	s.logger.Info("attempt recorded", "material_id", materialID, "user_id", userIDStr, "score", score)
 
-	// TODO(sprint-00): Restaurar publicación de eventos cuando se defina schema
-	// para assessment.attempt.recorded en edugo-infrastructure/schemas
-	// El evento assessment.generated es para cuando el WORKER genera un quiz,
-	// pero necesitamos un evento diferente para cuando un ESTUDIANTE completa un intento
-	/*
-		event := messaging.AssessmentAttemptRecordedEvent{
-			AttemptID:    attempt.ID,
-			UserID:       userID.String(),
-			AssessmentID: assessment.MaterialID.String(),
-			Score:        score,
-			SubmittedAt:  time.Now(),
-		}
-
-		eventJSON, err := event.ToJSON()
-		if err != nil {
-			s.logger.Warn("failed to serialize assessment attempt recorded event",
-				zap.String("attempt_id", attempt.ID),
-				zap.Error(err),
-			)
-		} else {
-			// Publicar evento de forma asíncrona (no bloqueante)
-			if err := s.messagePublisher.Publish(ctx, "edugo.materials", "assessment.attempt.recorded", eventJSON); err != nil {
-				s.logger.Warn("failed to publish assessment attempt recorded event",
-					zap.String("attempt_id", attempt.ID),
-					zap.Error(err),
-				)
-			} else {
-				s.logger.Info("assessment attempt recorded event published",
-					zap.String("attempt_id", attempt.ID),
-				)
-			}
-		}
-	*/
+	// TODO(sprint-00): Publicar evento "assessment.attempt.recorded" a RabbitMQ
+	// cuando se defina el schema en edugo-infrastructure/schemas
 
 	return attempt, nil
 }

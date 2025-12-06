@@ -32,15 +32,15 @@
 ### Deuda Técnica
 - ~~Duplicación entre `valueobject/` y `valueobjects/`~~ ✅ Consolidado
 - Coexistencia de sistema de assessments legacy y nuevo
-- Código comentado que debería eliminarse
+- ~~Código comentado que debería eliminarse~~ ✅ Eliminado
 
 ---
 
 ## 🎯 Plan de Acción Recomendado
 
-### Fase 1: Limpieza Inmediata (1-2 días)
+### Fase 1: Limpieza Inmediata (1-2 días) ✅ COMPLETADA
 1. ~~Eliminar funciones `WithInjected*` deprecadas~~ ✅ Completado
-2. Eliminar código comentado
+2. ~~Eliminar código comentado~~ ✅ Completado
 3. ~~Consolidar carpetas `valueobject/` y `valueobjects/`~~ ✅ Completado
 
 ### Fase 2: Migración de Legacy (1 semana)

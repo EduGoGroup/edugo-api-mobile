@@ -375,18 +375,3 @@ func TestQuestion_Validation(t *testing.T) {
 	assert.NotEmpty(t, question.Feedback.Correct)
 	assert.NotEmpty(t, question.Feedback.Incorrect)
 }
-
-// TODO: Claude Local - Tests de integración con testcontainers MongoDB
-// func TestMongoAssessmentDocumentRepository_Integration(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration test")
-// 	}
-//
-// 	// Test que verifica:
-// 	// 1. Conexión a MongoDB con testcontainers
-// 	// 2. Guardar documento (upsert)
-// 	// 3. Recuperar por material_id
-// 	// 4. Recuperar por _id
-// 	// 5. Buscar pregunta específica
-// 	// 6. Eliminar documento
-// }

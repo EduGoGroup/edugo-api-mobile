@@ -197,22 +197,3 @@ func TestPostgresAssessmentRepository_Delete_InvalidID(t *testing.T) {
 	// Assert
 	assert.ErrorIs(t, err, domainErrors.ErrInvalidAssessmentID)
 }
-
-// TODO: Claude Local - Tests de integración con testcontainers
-// func TestPostgresAssessmentRepository_Integration(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration test")
-// 	}
-//
-// 	// Usar testcontainers para PostgreSQL
-// 	// ctx := context.Background()
-// 	// postgresContainer, err := testcontainers.GenericContainer(...)
-// 	// require.NoError(t, err)
-// 	// defer postgresContainer.Terminate(ctx)
-//
-// 	// Conectar a DB real
-// 	// db, err := sql.Open("postgres", connectionString)
-// 	// require.NoError(t, err)
-//
-// 	// Ejecutar tests reales...
-// }
