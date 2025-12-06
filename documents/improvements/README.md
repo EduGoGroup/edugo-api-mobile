@@ -43,10 +43,10 @@
 2. ~~Eliminar código comentado~~ ✅ Completado
 3. ~~Consolidar carpetas `valueobject/` y `valueobjects/`~~ ✅ Completado
 
-### Fase 2: Migración de Legacy (1 semana)
-1. Migrar clientes del endpoint `PATCH /materials/:id/progress` a `PUT /progress`
-2. Migrar clientes del endpoint `POST /assessments/:id/submit` al nuevo sistema
-3. Eliminar repositorio legacy de assessments
+### Fase 2: Migración de Legacy (1 semana) ✅ EN PROGRESO
+1. ~~Migrar clientes del endpoint `PATCH /materials/:id/progress` a `PUT /progress`~~ ✅ Endpoint eliminado
+2. ~~Migrar clientes del endpoint `POST /assessments/:id/submit` al nuevo sistema~~ ✅ Endpoint eliminado
+3. Eliminar repositorio legacy de assessments (pendiente - código aún existe pero no es accesible)
 
 ### Fase 3: Completar Funcionalidad (2 semanas)
 1. Implementar obtención de `schoolID` desde JWT
