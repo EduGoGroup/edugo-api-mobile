@@ -28,9 +28,11 @@ Crear la entity Assessment que representa una evaluación asociada a un material
    package entities
 
    import (
-       "errors"
-       "time"
-       "github.com/google/uuid"
+
+"errors"
+"time"
+
+"github.com/google/uuid"
    )
 
    // Assessment representa una evaluación de un material educativo
@@ -593,8 +595,10 @@ Crear la entity Attempt que representa un intento de un estudiante en una evalua
    package entities
 
    import (
-       "time"
-       "github.com/google/uuid"
+
+"time"
+
+"github.com/google/uuid"
    )
 
    // Attempt representa un intento de un estudiante en una evaluación
@@ -1069,8 +1073,10 @@ Crear la entity Answer que representa una respuesta individual a una pregunta de
    package entities
 
    import (
-       "time"
-       "github.com/google/uuid"
+
+"time"
+
+"github.com/google/uuid"
    )
 
    // Answer representa una respuesta individual a una pregunta en un intento
@@ -1328,9 +1334,11 @@ Crear interfaces de repositorios en la capa de dominio. Estas interfaces definen
    package repositories
 
    import (
-       "context"
-       "github.com/google/uuid"
-       "edugo-api-mobile/internal/domain/entities"
+
+"context"
+"edugo-api-mobile/internal/domain/entities"
+
+"github.com/google/uuid"
    )
 
    // AssessmentRepository define el contrato para persistencia de evaluaciones
@@ -1354,9 +1362,11 @@ Crear interfaces de repositorios en la capa de dominio. Estas interfaces definen
    package repositories
 
    import (
-       "context"
-       "github.com/google/uuid"
-       "edugo-api-mobile/internal/domain/entities"
+
+"context"
+"edugo-api-mobile/internal/domain/entities"
+
+"github.com/google/uuid"
    )
 
    // AttemptRepository define el contrato para persistencia de intentos

@@ -85,7 +85,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Ejecutar 5 queries en paralelo usando goroutines
 	wg.Add(5)
 
-	// Goroutine 1: Contar materiales publicados (PostgreSQL)
+	// Goroutine 1: Contar materiales publicados (PostgresSQL)
 	go func() {
 		defer wg.Done()
 		count, err := s.materialStats.CountPublishedMaterials(ctx)
@@ -127,7 +127,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 		avgScore = avg
 	}()
 
-	// Goroutine 4: Contar usuarios activos (PostgreSQL - últimos 30 días)
+	// Goroutine 4: Contar usuarios activos (PostgresSQL - últimos 30 días)
 	go func() {
 		defer wg.Done()
 		count, err := s.progressStats.CountActiveUsers(ctx)
@@ -141,7 +141,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 		activeUsers = count
 	}()
 
-	// Goroutine 5: Calcular promedio de progreso (PostgreSQL)
+	// Goroutine 5: Calcular promedio de progreso (PostgresSQL)
 	go func() {
 		defer wg.Done()
 		avg, err := s.progressStats.CalculateAverageProgress(ctx)
@@ -158,7 +158,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Esperar a que todas las goroutines terminen
 	wg.Wait()
 
-	// Si hubo algún error en las queries, retornar error
+	// Sí hubo algún error en las queries, retornar error
 	if len(queryErrors) > 0 {
 		s.logger.Error("errores al obtener estadísticas globales",
 			zap.Int("total_errors", len(queryErrors)))

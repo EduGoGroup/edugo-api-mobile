@@ -888,7 +888,7 @@ func TestMaterialService_GetMaterialWithVersions_Success_WithoutVersions(t *test
 		UpdatedAt:           now,
 	}
 
-	versions := []*pgentities.MaterialVersion{} // Array vacío
+	var versions []*pgentities.MaterialVersion // Array vacío
 
 	// Configurar mock
 	mockRepo.On("FindByIDWithVersions", ctx, materialID).Return(material, versions, nil)

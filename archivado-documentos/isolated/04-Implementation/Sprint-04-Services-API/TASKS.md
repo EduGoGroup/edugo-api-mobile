@@ -23,8 +23,10 @@ Archivo: `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/inter
 package services
 
 import (
-    "context"
-    "github.com/google/uuid"
+
+"context"
+
+"github.com/google/uuid"
 
     "edugo-api-mobile/internal/domain/entities"
     "edugo-api-mobile/internal/domain/repositories"
@@ -235,17 +237,18 @@ Archivo: `/Users/jhoanmedina/source/EduGo/repos-separados/edugo-api-mobile/inter
 package handlers
 
 import (
-    "net/http"
-    "github.com/gin-gonic/gin"
-    "github.com/google/uuid"
+	"net/http"
 
-    "edugo-api-mobile/internal/application/services"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+
+	"edugo-api-mobile/internal/application/services"
 )
 
 type AssessmentHandler struct {
-    assessmentService *services.AssessmentService
-    scoringService    *services.ScoringService
-    attemptService    *services.AttemptService
+	assessmentService *services.AssessmentService
+	scoringService    *services.ScoringService
+	attemptService    *services.AttemptService
 }
 
 // GetAssessment godoc
@@ -257,23 +260,23 @@ type AssessmentHandler struct {
 // @Failure 404 {object} ErrorResponse
 // @Router /v1/materials/{id}/assessment [get]
 func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
-    materialID, err := uuid.Parse(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid material ID"})
-        return
-    }
+	materialID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid material ID"})
+		return
+	}
 
-    assessment, err := h.assessmentService.GetAssessmentByMaterialID(c.Request.Context(), materialID)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
-        return
-    }
-    if assessment == nil {
-        c.JSON(http.StatusNotFound, ErrorResponse{Error: "Assessment not found"})
-        return
-    }
+	assessment, err := h.assessmentService.GetAssessmentByMaterialID(c.Request.Context(), materialID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if assessment == nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Assessment not found"})
+		return
+	}
 
-    c.JSON(http.StatusOK, assessment)
+	c.JSON(http.StatusOK, assessment)
 }
 
 // CreateAttempt godoc
@@ -285,23 +288,23 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 // @Success 201 {object} AttemptResponse
 // @Router /v1/materials/{id}/assessment/attempts [post]
 func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
-    var req CreateAttemptRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-        return
-    }
+	var req CreateAttemptRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-    // Obtener student ID del JWT
-    studentID := getStudentIDFromContext(c)
+	// Obtener student ID del JWT
+	studentID := getStudentIDFromContext(c)
 
-    // Crear intento
-    attempt, err := h.attemptService.CreateAttempt(c.Request.Context(), studentID, req)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
-        return
-    }
+	// Crear intento
+	attempt, err := h.attemptService.CreateAttempt(c.Request.Context(), studentID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-    c.JSON(http.StatusCreated, attempt)
+	c.JSON(http.StatusCreated, attempt)
 }
 
 // GetAttemptResults godoc
@@ -312,21 +315,21 @@ func (h *AssessmentHandler) CreateAttempt(c *gin.Context) {
 // @Success 200 {object} AttemptResultsResponse
 // @Router /v1/attempts/{id}/results [get]
 func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
-    attemptID, err := uuid.Parse(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid attempt ID"})
-        return
-    }
+	attemptID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid attempt ID"})
+		return
+	}
 
-    studentID := getStudentIDFromContext(c)
+	studentID := getStudentIDFromContext(c)
 
-    results, err := h.attemptService.GetAttemptResults(c.Request.Context(), attemptID, studentID)
-    if err != nil {
-        c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
-        return
-    }
+	results, err := h.attemptService.GetAttemptResults(c.Request.Context(), attemptID, studentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-    c.JSON(http.StatusOK, results)
+	c.JSON(http.StatusOK, results)
 }
 
 // GetUserAttempts godoc
@@ -338,18 +341,18 @@ func (h *AssessmentHandler) GetAttemptResults(c *gin.Context) {
 // @Success 200 {object} AttemptsListResponse
 // @Router /v1/users/me/attempts [get]
 func (h *AssessmentHandler) GetUserAttempts(c *gin.Context) {
-    studentID := getStudentIDFromContext(c)
+	studentID := getStudentIDFromContext(c)
 
-    limit := c.DefaultQuery("limit", "10")
-    offset := c.DefaultQuery("offset", "0")
+	limit := c.DefaultQuery("limit", "10")
+	offset := c.DefaultQuery("offset", "0")
 
-    attempts, err := h.attemptService.GetUserAttempts(c.Request.Context(), studentID, limit, offset)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
-        return
-    }
+	attempts, err := h.attemptService.GetUserAttempts(c.Request.Context(), studentID, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-    c.JSON(http.StatusOK, attempts)
+	c.JSON(http.StatusOK, attempts)
 }
 ```
 

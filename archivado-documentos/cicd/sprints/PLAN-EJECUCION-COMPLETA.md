@@ -519,65 +519,65 @@ Crear tests unitarios para los 4 domain services.
 package services
 
 import (
-    "testing"
-    "time"
+	"testing"
+	"time"
 
-    "github.com/google/uuid"
-    pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-    "github.com/stretchr/testify/assert"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMaterialDomainService_SetFileInfo(t *testing.T) {
-    svc := NewMaterialDomainService()
-    material := &pgentities.Material{
-        ID:        uuid.New(),
-        Status:    "uploaded",
-        UpdatedAt: time.Now().Add(-1 * time.Hour),
-    }
+	svc := NewMaterialDomainService()
+	material := &pgentities.Material{
+		ID:        uuid.New(),
+		Status:    "uploaded",
+		UpdatedAt: time.Now().Add(-1 * time.Hour),
+	}
 
-    err := svc.SetFileInfo(material, "https://s3.amazonaws.com/bucket/file.pdf")
+	err := svc.SetFileInfo(material, "https://s3.amazonaws.com/bucket/file.pdf")
 
-    assert.NoError(t, err)
-    assert.Equal(t, "https://s3.amazonaws.com/bucket/file.pdf", material.FileURL)
-    assert.Equal(t, "processing", material.Status)
-    assert.NotNil(t, material.ProcessingStartedAt)
+	assert.NoError(t, err)
+	assert.Equal(t, "https://s3.amazonaws.com/bucket/file.pdf", material.FileURL)
+	assert.Equal(t, "processing", material.Status)
+	assert.NotNil(t, material.ProcessingStartedAt)
 }
 
 func TestMaterialDomainService_SetFileInfo_ValidationError(t *testing.T) {
-    svc := NewMaterialDomainService()
-    material := &pgentities.Material{ID: uuid.New()}
+	svc := NewMaterialDomainService()
+	material := &pgentities.Material{ID: uuid.New()}
 
-    err := svc.SetFileInfo(material, "")
+	err := svc.SetFileInfo(material, "")
 
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "file_url")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "file_url")
 }
 
 func TestMaterialDomainService_MarkProcessingComplete(t *testing.T) {
-    svc := NewMaterialDomainService()
-    material := &pgentities.Material{
-        ID:     uuid.New(),
-        Status: "processing",
-    }
+	svc := NewMaterialDomainService()
+	material := &pgentities.Material{
+		ID:     uuid.New(),
+		Status: "processing",
+	}
 
-    err := svc.MarkProcessingComplete(material)
+	err := svc.MarkProcessingComplete(material)
 
-    assert.NoError(t, err)
-    assert.Equal(t, "ready", material.Status)
-    assert.NotNil(t, material.ProcessingCompletedAt)
+	assert.NoError(t, err)
+	assert.Equal(t, "ready", material.Status)
+	assert.NotNil(t, material.ProcessingCompletedAt)
 }
 
 func TestMaterialDomainService_Publish_RequiresProcessed(t *testing.T) {
-    svc := NewMaterialDomainService()
-    material := &pgentities.Material{
-        ID:     uuid.New(),
-        Status: "uploaded", // No procesado
-    }
+	svc := NewMaterialDomainService()
+	material := &pgentities.Material{
+		ID:     uuid.New(),
+		Status: "uploaded", // No procesado
+	}
 
-    err := svc.Publish(material)
+	err := svc.Publish(material)
 
-    assert.Error(t, err)
-    assert.Contains(t, err.Error(), "must be processed")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must be processed")
 }
 
 // Agregar más tests...

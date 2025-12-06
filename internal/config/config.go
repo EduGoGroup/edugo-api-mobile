@@ -139,7 +139,7 @@ type DevelopmentConfig struct {
 	UseMockRepositories bool `mapstructure:"use_mock_repositories"` // ENV: DEVELOPMENT_USE_MOCK_REPOSITORIES
 }
 
-// GetPostgresConnectionString construye la cadena de conexión PostgreSQL
+// GetConnectionString GetPostgresConnectionString construye la cadena de conexión PostgreSQL
 func (c *PostgresConfig) GetConnectionString() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)

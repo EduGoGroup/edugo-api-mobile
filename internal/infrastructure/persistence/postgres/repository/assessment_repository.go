@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -53,7 +54,7 @@ func (r *PostgresAssessmentRepository) FindByID(ctx context.Context, id uuid.UUI
 		&createdAt, &updatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // No encontrado
 	}
 	if err != nil {
@@ -130,7 +131,7 @@ func (r *PostgresAssessmentRepository) FindByMaterialID(ctx context.Context, mat
 		&createdAt, &updatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // No encontrado
 	}
 	if err != nil {

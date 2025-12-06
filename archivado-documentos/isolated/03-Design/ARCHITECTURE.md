@@ -192,43 +192,45 @@ graph LR
 ### 2.2 Domain Layer - Entidades y Value Objects
 
 #### Entity: Assessment
+
 ```go
 // internal/domain/entities/assessment.go
 package entities
 
 import (
-    "time"
-    "github.com/google/uuid"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type Assessment struct {
-    ID                uuid.UUID
-    MaterialID        uuid.UUID
-    MongoDocumentID   string    // ObjectId de MongoDB
-    Title             string
-    TotalQuestions    int
-    PassThreshold     int       // 0-100
-    MaxAttempts       *int      // NULL = ilimitado
-    CreatedAt         time.Time
-    UpdatedAt         time.Time
+	ID              uuid.UUID
+	MaterialID      uuid.UUID
+	MongoDocumentID string // ObjectId de MongoDB
+	Title           string
+	TotalQuestions  int
+	PassThreshold   int  // 0-100
+	MaxAttempts     *int // NULL = ilimitado
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Business Rules
 func (a *Assessment) CanAttempt(currentAttempts int) bool {
-    if a.MaxAttempts == nil {
-        return true // Ilimitado
-    }
-    return currentAttempts < *a.MaxAttempts
+	if a.MaxAttempts == nil {
+		return true // Ilimitado
+	}
+	return currentAttempts < *a.MaxAttempts
 }
 
 func (a *Assessment) Validate() error {
-    if a.TotalQuestions <= 0 {
-        return errors.New("total_questions must be > 0")
-    }
-    if a.PassThreshold < 0 || a.PassThreshold > 100 {
-        return errors.New("pass_threshold must be 0-100")
-    }
-    return nil
+	if a.TotalQuestions <= 0 {
+		return errors.New("total_questions must be > 0")
+	}
+	if a.PassThreshold < 0 || a.PassThreshold > 100 {
+		return errors.New("pass_threshold must be 0-100")
+	}
+	return nil
 }
 ```
 

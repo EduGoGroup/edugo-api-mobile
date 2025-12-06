@@ -290,10 +290,12 @@ go mod tidy
 package services
 
 import (
-    "time"
-    pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-    "github.com/EduGoGroup/edugo-shared/common/errors"
-    "github.com/EduGoGroup/edugo-shared/common/types/enum"
+
+"time"
+
+pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+"github.com/EduGoGroup/edugo-shared/common/errors"
+"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 // MaterialDomainService contiene reglas de negocio de Material
@@ -374,10 +376,12 @@ func (s *MaterialDomainService) IsProcessed(material *pgentities.Material) bool 
 package services
 
 import (
-    "time"
-    pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-    "github.com/EduGoGroup/edugo-shared/common/errors"
-    "github.com/EduGoGroup/edugo-shared/common/types/enum"
+
+"time"
+
+pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+"github.com/EduGoGroup/edugo-shared/common/errors"
+"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 type ProgressDomainService struct{}
@@ -422,10 +426,12 @@ func (s *ProgressDomainService) UpdateProgress(progress *pgentities.Progress, pe
 package services
 
 import (
-    "time"
-    "github.com/google/uuid"
-    pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-    domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+
+"time"
+
+domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+"github.com/google/uuid"
 )
 
 type AssessmentDomainService struct{}
@@ -521,103 +527,104 @@ func (s *AssessmentDomainService) RemoveTimeLimit(assessment *pgentities.Assessm
 package services
 
 import (
-    "errors"
-    "time"
-    "github.com/google/uuid"
-    pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-    domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	"errors"
+	"time"
+
+	domainErrors "github.com/EduGoGroup/edugo-api-mobile/internal/domain/errors"
+	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
+	"github.com/google/uuid"
 )
 
 type AttemptDomainService struct{}
 
 func NewAttemptDomainService() *AttemptDomainService {
-    return &AttemptDomainService{}
+	return &AttemptDomainService{}
 }
 
 // IsPassed indica si aprobó
 func (s *AttemptDomainService) IsPassed(attempt *pgentities.AssessmentAttempt, passThreshold int) bool {
-    return attempt.Score >= passThreshold
+	return attempt.Score >= passThreshold
 }
 
 // GetCorrectAnswersCount cuenta respuestas correctas
 func (s *AttemptDomainService) GetCorrectAnswersCount(answers []*pgentities.AssessmentAnswer) int {
-    count := 0
-    for _, answer := range answers {
-        if answer.IsCorrect {
-            count++
-        }
-    }
-    return count
+	count := 0
+	for _, answer := range answers {
+		if answer.IsCorrect {
+			count++
+		}
+	}
+	return count
 }
 
 // GetIncorrectAnswersCount cuenta respuestas incorrectas
 func (s *AttemptDomainService) GetIncorrectAnswersCount(answers []*pgentities.AssessmentAnswer) int {
-    return len(answers) - s.GetCorrectAnswersCount(answers)
+	return len(answers) - s.GetCorrectAnswersCount(answers)
 }
 
 // GetAverageTimePerQuestion calcula tiempo promedio
 func (s *AttemptDomainService) GetAverageTimePerQuestion(attempt *pgentities.AssessmentAttempt, totalQuestions int) int {
-    if totalQuestions == 0 {
-        return 0
-    }
-    return attempt.TimeSpentSeconds / totalQuestions
+	if totalQuestions == 0 {
+		return 0
+	}
+	return attempt.TimeSpentSeconds / totalQuestions
 }
 
 // ValidateAttempt valida intento
 func (s *AttemptDomainService) ValidateAttempt(attempt *pgentities.AssessmentAttempt, answers []*pgentities.AssessmentAnswer) error {
-    if attempt.ID == uuid.Nil {
-        return domainErrors.ErrInvalidAttemptID
-    }
-    if attempt.AssessmentID == uuid.Nil {
-        return domainErrors.ErrInvalidAssessmentID
-    }
-    if attempt.StudentID == uuid.Nil {
-        return domainErrors.ErrInvalidStudentID
-    }
-    if attempt.Score < 0 || attempt.Score > 100 {
-        return domainErrors.ErrInvalidScore
-    }
-    if attempt.TimeSpentSeconds <= 0 || attempt.TimeSpentSeconds > 7200 {
-        return domainErrors.ErrInvalidTimeSpent
-    }
-    if attempt.StartedAt.IsZero() {
-        return domainErrors.ErrInvalidStartTime
-    }
-    if attempt.CompletedAt.IsZero() || !attempt.CompletedAt.After(attempt.StartedAt) {
-        return domainErrors.ErrInvalidEndTime
-    }
-    if len(answers) == 0 {
-        return domainErrors.ErrNoAnswersProvided
-    }
+	if attempt.ID == uuid.Nil {
+		return domainErrors.ErrInvalidAttemptID
+	}
+	if attempt.AssessmentID == uuid.Nil {
+		return domainErrors.ErrInvalidAssessmentID
+	}
+	if attempt.StudentID == uuid.Nil {
+		return domainErrors.ErrInvalidStudentID
+	}
+	if attempt.Score < 0 || attempt.Score > 100 {
+		return domainErrors.ErrInvalidScore
+	}
+	if attempt.TimeSpentSeconds <= 0 || attempt.TimeSpentSeconds > 7200 {
+		return domainErrors.ErrInvalidTimeSpent
+	}
+	if attempt.StartedAt.IsZero() {
+		return domainErrors.ErrInvalidStartTime
+	}
+	if attempt.CompletedAt.IsZero() || !attempt.CompletedAt.After(attempt.StartedAt) {
+		return domainErrors.ErrInvalidEndTime
+	}
+	if len(answers) == 0 {
+		return domainErrors.ErrNoAnswersProvided
+	}
 
-    // Verificar que el score calculado coincide
-    correctCount := s.GetCorrectAnswersCount(answers)
-    expectedScore := (correctCount * 100) / len(answers)
-    if attempt.Score != expectedScore {
-        return errors.New("domain: score mismatch with answers")
-    }
+	// Verificar que el score calculado coincide
+	correctCount := s.GetCorrectAnswersCount(answers)
+	expectedScore := (correctCount * 100) / len(answers)
+	if attempt.Score != expectedScore {
+		return errors.New("domain: score mismatch with answers")
+	}
 
-    return nil
+	return nil
 }
 
 // ValidateAnswer valida respuesta individual
 func (s *AttemptDomainService) ValidateAnswer(answer *pgentities.AssessmentAnswer) error {
-    if answer.ID == uuid.Nil {
-        return domainErrors.ErrInvalidAnswerID
-    }
-    if answer.AttemptID == uuid.Nil {
-        return domainErrors.ErrInvalidAttemptID
-    }
-    if answer.QuestionID == "" {
-        return domainErrors.ErrInvalidQuestionID
-    }
-    if answer.SelectedAnswerID == "" {
-        return domainErrors.ErrInvalidSelectedAnswerID
-    }
-    if answer.TimeSpentSeconds < 0 {
-        return domainErrors.ErrInvalidTimeSpent
-    }
-    return nil
+	if answer.ID == uuid.Nil {
+		return domainErrors.ErrInvalidAnswerID
+	}
+	if answer.AttemptID == uuid.Nil {
+		return domainErrors.ErrInvalidAttemptID
+	}
+	if answer.QuestionID == "" {
+		return domainErrors.ErrInvalidQuestionID
+	}
+	if answer.SelectedAnswerID == "" {
+		return domainErrors.ErrInvalidSelectedAnswerID
+	}
+	if answer.TimeSpentSeconds < 0 {
+		return domainErrors.ErrInvalidTimeSpent
+	}
+	return nil
 }
 ```
 

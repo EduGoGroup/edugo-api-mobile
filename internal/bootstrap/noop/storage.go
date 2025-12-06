@@ -28,7 +28,7 @@ func (s *NoopS3Storage) GeneratePresignedUploadURL(ctx context.Context, key, con
 		zap.String("content_type", contentType),
 		zap.Duration("expires", expires),
 	)
-	return "", fmt.Errorf("S3 not available")
+	return "", fmt.Errorf("s3 not available")
 }
 
 // GeneratePresignedDownloadURL simula la generación de una URL presignada para descargar archivos
@@ -38,5 +38,5 @@ func (s *NoopS3Storage) GeneratePresignedDownloadURL(ctx context.Context, key st
 		zap.String("key", key),
 		zap.Duration("expires", expires),
 	)
-	return "", fmt.Errorf("S3 not available")
+	return "", fmt.Errorf("s3 not available")
 }

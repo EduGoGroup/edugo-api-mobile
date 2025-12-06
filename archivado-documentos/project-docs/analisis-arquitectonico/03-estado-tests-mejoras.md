@@ -209,12 +209,14 @@ test/integration/
 package testcontainers
 
 import (
-    "context"
-    "testing"
-    "github.com/testcontainers/testcontainers-go"
-    postgresContainer "github.com/testcontainers/testcontainers-go/modules/postgres"
-    mongoContainer "github.com/testcontainers/testcontainers-go/modules/mongodb"
-    rabbitmqContainer "github.com/testcontainers/testcontainers-go/modules/rabbitmq"
+
+"context"
+"testing"
+
+"github.com/testcontainers/testcontainers-go"
+mongoContainer "github.com/testcontainers/testcontainers-go/modules/mongodb"
+postgresContainer "github.com/testcontainers/testcontainers-go/modules/postgres"
+rabbitmqContainer "github.com/testcontainers/testcontainers-go/modules/rabbitmq"
 )
 
 type TestContainers struct {
@@ -308,101 +310,104 @@ func (tc *TestContainers) TeardownContainers(ctx context.Context) error {
 package integration
 
 import (
-    "context"
-    "testing"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
-    "your-project/test/integration/testcontainers"
+	"context"
+	"testing"
+	"your-project/test/integration/testcontainers"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-    testContainers *testcontainers.TestContainers
-    container      *container.Container
+	testContainers *testcontainers.TestContainers
+	container      *container.Container
 )
 
 // TestMain se ejecuta UNA VEZ antes de todos los tests
 func TestMain(m *testing.M) {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // Setup contenedores
-    tc, err := testcontainers.SetupContainers(ctx)
-    if err != nil {
-        log.Fatalf("Failed to setup containers: %v", err)
-    }
-    testContainers = tc
+	// Setup contenedores
+	tc, err := testcontainers.SetupContainers(ctx)
+	if err != nil {
+		log.Fatalf("Failed to setup containers: %v", err)
+	}
+	testContainers = tc
 
-    // Ejecutar migraciones
-    if err := runMigrations(tc.PostgresURI); err != nil {
-        log.Fatalf("Failed to run migrations: %v", err)
-    }
+	// Ejecutar migraciones
+	if err := runMigrations(tc.PostgresURI); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
 
-    // Inicializar container DI con URIs de test
-    container = initializeTestContainer(
-        tc.PostgresURI,
-        tc.MongoURI,
-        tc.RabbitURI,
-    )
+	// Inicializar container DI con URIs de test
+	container = initializeTestContainer(
+		tc.PostgresURI,
+		tc.MongoURI,
+		tc.RabbitURI,
+	)
 
-    // Ejecutar tests
-    code := m.Run()
+	// Ejecutar tests
+	code := m.Run()
 
-    // Cleanup
-    tc.TeardownContainers(ctx)
-    os.Exit(code)
+	// Cleanup
+	tc.TeardownContainers(ctx)
+	os.Exit(code)
 }
 
 func TestAuthFlow_CompleteLogin(t *testing.T) {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // 1. Crear usuario de prueba
-    user := createTestUser(t, container.UserRepository)
+	// 1. Crear usuario de prueba
+	user := createTestUser(t, container.UserRepository)
 
-    // 2. Login
-    loginReq := dto.LoginRequest{
-        Email:    user.Email,
-        Password: "test_password",
-    }
-    loginResp, err := container.AuthService.Login(ctx, loginReq)
-    require.NoError(t, err)
-    require.NotEmpty(t, loginResp.AccessToken)
-    require.NotEmpty(t, loginResp.RefreshToken)
+	// 2. Login
+	loginReq := dto.LoginRequest{
+		Email:    user.Email,
+		Password: "test_password",
+	}
+	loginResp, err := container.AuthService.Login(ctx, loginReq)
+	require.NoError(t, err)
+	require.NotEmpty(t, loginResp.AccessToken)
+	require.NotEmpty(t, loginResp.RefreshToken)
 
-    // 3. Verificar que access token es válido
-    claims, err := container.JWTManager.ValidateToken(loginResp.AccessToken)
-    require.NoError(t, err)
-    assert.Equal(t, user.ID.String(), claims.UserID)
+	// 3. Verificar que access token es válido
+	claims, err := container.JWTManager.ValidateToken(loginResp.AccessToken)
+	require.NoError(t, err)
+	assert.Equal(t, user.ID.String(), claims.UserID)
 
-    // 4. Verificar refresh token está en BD
-    tokenHash := auth.HashToken(loginResp.RefreshToken)
-    token, err := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
-    require.NoError(t, err)
-    assert.NotNil(t, token)
-    assert.Equal(t, user.ID, token.UserID)
+	// 4. Verificar refresh token está en BD
+	tokenHash := auth.HashToken(loginResp.RefreshToken)
+	token, err := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+	assert.Equal(t, user.ID, token.UserID)
 
-    // 5. Usar access token para acceder a recurso protegido
-    material, err := container.MaterialService.GetMaterial(ctx, "some-id")
-    // Validar que funciona...
+	// 5. Usar access token para acceder a recurso protegido
+	material, err := container.MaterialService.GetMaterial(ctx, "some-id")
+	// Validar que funciona...
 }
 
 func TestAuthFlow_RefreshToken(t *testing.T) {
-    // Test de refresh token rotation...
+	// Test de refresh token rotation...
 }
 
 func TestAuthFlow_Logout(t *testing.T) {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // 1. Login
-    user := createTestUser(t, container.UserRepository)
-    loginResp, _ := container.AuthService.Login(ctx, dto.LoginRequest{...})
+	// 1. Login
+	user := createTestUser(t, container.UserRepository)
+	loginResp, _ := container.AuthService.Login(ctx, dto.LoginRequest{...})
 
-    // 2. Logout
-    err := container.AuthService.Logout(ctx, user.ID.String(), loginResp.RefreshToken)
-    require.NoError(t, err)
+	// 2. Logout
+	err := container.AuthService.Logout(ctx, user.ID.String(), loginResp.RefreshToken)
+	require.NoError(t, err)
 
-    // 3. Verificar refresh token revocado
-    tokenHash := auth.HashToken(loginResp.RefreshToken)
-    token, _ := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
-    assert.NotNil(t, token.RevokedAt)  ← Debe estar revocado
+	// 3. Verificar refresh token revocado
+	tokenHash := auth.HashToken(loginResp.RefreshToken)
+	token, _ := container.RefreshTokenRepository.FindByTokenHash(ctx, tokenHash)
+	assert.NotNil(t, token.RevokedAt)  ← Debe
+	estar
+	revocado
 }
 ```
 

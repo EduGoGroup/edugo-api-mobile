@@ -461,32 +461,34 @@ db.evaluation_results.createIndex({ "evaluation_id": 1, "student_id": 1 })
 ```
 
 **Publish desde API Mobile:**
+
 ```go
 package messaging
 
 import (
-    "encoding/json"
-    "github.com/streadway/amqp"
+	"encoding/json"
+
+	"github.com/streadway/amqp"
 )
 
 type Publisher struct {
-    conn *amqp.Connection
-    ch   *amqp.Channel
+	conn *amqp.Connection
+	ch   *amqp.Channel
 }
 
 func (p *Publisher) PublishGenerateQuiz(req GenerateQuizRequest) error {
-    body, _ := json.Marshal(req)
+	body, _ := json.Marshal(req)
 
-    return p.ch.Publish(
-        "assessment.requests",        // exchange
-        "worker.assessment.requests", // routing key
-        false,                        // mandatory
-        false,                        // immediate
-        amqp.Publishing{
-            ContentType: "application/json",
-            Body:        body,
-        },
-    )
+	return p.ch.Publish(
+		"assessment.requests",        // exchange
+		"worker.assessment.requests", // routing key
+		false,                        // mandatory
+		false,                        // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
 }
 ```
 

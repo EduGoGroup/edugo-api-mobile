@@ -388,13 +388,16 @@ CREATE INDEX idx_answer_drafts_assignment_id ON answer_drafts(assignment_id);
 ```
 
 **Conexión desde API Mobile:**
+
 ```go
 package database
 
 import (
-    "fmt"
-    "github.com/EduGoGroup/edugo-shared/database"
-    "os"
+
+"fmt"
+"os"
+
+"github.com/EduGoGroup/edugo-shared/database"
 )
 
 func InitPostgres() error {
@@ -470,13 +473,16 @@ db.evaluation_audit.createIndex({ "evaluation_id": 1, "timestamp": -1 });
 ```
 
 **Conexión desde API Mobile:**
+
 ```go
 package database
 
 import (
-    "context"
-    "github.com/EduGoGroup/edugo-shared/database"
-    "os"
+
+"context"
+"os"
+
+"github.com/EduGoGroup/edugo-shared/database"
 )
 
 func InitMongoDB() error {
@@ -535,12 +541,15 @@ rabbitmqctl bind_queue assessment.responses api-mobile.assessment.responses api-
 ```
 
 **Publicar mensaje (desde API Mobile):**
+
 ```go
 package messaging
 
 import (
-    "encoding/json"
-    "github.com/EduGoGroup/edugo-shared/messaging"
+
+"encoding/json"
+
+"github.com/EduGoGroup/edugo-shared/messaging"
 )
 
 type GenerateQuizRequest struct {
@@ -723,29 +732,31 @@ GET /api/v1/schools/{school_id}/academic-units
 ```
 
 **Ejemplo de integración:**
+
 ```go
 package adapters
 
 import (
-    "github.com/go-resty/resty/v2"
-    "os"
+	"os"
+
+	"github.com/go-resty/resty/v2"
 )
 
 var adminAPIClient = resty.New().
-    SetBaseURL(os.Getenv("API_ADMIN_URL")). // http://api-admin:8081
-    SetHeader("Authorization", "Bearer "+getToken())
+	SetBaseURL(os.Getenv("API_ADMIN_URL")). // http://api-admin:8081
+	SetHeader("Authorization", "Bearer "+getToken())
 
 func GetTeacher(teacherID int) (*models.Teacher, error) {
-    resp, err := adminAPIClient.
-        R().
-        SetResult(&models.Teacher{}).
-        Get("/api/v1/teachers/" + string(teacherID))
+	resp, err := adminAPIClient.
+		R().
+		SetResult(&models.Teacher{}).
+		Get("/api/v1/teachers/" + string(teacherID))
 
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    return resp.Result().(*models.Teacher), nil
+	return resp.Result().(*models.Teacher), nil
 }
 ```
 

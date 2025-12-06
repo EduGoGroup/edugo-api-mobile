@@ -16,21 +16,6 @@ import (
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 )
 
-// ptrStr crea un puntero a string
-func ptrStr(s string) *string {
-	return &s
-}
-
-// ptrBool crea un puntero a bool
-func ptrBool(b bool) *bool {
-	return &b
-}
-
-// ptrInt crea un puntero a int
-func ptrInt(i int) *int {
-	return &i
-}
-
 // AnswerRepositoryIntegrationSuite tests de integración para AnswerRepository
 type AnswerRepositoryIntegrationSuite struct {
 	suite.IntegrationTestSuite
@@ -63,33 +48,42 @@ func (s *AnswerRepositoryIntegrationSuite) TestSave_BatchInsert() {
 	// Arrange
 	attemptID := uuid.New()
 	now := time.Now()
+	studentAnswer1 := "a"
+	isCorrect1 := true
+	timeSpent1 := 30
 	answer1 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q1",
-		StudentAnswer:    ptrStr("a"),
-		IsCorrect:        ptrBool(true),
-		TimeSpentSeconds: ptrInt(30),
+		QuestionIndex:    0,
+		StudentAnswer:    &studentAnswer1,
+		IsCorrect:        &isCorrect1,
+		TimeSpentSeconds: &timeSpent1,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
+	studentAnswer2 := "b"
+	isCorrect2 := false
+	timeSpent2 := 45
 	answer2 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q2",
-		StudentAnswer:    ptrStr("b"),
-		IsCorrect:        ptrBool(false),
-		TimeSpentSeconds: ptrInt(45),
+		QuestionIndex:    1,
+		StudentAnswer:    &studentAnswer2,
+		IsCorrect:        &isCorrect2,
+		TimeSpentSeconds: &timeSpent2,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
+	studentAnswer3 := "c"
+	isCorrect3 := true
+	timeSpent3 := 60
 	answer3 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q3",
-		StudentAnswer:    ptrStr("c"),
-		IsCorrect:        ptrBool(true),
-		TimeSpentSeconds: ptrInt(60),
+		QuestionIndex:    2,
+		StudentAnswer:    &studentAnswer3,
+		IsCorrect:        &isCorrect3,
+		TimeSpentSeconds: &timeSpent3,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
@@ -126,33 +120,42 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByAttemptID_OrderedByCreatedA
 	// Arrange - Guardar answers en orden específico
 	attemptID := uuid.New()
 	now := time.Now()
+	studentAnswer1 := "a"
+	isCorrect1 := true
+	timeSpent1 := 10
 	answer1 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q1",
-		StudentAnswer:    ptrStr("a"),
-		IsCorrect:        ptrBool(true),
-		TimeSpentSeconds: ptrInt(10),
+		QuestionIndex:    0,
+		StudentAnswer:    &studentAnswer1,
+		IsCorrect:        &isCorrect1,
+		TimeSpentSeconds: &timeSpent1,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
+	studentAnswer2 := "b"
+	isCorrect2 := false
+	timeSpent2 := 20
 	answer2 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q2",
-		StudentAnswer:    ptrStr("b"),
-		IsCorrect:        ptrBool(false),
-		TimeSpentSeconds: ptrInt(20),
+		QuestionIndex:    1,
+		StudentAnswer:    &studentAnswer2,
+		IsCorrect:        &isCorrect2,
+		TimeSpentSeconds: &timeSpent2,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
+	studentAnswer3 := "c"
+	isCorrect3 := true
+	timeSpent3 := 30
 	answer3 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q3",
-		StudentAnswer:    ptrStr("c"),
-		IsCorrect:        ptrBool(true),
-		TimeSpentSeconds: ptrInt(30),
+		QuestionIndex:    2,
+		StudentAnswer:    &studentAnswer3,
+		IsCorrect:        &isCorrect3,
+		TimeSpentSeconds: &timeSpent3,
 		AnsweredAt:       now,
 		CreatedAt:        now,
 	}
@@ -167,9 +170,9 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByAttemptID_OrderedByCreatedA
 	s.NoError(err)
 	s.Equal(3, len(found))
 	// Verificar orden por created_at ASC
-	s.Equal("q1", found[0].QuestionID)
-	s.Equal("q2", found[1].QuestionID)
-	s.Equal("q3", found[2].QuestionID)
+	s.Equal(0, found[0].QuestionIndex)
+	s.Equal(1, found[1].QuestionIndex)
+	s.Equal(2, found[2].QuestionIndex)
 }
 
 // TestFindByAttemptID_Empty valida que retorna array vacío cuando no hay answers
@@ -184,23 +187,26 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByAttemptID_Empty() {
 	s.Empty(found, "Debe retornar array vacío cuando no hay answers")
 }
 
-// TestFindByQuestionID_WithPagination valida paginación por question_id
+// TestFindByQuestionID_WithPagination valida paginación por question_index
 func (s *AnswerRepositoryIntegrationSuite) TestFindByQuestionID_WithPagination() {
 	ctx := context.Background()
 
-	// Arrange - Guardar 5 respuestas para la misma pregunta (diferentes intentos)
-	questionID := "q1"
+	// Arrange - Guardar 5 respuestas para el mismo índice de pregunta (diferentes intentos)
+	questionIndex := 0
 	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
+		studentAnswer := "a"
+		isCorrect := i%2 == 0
+		timeSpent := 30
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       questionID,
-			StudentAnswer:    ptrStr("a"),
-			IsCorrect:        ptrBool(i%2 == 0),
-			TimeSpentSeconds: ptrInt(30),
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    &studentAnswer,
+			IsCorrect:        &isCorrect,
+			TimeSpentSeconds: &timeSpent,
 			AnsweredAt:       now,
 			CreatedAt:        now,
 		}
@@ -210,29 +216,29 @@ func (s *AnswerRepositoryIntegrationSuite) TestFindByQuestionID_WithPagination()
 	}
 
 	// Act - Primera página (limit=2, offset=0)
-	page1, err := s.repo.FindByQuestionID(ctx, questionID, 2, 0)
+	page1, err := s.repo.FindByQuestionID(ctx, "0", 2, 0)
 	s.NoError(err)
 	s.Equal(2, len(page1), "Primera página debe tener 2 elementos")
 
 	// Act - Segunda página (limit=2, offset=2)
-	page2, err := s.repo.FindByQuestionID(ctx, questionID, 2, 2)
+	page2, err := s.repo.FindByQuestionID(ctx, "0", 2, 2)
 	s.NoError(err)
 	s.Equal(2, len(page2), "Segunda página debe tener 2 elementos")
 
 	// Act - Tercera página (limit=2, offset=4)
-	page3, err := s.repo.FindByQuestionID(ctx, questionID, 2, 4)
+	page3, err := s.repo.FindByQuestionID(ctx, "0", 2, 4)
 	s.NoError(err)
 	s.Equal(1, len(page3), "Tercera página debe tener 1 elemento")
 
-	// Assert - Todas deben ser de la misma pregunta
+	// Assert - Todas deben ser del mismo índice
 	for _, answer := range page1 {
-		s.Equal(questionID, answer.QuestionID)
+		s.Equal(questionIndex, answer.QuestionIndex)
 	}
 	for _, answer := range page2 {
-		s.Equal(questionID, answer.QuestionID)
+		s.Equal(questionIndex, answer.QuestionIndex)
 	}
 	for _, answer := range page3 {
-		s.Equal(questionID, answer.QuestionID)
+		s.Equal(questionIndex, answer.QuestionIndex)
 	}
 }
 
@@ -253,19 +259,21 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_Succes
 	ctx := context.Background()
 
 	// Arrange - Guardar 10 respuestas: 7 correctas, 3 incorrectas
-	questionID := "q1"
+	questionIndex := 1
 	now := time.Now()
 
 	for i := 0; i < 10; i++ {
 		attemptID := uuid.New()
 		isCorrect := i < 7 // Primeras 7 son correctas
+		studentAnswer := "a"
+		timeSpent := 30
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       questionID,
-			StudentAnswer:    ptrStr("a"),
-			IsCorrect:        ptrBool(isCorrect),
-			TimeSpentSeconds: ptrInt(30),
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    &studentAnswer,
+			IsCorrect:        &isCorrect,
+			TimeSpentSeconds: &timeSpent,
 			AnsweredAt:       now,
 			CreatedAt:        now,
 		}
@@ -275,7 +283,7 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_Succes
 	}
 
 	// Act
-	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, questionID)
+	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, "1")
 
 	// Assert
 	s.NoError(err)
@@ -303,18 +311,21 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllCor
 	ctx := context.Background()
 
 	// Arrange - Todas correctas
-	questionID := "q_easy"
+	questionIndex := 2
 	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
+		studentAnswer := "a"
+		isCorrect := true
+		timeSpent := 30
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       questionID,
-			StudentAnswer:    ptrStr("a"),
-			IsCorrect:        ptrBool(true),
-			TimeSpentSeconds: ptrInt(30),
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    &studentAnswer,
+			IsCorrect:        &isCorrect,
+			TimeSpentSeconds: &timeSpent,
 			AnsweredAt:       now,
 			CreatedAt:        now,
 		}
@@ -324,7 +335,7 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllCor
 	}
 
 	// Act
-	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, questionID)
+	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, "2")
 
 	// Assert
 	s.NoError(err)
@@ -338,18 +349,21 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllInc
 	ctx := context.Background()
 
 	// Arrange - Todas incorrectas
-	questionID := "q_hard"
+	questionIndex := 3
 	now := time.Now()
 
 	for i := 0; i < 5; i++ {
 		attemptID := uuid.New()
+		studentAnswer := "wrong"
+		isCorrect := false
+		timeSpent := 30
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       questionID,
-			StudentAnswer:    ptrStr("wrong"),
-			IsCorrect:        ptrBool(false),
-			TimeSpentSeconds: ptrInt(30),
+			QuestionIndex:    questionIndex,
+			StudentAnswer:    &studentAnswer,
+			IsCorrect:        &isCorrect,
+			TimeSpentSeconds: &timeSpent,
 			AnsweredAt:       now,
 			CreatedAt:        now,
 		}
@@ -359,7 +373,7 @@ func (s *AnswerRepositoryIntegrationSuite) TestGetQuestionDifficultyStats_AllInc
 	}
 
 	// Act
-	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, questionID)
+	total, correct, errorRate, err := s.repo.GetQuestionDifficultyStats(ctx, "3")
 
 	// Assert
 	s.NoError(err)

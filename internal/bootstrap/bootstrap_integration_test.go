@@ -33,9 +33,18 @@ func TestNormalInitialization(t *testing.T) {
 	// Start test containers
 	pgContainer, mongoContainer, rabbitContainer := setupTestContainers(t, ctx)
 	defer func() {
-		pgContainer.Terminate(ctx)
-		mongoContainer.Terminate(ctx)
-		rabbitContainer.Terminate(ctx)
+		err := pgContainer.Terminate(ctx)
+		if err != nil {
+			return
+		}
+		err = mongoContainer.Terminate(ctx)
+		if err != nil {
+			return
+		}
+		err = rabbitContainer.Terminate(ctx)
+		if err != nil {
+			return
+		}
 	}()
 
 	// Get connection details
@@ -109,7 +118,10 @@ func setupTestContainers(t *testing.T, ctx context.Context) (*postgres.PostgresC
 		mongodb.WithPassword("test_pass"),
 	)
 	if err != nil {
-		pgContainer.Terminate(ctx)
+		errI := pgContainer.Terminate(ctx)
+		if errI != nil {
+			return nil, nil, nil
+		}
 		require.NoError(t, err, "MongoDB container should start")
 	}
 
@@ -120,8 +132,14 @@ func setupTestContainers(t *testing.T, ctx context.Context) (*postgres.PostgresC
 		rabbitmq.WithAdminPassword("test_pass"),
 	)
 	if err != nil {
-		pgContainer.Terminate(ctx)
-		mongoContainer.Terminate(ctx)
+		errI := pgContainer.Terminate(ctx)
+		if errI != nil {
+			return nil, nil, nil
+		}
+		errI = mongoContainer.Terminate(ctx)
+		if errI != nil {
+			return nil, nil, nil
+		}
 		require.NoError(t, err, "RabbitMQ container should start")
 	}
 
@@ -247,8 +265,14 @@ func TestOptionalResourceFailure(t *testing.T) {
 	// Start only PostgreSQL and MongoDB (no RabbitMQ)
 	pgContainer, mongoContainer := setupMinimalContainers(t, ctx)
 	defer func() {
-		pgContainer.Terminate(ctx)
-		mongoContainer.Terminate(ctx)
+		err := pgContainer.Terminate(ctx)
+		if err != nil {
+			return
+		}
+		err = mongoContainer.Terminate(ctx)
+		if err != nil {
+			return
+		}
 	}()
 
 	// Get connection details
@@ -316,7 +340,10 @@ func setupMinimalContainers(t *testing.T, ctx context.Context) (*postgres.Postgr
 		mongodb.WithPassword("test_pass"),
 	)
 	if err != nil {
-		pgContainer.Terminate(ctx)
+		errI := pgContainer.Terminate(ctx)
+		if errI != nil {
+			return nil, nil
+		}
 		require.NoError(t, err, "MongoDB container should start")
 	}
 
