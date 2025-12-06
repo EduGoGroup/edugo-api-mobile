@@ -11,6 +11,7 @@
 | [LEGACY-ENDPOINTS.md](./LEGACY-ENDPOINTS.md) | 🟡 Media | Endpoints legacy a migrar/eliminar |
 | [REFACTORING-OPPORTUNITIES.md](./REFACTORING-OPPORTUNITIES.md) | 🟢 Baja | Oportunidades de mejora de código |
 | [TECHNICAL-DEBT.md](./TECHNICAL-DEBT.md) | 🔴 Alta | Deuda técnica acumulada |
+| [API-ADMIN-REQUIREMENTS.md](./API-ADMIN-REQUIREMENTS.md) | 🔴 Alta | Requerimientos pendientes para api-admin |
 
 ---
 
