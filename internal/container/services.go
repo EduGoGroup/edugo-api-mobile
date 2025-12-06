@@ -11,7 +11,6 @@ type ServiceContainer struct {
 	MaterialService          service.MaterialService
 	ProgressService          service.ProgressService
 	SummaryService           service.SummaryService
-	AssessmentService        service.AssessmentService
 	AssessmentAttemptService service.AssessmentAttemptService // Sprint-04
 	StatsService             service.StatsService
 }
@@ -41,13 +40,6 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 		// SummaryService gestiona resúmenes de materiales (MongoDB)
 		SummaryService: service.NewSummaryService(
 			repos.SummaryRepository,
-			infra.Logger,
-		),
-
-		// AssessmentService gestiona evaluaciones y scoring con Strategy Pattern
-		AssessmentService: service.NewAssessmentService(
-			repos.AssessmentRepository,
-			infra.MessagePublisher,
 			infra.Logger,
 		),
 

@@ -13,15 +13,14 @@ import (
 // TestNewAssessmentHandler verifica la creación correcta del handler
 func TestNewAssessmentHandler(t *testing.T) {
 	// Arrange
-	mockService := &MockAssessmentService{}
+	mockAttemptService := &MockAssessmentAttemptService{}
 	logger := NewTestLogger()
 
 	// Act
-	mockAttemptService := &MockAssessmentAttemptService{}
-	handler := NewAssessmentHandler(mockService, mockAttemptService, logger)
+	handler := NewAssessmentHandler(mockAttemptService, logger)
 
 	// Assert
 	assert.NotNil(t, handler)
-	assert.Equal(t, mockService, handler.assessmentService)
+	assert.Equal(t, mockAttemptService, handler.assessmentAttemptService)
 	assert.Equal(t, logger, handler.logger)
 }
