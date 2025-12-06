@@ -123,7 +123,10 @@ func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	stats := rg.Group("/stats")
 	{
 		// Estadísticas globales del sistema (Fase 6)
-		// TODO: Agregar middleware de autorización para solo admins
-		stats.GET("/global", c.Handlers.StatsHandler.GetGlobalStats)
+		// Solo accesible para administradores
+		stats.GET("/global",
+			middleware.RequireRole("admin", "super_admin"),
+			c.Handlers.StatsHandler.GetGlobalStats,
+		)
 	}
 }

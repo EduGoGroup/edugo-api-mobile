@@ -62,21 +62,17 @@ func (s *materialService) CreateMaterial(...) {
 
 ---
 
-### TODO-002: Agregar Middleware de Autorización para Admins
+### ~~TODO-002: Agregar Middleware de Autorización para Admins~~ ✅ Completado
 
 **Archivo:** `internal/infrastructure/http/router/router.go`  
-**Línea:** 135
+**Estado:** ✅ Implementado Dic 2024
 
 ```go
-// setupStatsRoutes configura rutas de estadísticas globales del sistema.
-func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
-    stats := rg.Group("/stats")
-    {
-        // Estadísticas globales del sistema (Fase 6)
-        // TODO: Agregar middleware de autorización para solo admins
-        stats.GET("/global", c.Handlers.StatsHandler.GetGlobalStats)
-    }
-}
+// Solo accesible para administradores
+stats.GET("/global",
+    middleware.RequireRole("admin", "super_admin"),
+    c.Handlers.StatsHandler.GetGlobalStats,
+)
 ```
 
 #### Problema
