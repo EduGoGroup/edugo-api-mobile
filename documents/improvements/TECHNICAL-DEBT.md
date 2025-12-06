@@ -302,7 +302,7 @@ s.logger.Info("message here",
 
 | ID | Descripción | Severidad | Esfuerzo | Estado |
 |----|-------------|-----------|----------|--------|
-| DEBT-001 | Duplicación valueobject/valueobjects | 🔴 Alta | 2-3h | Pendiente |
+| DEBT-001 | Duplicación valueobject/valueobjects | 🔴 Alta | 2-3h | ✅ Completado |
 | DEBT-002 | Código comentado | 🟡 Media | 1h | Pendiente |
 | DEBT-003 | SchoolID hardcodeado | 🔴 Alta | 4-8h | Pendiente |
 | DEBT-004 | Sistemas assessment duplicados | 🟡 Media | 2-3 semanas | Pendiente |
@@ -317,11 +317,11 @@ s.logger.Info("message here",
 
 | Severidad | Puntos | Items |
 |-----------|--------|-------|
-| 🔴 Alta | 10 pts c/u | 2 |
+| 🔴 Alta | 10 pts c/u | 1 (era 2) |
 | 🟡 Media | 5 pts c/u | 2 |
 | 🟢 Baja | 2 pts c/u | 2 |
 
-**Total:** 34 puntos de deuda técnica
+**Total:** 24 puntos de deuda técnica (era 34)
 
 ### Objetivo
 
@@ -333,6 +333,6 @@ Reducir a menos de 15 puntos antes del Q2 2025.
 
 | Fecha | Item | Puntos Pagados | PR |
 |-------|------|----------------|-----|
-| - | - | - | - |
+| Dic 2024 | DEBT-001 | 10 pts | - |
 
-**Puntos pagados este trimestre:** 0
+**Puntos pagados este trimestre:** 10

@@ -1,4 +1,4 @@
-package valueobjects_test
+package valueobject_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobjects"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 )
 
 func TestNewTimeSpent_Success(t *testing.T) {
@@ -23,7 +23,7 @@ func TestNewTimeSpent_Success(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		timeSpent, err := valueobjects.NewTimeSpent(tc.seconds)
+		timeSpent, err := valueobject.NewTimeSpent(tc.seconds)
 		require.NoError(t, err)
 		assert.Equal(t, tc.seconds, timeSpent.Seconds())
 		assert.Equal(t, tc.expectedMinutes, timeSpent.Minutes())
@@ -34,7 +34,7 @@ func TestNewTimeSpent_Negative(t *testing.T) {
 	testCases := []int{-1, -10, -100}
 
 	for _, seconds := range testCases {
-		_, err := valueobjects.NewTimeSpent(seconds)
+		_, err := valueobject.NewTimeSpent(seconds)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be negative")
 	}
@@ -44,7 +44,7 @@ func TestNewTimeSpent_ExceedsMaximum(t *testing.T) {
 	testCases := []int{7201, 8000, 10000}
 
 	for _, seconds := range testCases {
-		_, err := valueobjects.NewTimeSpent(seconds)
+		_, err := valueobject.NewTimeSpent(seconds)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot exceed 7200 seconds")
 	}
@@ -64,15 +64,15 @@ func TestTimeSpent_String(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		timeSpent, _ := valueobjects.NewTimeSpent(tc.seconds)
+		timeSpent, _ := valueobject.NewTimeSpent(tc.seconds)
 		assert.Equal(t, tc.expected, timeSpent.String())
 	}
 }
 
 func TestTimeSpent_Equals(t *testing.T) {
-	time1, _ := valueobjects.NewTimeSpent(300)
-	time2, _ := valueobjects.NewTimeSpent(300)
-	time3, _ := valueobjects.NewTimeSpent(400)
+	time1, _ := valueobject.NewTimeSpent(300)
+	time2, _ := valueobject.NewTimeSpent(300)
+	time3, _ := valueobject.NewTimeSpent(400)
 
 	assert.True(t, time1.Equals(time2))
 	assert.False(t, time1.Equals(time3))
@@ -92,7 +92,7 @@ func TestTimeSpent_Minutes_Conversion(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		timeSpent, _ := valueobjects.NewTimeSpent(tc.seconds)
+		timeSpent, _ := valueobject.NewTimeSpent(tc.seconds)
 		assert.Equal(t, tc.minutes, timeSpent.Minutes())
 	}
 }

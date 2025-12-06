@@ -283,7 +283,7 @@ func (h *AssessmentHandler) CreateMaterialAttempt(c *gin.Context) {
 
 ## 📋 Checklist de Eliminación
 
-- [ ] DEP-001: Funciones WithInjected* (bootstrap.go)
+- [x] DEP-001: Funciones WithInjected* (bootstrap.go) ✅ Dic 2024
 - [ ] DEP-002: Repositorio Legacy Assessments (MongoDB)
 - [ ] DEP-003: Endpoint PATCH /materials/:id/progress
 - [ ] DEP-004: Endpoint POST /assessments/:id/submit
@@ -294,4 +294,4 @@ func (h *AssessmentHandler) CreateMaterialAttempt(c *gin.Context) {
 
 | Fecha | Código | PR | Descripción |
 |-------|--------|-----|-------------|
-| - | - | - | Ninguna eliminación registrada aún |
+| Dic 2024 | DEP-001 | - | Eliminadas funciones WithInjected* deprecadas |

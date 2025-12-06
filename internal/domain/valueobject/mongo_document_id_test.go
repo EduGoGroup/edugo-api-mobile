@@ -1,4 +1,4 @@
-package valueobjects_test
+package valueobject_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobjects"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 )
 
 func TestNewMongoDocumentID_Success(t *testing.T) {
@@ -21,7 +21,7 @@ func TestNewMongoDocumentID_Success(t *testing.T) {
 
 	for _, id := range validIDs {
 		t.Run(id, func(t *testing.T) {
-			mongoID, err := valueobjects.NewMongoDocumentID(id)
+			mongoID, err := valueobject.NewMongoDocumentID(id)
 			require.NoError(t, err)
 			assert.Equal(t, id, mongoID.Value())
 			assert.Equal(t, id, mongoID.String())
@@ -40,8 +40,8 @@ func TestNewMongoDocumentID_InvalidLength(t *testing.T) {
 
 	for _, id := range invalidIDs {
 		t.Run(id, func(t *testing.T) {
-			_, err := valueobjects.NewMongoDocumentID(id)
-			assert.ErrorIs(t, err, valueobjects.ErrInvalidMongoDocumentID)
+			_, err := valueobject.NewMongoDocumentID(id)
+			assert.ErrorIs(t, err, valueobject.ErrInvalidMongoDocumentID)
 		})
 	}
 }
@@ -57,16 +57,16 @@ func TestNewMongoDocumentID_InvalidCharacters(t *testing.T) {
 
 	for _, id := range invalidIDs {
 		t.Run(id, func(t *testing.T) {
-			_, err := valueobjects.NewMongoDocumentID(id)
-			assert.ErrorIs(t, err, valueobjects.ErrInvalidMongoDocumentID)
+			_, err := valueobject.NewMongoDocumentID(id)
+			assert.ErrorIs(t, err, valueobject.ErrInvalidMongoDocumentID)
 		})
 	}
 }
 
 func TestMongoDocumentID_Equals(t *testing.T) {
-	id1, _ := valueobjects.NewMongoDocumentID("507f1f77bcf86cd799439011")
-	id2, _ := valueobjects.NewMongoDocumentID("507f1f77bcf86cd799439011")
-	id3, _ := valueobjects.NewMongoDocumentID("123456789012345678901234")
+	id1, _ := valueobject.NewMongoDocumentID("507f1f77bcf86cd799439011")
+	id2, _ := valueobject.NewMongoDocumentID("507f1f77bcf86cd799439011")
+	id3, _ := valueobject.NewMongoDocumentID("123456789012345678901234")
 
 	assert.True(t, id1.Equals(id2))
 	assert.False(t, id1.Equals(id3))
@@ -74,8 +74,8 @@ func TestMongoDocumentID_Equals(t *testing.T) {
 
 func TestMongoDocumentID_CaseInsensitive(t *testing.T) {
 	// Ambas deberían ser válidas
-	id1, err1 := valueobjects.NewMongoDocumentID("abcdef1234567890abcdef12")
-	id2, err2 := valueobjects.NewMongoDocumentID("ABCDEF1234567890ABCDEF12")
+	id1, err1 := valueobject.NewMongoDocumentID("abcdef1234567890abcdef12")
+	id2, err2 := valueobject.NewMongoDocumentID("ABCDEF1234567890ABCDEF12")
 
 	require.NoError(t, err1)
 	require.NoError(t, err2)

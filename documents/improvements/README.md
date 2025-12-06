@@ -17,7 +17,7 @@
 ## 📊 Resumen de Estado
 
 ### Código Deprecado
-- **5 funciones** en `bootstrap/bootstrap.go` marcadas como DEPRECATED
+- ~~**5 funciones** en `bootstrap/bootstrap.go` marcadas como DEPRECATED~~ ✅ Eliminadas
 - **1 repositorio** legacy (`AssessmentRepository`) coexiste con versión nueva
 - **2 endpoints** legacy que deberían migrarse
 
@@ -30,7 +30,7 @@
   - Tests de integración incompletos
 
 ### Deuda Técnica
-- Duplicación entre `valueobject/` y `valueobjects/`
+- ~~Duplicación entre `valueobject/` y `valueobjects/`~~ ✅ Consolidado
 - Coexistencia de sistema de assessments legacy y nuevo
 - Código comentado que debería eliminarse
 
@@ -39,9 +39,9 @@
 ## 🎯 Plan de Acción Recomendado
 
 ### Fase 1: Limpieza Inmediata (1-2 días)
-1. Eliminar funciones `WithInjected*` deprecadas
+1. ~~Eliminar funciones `WithInjected*` deprecadas~~ ✅ Completado
 2. Eliminar código comentado
-3. Consolidar carpetas `valueobject/` y `valueobjects/`
+3. ~~Consolidar carpetas `valueobject/` y `valueobjects/`~~ ✅ Completado
 
 ### Fase 2: Migración de Legacy (1 semana)
 1. Migrar clientes del endpoint `PATCH /materials/:id/progress` a `PUT /progress`
