@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.uber.org/zap"
 )
 
 // NoopPublisher es una implementación noop de rabbitmq.Publisher
@@ -22,9 +21,9 @@ func NewNoopPublisher(log logger.Logger) *NoopPublisher {
 // Registra un mensaje de debug para facilitar el debugging
 func (p *NoopPublisher) Publish(ctx context.Context, exchange, routingKey string, body []byte) error {
 	p.logger.Debug("noop publisher: message not published (RabbitMQ not available)",
-		zap.String("exchange", exchange),
-		zap.String("routing_key", routingKey),
-		zap.Int("body_size", len(body)),
+		"exchange", exchange,
+		"routing_key", routingKey,
+		"body_size", len(body),
 	)
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.uber.org/zap"
 )
 
 type MaterialStats struct {
@@ -93,7 +92,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
 			mu.Unlock()
-			s.logger.Error("error al contar materiales publicados", zap.Error(err))
+			s.logger.Error("error al contar materiales publicados", "error", err)
 			return
 		}
 		totalMaterials = count
@@ -107,7 +106,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
 			mu.Unlock()
-			s.logger.Error("error al contar evaluaciones completadas", zap.Error(err))
+			s.logger.Error("error al contar evaluaciones completadas", "error", err)
 			return
 		}
 		totalAssessments = count
@@ -121,7 +120,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
 			mu.Unlock()
-			s.logger.Error("error al calcular promedio de puntajes", zap.Error(err))
+			s.logger.Error("error al calcular promedio de puntajes", "error", err)
 			return
 		}
 		avgScore = avg
@@ -135,7 +134,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
 			mu.Unlock()
-			s.logger.Error("error al contar usuarios activos", zap.Error(err))
+			s.logger.Error("error al contar usuarios activos", "error", err)
 			return
 		}
 		activeUsers = count
@@ -149,7 +148,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 			mu.Lock()
 			queryErrors = append(queryErrors, err)
 			mu.Unlock()
-			s.logger.Error("error al calcular promedio de progreso", zap.Error(err))
+			s.logger.Error("error al calcular promedio de progreso", "error", err)
 			return
 		}
 		avgProgress = avg
@@ -161,7 +160,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	// Sí hubo algún error en las queries, retornar error
 	if len(queryErrors) > 0 {
 		s.logger.Error("errores al obtener estadísticas globales",
-			zap.Int("total_errors", len(queryErrors)))
+			"total_errors", len(queryErrors))
 		return nil, errors.NewInternalError("error al obtener estadísticas del sistema", queryErrors[0])
 	}
 
@@ -179,12 +178,12 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 	}
 
 	s.logger.Info("estadísticas globales obtenidas exitosamente",
-		zap.Int64("total_materials", totalMaterials),
-		zap.Int64("total_assessments", totalAssessments),
-		zap.Float64("avg_score", avgScore),
-		zap.Int64("active_users", activeUsers),
-		zap.Float64("avg_progress", avgProgress),
-		zap.Int64("elapsed_ms", elapsed))
+		"total_materials", totalMaterials,
+		"total_assessments", totalAssessments,
+		"avg_score", avgScore,
+		"active_users", activeUsers,
+		"avg_progress", avgProgress,
+		"elapsed_ms", elapsed)
 
 	return stats, nil
 }

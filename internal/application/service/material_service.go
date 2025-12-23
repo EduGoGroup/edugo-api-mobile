@@ -12,12 +12,11 @@ import (
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // MaterialService define las operaciones de negocio para materiales
 type MaterialService interface {
-	CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
+	CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error)
 	GetMaterial(ctx context.Context, id string) (*dto.MaterialResponse, error)
 	GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	NotifyUploadComplete(ctx context.Context, materialID string, req dto.UploadCompleteRequest) error
@@ -46,6 +45,7 @@ func (s *materialService) CreateMaterial(
 	ctx context.Context,
 	req dto.CreateMaterialRequest,
 	authorIDStr string,
+	schoolIDStr string,
 ) (*dto.MaterialResponse, error) {
 	// Validar request
 	if err := req.Validate(); err != nil {
@@ -59,9 +59,12 @@ func (s *materialService) CreateMaterial(
 		return nil, errors.NewValidationError("invalid author_id format")
 	}
 
-	// Crear entidad Material manualmente
-	// TODO: Obtener schoolID del contexto de autenticación
-	schoolID := uuid.New() // Temporal
+	// Parsear school ID del contexto de autenticación (JWT)
+	schoolID, err := uuid.Parse(schoolIDStr)
+	if err != nil {
+		s.logger.Warn("invalid school_id format", "school_id", schoolIDStr, "error", err)
+		return nil, errors.NewValidationError("invalid school_id format in authentication context")
+	}
 
 	var description *string
 	if req.Description != "" {
@@ -126,20 +129,20 @@ func (s *materialService) CreateMaterial(
 	eventJSON, err := event.ToJSON()
 	if err != nil {
 		s.logger.Warn("failed to serialize material uploaded event",
-			zap.String("material_id", material.ID.String()),
-			zap.Error(err),
+			"material_id", material.ID.String(),
+			"error", err,
 		)
 	} else {
 		// Publicar evento de forma asíncrona (no bloqueante)
 		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "material.uploaded", eventJSON); err != nil {
 			s.logger.Warn("failed to publish material uploaded event",
-				zap.String("material_id", material.ID.String()),
-				zap.Error(err),
+				"material_id", material.ID.String(),
+				"error", err,
 			)
 		} else {
 			s.logger.Info("material uploaded event published",
-				zap.String("material_id", material.ID.String()),
-				zap.String("event_id", event.EventID),
+				"material_id", material.ID.String(),
+				"event_id", event.EventID,
 			)
 		}
 	}
@@ -231,8 +234,8 @@ func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string
 	materialID, err := valueobject.MaterialIDFromString(id)
 	if err != nil {
 		s.logger.Warn("invalid material_id format",
-			zap.String("material_id", id),
-			zap.Error(err),
+			"material_id", id,
+			"error", err,
 		)
 		return nil, errors.NewValidationError("invalid material_id format")
 	}
@@ -241,8 +244,8 @@ func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string
 	material, versions, err := s.materialRepo.FindByIDWithVersions(ctx, materialID)
 	if err != nil {
 		s.logger.Error("failed to fetch material with versions",
-			zap.String("material_id", materialID.String()),
-			zap.Error(err),
+			"material_id", materialID.String(),
+			"error", err,
 		)
 		return nil, errors.NewDatabaseError("fetch material with versions", err)
 	}
@@ -250,7 +253,7 @@ func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string
 	// Validar que el material existe
 	if material == nil {
 		s.logger.Warn("material not found",
-			zap.String("material_id", materialID.String()),
+			"material_id", materialID.String(),
 		)
 		return nil, errors.NewNotFoundError("material")
 	}
@@ -261,9 +264,9 @@ func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string
 	// Logging contextual con métricas relevantes
 	executionTime := time.Since(startTime)
 	s.logger.Info("material with versions fetched successfully",
-		zap.String("material_id", materialID.String()),
-		zap.Int("version_count", len(versions)),
-		zap.Duration("execution_time", executionTime),
+		"material_id", materialID.String(),
+		"version_count", len(versions),
+		"execution_time", executionTime,
 	)
 
 	return response, nil

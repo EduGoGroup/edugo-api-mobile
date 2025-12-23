@@ -159,6 +159,7 @@ func TestMaterialService_CreateMaterial_Success(t *testing.T) {
 
 	ctx := context.Background()
 	authorID := valueobject.NewUserID()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "Test Material",
 		Description: "Test Description",
@@ -166,13 +167,13 @@ func TestMaterialService_CreateMaterial_Success(t *testing.T) {
 	}
 
 	mockRepo.On("Create", ctx, mock.MatchedBy(func(m *pgentities.Material) bool {
-		return m.Title == req.Title
+		return m.Title == req.Title && m.SchoolID == schoolID
 	})).Return(nil)
 	mockPublisher.On("Publish", ctx, "edugo.materials", "material.uploaded", mock.Anything).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
 	// Act
-	result, err := service.CreateMaterial(ctx, req, authorID.String())
+	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
 
 	// Assert
 	assert.NoError(t, err)
@@ -197,6 +198,7 @@ func TestMaterialService_CreateMaterial_ValidationError_EmptyTitle(t *testing.T)
 
 	ctx := context.Background()
 	authorID := valueobject.NewUserID()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "", // Empty title
 		Description: "Test Description",
@@ -205,7 +207,7 @@ func TestMaterialService_CreateMaterial_ValidationError_EmptyTitle(t *testing.T)
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
 
 	// Act
-	result, err := service.CreateMaterial(ctx, req, authorID.String())
+	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
 
 	// Assert
 	assert.Error(t, err)
@@ -228,6 +230,7 @@ func TestMaterialService_CreateMaterial_ValidationError_TitleTooShort(t *testing
 
 	ctx := context.Background()
 	authorID := valueobject.NewUserID()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "AB", // Too short (min 3)
 		Description: "Test Description",
@@ -236,7 +239,7 @@ func TestMaterialService_CreateMaterial_ValidationError_TitleTooShort(t *testing
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
 
 	// Act
-	result, err := service.CreateMaterial(ctx, req, authorID.String())
+	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
 
 	// Assert
 	assert.Error(t, err)
@@ -254,13 +257,14 @@ func TestMaterialService_CreateMaterial_InvalidAuthorID(t *testing.T) {
 	service := NewMaterialService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "Test Material",
 		Description: "Test Description",
 	}
 
 	// Act
-	result, err := service.CreateMaterial(ctx, req, "invalid-uuid")
+	result, err := service.CreateMaterial(ctx, req, "invalid-uuid", schoolID.String())
 
 	// Assert
 	assert.Error(t, err)
@@ -283,6 +287,7 @@ func TestMaterialService_CreateMaterial_RepositoryError(t *testing.T) {
 
 	ctx := context.Background()
 	authorID := valueobject.NewUserID()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "Test Material",
 		Description: "Test Description",
@@ -295,7 +300,7 @@ func TestMaterialService_CreateMaterial_RepositoryError(t *testing.T) {
 	mockLogger.On("Error", mock.Anything, mock.Anything).Return()
 
 	// Act
-	result, err := service.CreateMaterial(ctx, req, authorID.String())
+	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
 
 	// Assert
 	assert.Error(t, err)
@@ -318,6 +323,7 @@ func TestMaterialService_CreateMaterial_PublishEventFailure(t *testing.T) {
 
 	ctx := context.Background()
 	authorID := valueobject.NewUserID()
+	schoolID := uuid.New()
 	req := dto.CreateMaterialRequest{
 		Title:       "Test Material",
 		Description: "Test Description",
@@ -329,7 +335,7 @@ func TestMaterialService_CreateMaterial_PublishEventFailure(t *testing.T) {
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
 
 	// Act - Should succeed even if event publishing fails
-	result, err := service.CreateMaterial(ctx, req, authorID.String())
+	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
 
 	// Assert
 	assert.NoError(t, err)
