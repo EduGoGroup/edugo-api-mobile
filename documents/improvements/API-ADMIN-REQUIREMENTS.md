@@ -2,8 +2,56 @@
 
 > **Documento para:** Equipo de api-admin  
 > **Creado:** Diciembre 2024  
+> **Actualizado:** Diciembre 2024  
 > **Prioridad:** 🔴 Alta  
 > **Relacionado con:** TODO-001 en edugo-api-mobile
+
+---
+
+## ⚠️ Estado de Implementación
+
+> **Última revisión de código:** 23 Diciembre 2024
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| `school_id` en JWT Claims | ❌ **No implementado** | Falta agregar campo |
+| `school_id` en Login Response | ❌ **No implementado** | Falta incluir en respuesta |
+| Relación User-School en BD | ⚠️ **Por verificar** | Revisar si existe columna |
+
+### Código Actual en api-admin
+
+**Archivo:** `internal/shared/crypto/jwt_manager.go`
+```go
+// Estado ACTUAL - Sin school_id
+type Claims struct {
+    UserID string `json:"user_id"`
+    Email  string `json:"email"`
+    Role   string `json:"role"`
+    jwt.RegisteredClaims
+}
+```
+
+**Archivo:** `internal/auth/dto/auth_dto.go`
+```go
+// Estado ACTUAL - Sin school_id
+type TokenClaims struct {
+    UserID    string    `json:"user_id"`
+    Email     string    `json:"email"`
+    Role      string    `json:"role"`
+    TokenID   string    `json:"jti"`
+    IssuedAt  time.Time `json:"iat"`
+    ExpiresAt time.Time `json:"exp"`
+}
+
+type UserInfo struct {
+    ID        string `json:"id"`
+    Email     string `json:"email"`
+    FirstName string `json:"first_name"`
+    LastName  string `json:"last_name"`
+    FullName  string `json:"full_name"`
+    Role      string `json:"role"`
+}
+```
 
 ---
 
@@ -38,58 +86,87 @@ schoolID := uuid.New() // ← Se genera UUID aleatorio (INCORRECTO)
 
 ### 1. Modificar Claims del JWT
 
-**Archivo probable:** `internal/auth/claims.go` o donde esté definido `CustomClaims`
+**Archivo:** `internal/shared/crypto/jwt_manager.go`
 
 ```go
-// ANTES
-type CustomClaims struct {
-    jwt.RegisteredClaims
+// ANTES (estado actual)
+type Claims struct {
     UserID string `json:"user_id"`
     Email  string `json:"email"`
     Role   string `json:"role"`
+    jwt.RegisteredClaims
 }
 
-// DESPUÉS
-type CustomClaims struct {
-    jwt.RegisteredClaims
+// DESPUÉS (requerido)
+type Claims struct {
     UserID   string `json:"user_id"`
     Email    string `json:"email"`
     Role     string `json:"role"`
     SchoolID string `json:"school_id"` // ← AGREGAR
+    jwt.RegisteredClaims
 }
 ```
 
-### 2. Incluir `school_id` al Generar Token
+### 2. Modificar DTOs de Auth
 
-**Archivo probable:** `internal/service/auth_service.go` o donde se maneje el login
+**Archivo:** `internal/auth/dto/auth_dto.go`
 
 ```go
-func (s *authService) Login(ctx context.Context, email, password string) (*TokenResponse, error) {
+// Agregar SchoolID a TokenClaims
+type TokenClaims struct {
+    UserID    string    `json:"user_id"`
+    Email     string    `json:"email"`
+    Role      string    `json:"role"`
+    SchoolID  string    `json:"school_id"` // ← AGREGAR
+    TokenID   string    `json:"jti"`
+    IssuedAt  time.Time `json:"iat"`
+    ExpiresAt time.Time `json:"exp"`
+}
+
+// Agregar SchoolID a UserInfo
+type UserInfo struct {
+    ID        string `json:"id"`
+    Email     string `json:"email"`
+    FirstName string `json:"first_name"`
+    LastName  string `json:"last_name"`
+    FullName  string `json:"full_name"`
+    Role      string `json:"role"`
+    SchoolID  string `json:"school_id"` // ← AGREGAR
+}
+```
+
+### 3. Incluir `school_id` al Generar Token
+
+**Archivo:** `internal/auth/handler/auth_handler.go` o servicio relacionado
+
+```go
+func (h *AuthHandler) Login(c *gin.Context) {
     // ... validar credenciales ...
 
-    user, err := s.userRepo.FindByEmail(ctx, email)
+    user, err := h.userRepo.FindByEmail(ctx, req.Email)
     if err != nil {
         return nil, err
     }
 
-    claims := &CustomClaims{
-        RegisteredClaims: jwt.RegisteredClaims{
-            Subject:   user.ID.String(),
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.tokenExpiry)),
-            IssuedAt:  jwt.NewNumericDate(time.Now()),
-        },
+    // Obtener school_id del usuario
+    schoolID := user.SchoolID // ← Obtener de la BD
+
+    claims := &crypto.Claims{
         UserID:   user.ID.String(),
         Email:    user.Email,
         Role:     user.Role,
-        SchoolID: user.SchoolID.String(), // ← AGREGAR
+        SchoolID: schoolID.String(), // ← INCLUIR
+        RegisteredClaims: jwt.RegisteredClaims{
+            // ...
+        },
     }
 
-    token, err := s.jwtManager.GenerateToken(claims)
+    token, err := h.jwtManager.GenerateToken(claims)
     // ...
 }
 ```
 
-### 3. Actualizar Endpoint de Validación (si aplica)
+### 4. Actualizar Endpoint de Validación (si aplica)
 
 Si api-admin tiene un endpoint `/auth/validate` que devuelve claims, incluir `school_id`:
 
@@ -134,15 +211,18 @@ Si api-admin tiene un endpoint `/auth/validate` que devuelve claims, incluir `sc
 
 ## 🔄 Pasos de Implementación
 
-### En API-Admin
+### En API-Admin (PENDIENTE)
 
-- [ ] Agregar `SchoolID` a struct `CustomClaims`
+- [ ] Verificar que tabla `users` tenga columna `school_id`
+- [ ] Agregar `SchoolID` a struct `Claims` en `jwt_manager.go`
+- [ ] Agregar `SchoolID` a struct `TokenClaims` en `auth_dto.go`
+- [ ] Agregar `SchoolID` a struct `UserInfo` en `auth_dto.go`
 - [ ] Modificar generación de token en login para incluir `school_id`
 - [ ] Actualizar respuesta de `/auth/validate` (si existe)
 - [ ] Agregar tests unitarios
 - [ ] Documentar en Swagger/OpenAPI
 
-### En edugo-api-mobile (posterior)
+### En edugo-api-mobile (posterior, depende de API-Admin)
 
 - [ ] Actualizar `RemoteAuthMiddleware` para extraer `school_id`
 - [ ] Crear helper `MustGetSchoolID(c *gin.Context)`
@@ -153,11 +233,11 @@ Si api-admin tiene un endpoint `/auth/validate` que devuelve claims, incluir `sc
 
 ## 📅 Timeline Sugerido
 
-| Fase | Descripción | Estimado |
-|------|-------------|----------|
-| 1 | Implementar en api-admin | 2-4 horas |
-| 2 | Actualizar edugo-api-mobile | 1-2 horas |
-| 3 | Testing E2E | 1 hora |
+| Fase | Descripción | Estimado | Estado |
+|------|-------------|----------|--------|
+| 1 | Implementar en api-admin | 2-4 horas | ❌ Pendiente |
+| 2 | Actualizar edugo-api-mobile | 1-2 horas | ⏳ Bloqueado |
+| 3 | Testing E2E | 1 hora | ⏳ Bloqueado |
 
 ---
 
