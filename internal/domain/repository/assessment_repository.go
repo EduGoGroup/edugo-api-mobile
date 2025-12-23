@@ -1,3 +1,14 @@
+// Package repository contiene interfaces de repositorio para MongoDB (LEGACY)
+//
+// IMPORTANTE: Este paquete contiene el sistema LEGACY de assessments basado en MongoDB.
+// El nuevo sistema de assessments usa PostgreSQL y está en internal/domain/repositories/.
+//
+// Estado de migración:
+//   - AssessmentStats: ACTIVO - Usado por StatsService para estadísticas globales
+//   - AssessmentReader: LEGACY - No se usa activamente, pendiente migración
+//   - AssessmentWriter: LEGACY - No se usa activamente, pendiente migración
+//
+// Plan de consolidación: Ver docs/technical/ASSESSMENT_CONSOLIDATION.md
 package repository
 
 import (
@@ -59,6 +70,10 @@ type AssessmentResult struct {
 
 // AssessmentReader define operaciones de lectura para assessments (MongoDB)
 // Principio ISP: Separar lectura de escritura y estadísticas
+//
+// DEPRECATED: Esta interfaz es parte del sistema legacy de MongoDB.
+// El nuevo sistema usa PostgreSQL (ver internal/domain/repositories/assessment_repository.go).
+// Mantener hasta completar migración de datos históricos.
 type AssessmentReader interface {
 	// FindAssessmentByMaterialID busca el assessment de un material
 	FindAssessmentByMaterialID(ctx context.Context, materialID valueobject.MaterialID) (*MaterialAssessment, error)
@@ -71,6 +86,10 @@ type AssessmentReader interface {
 }
 
 // AssessmentWriter define operaciones de escritura para assessments
+//
+// DEPRECATED: Esta interfaz es parte del sistema legacy de MongoDB.
+// El nuevo sistema usa PostgreSQL (ver internal/domain/repositories/assessment_repository.go).
+// Mantener hasta completar migración de datos históricos.
 type AssessmentWriter interface {
 	// SaveAssessment guarda o actualiza un assessment
 	SaveAssessment(ctx context.Context, assessment *MaterialAssessment) error
@@ -84,6 +103,10 @@ type AssessmentWriter interface {
 }
 
 // AssessmentStats define operaciones de estadísticas para assessments
+//
+// ACTIVO: Esta interfaz SÍ se usa activamente por StatsService.
+// Consulta datos de MongoDB para estadísticas globales del sistema.
+// Pendiente: Migrar a PostgreSQL cuando se complete consolidación.
 type AssessmentStats interface {
 	// CountCompletedAssessments cuenta el total de evaluaciones completadas (para estadísticas)
 	CountCompletedAssessments(ctx context.Context) (int64, error)
@@ -94,8 +117,12 @@ type AssessmentStats interface {
 
 // AssessmentRepository agrega todas las capacidades de assessments (MongoDB)
 // Las implementaciones deben cumplir con todas las interfaces segregadas
+//
+// LEGACY: Este repositorio compuesto es parte del sistema legacy.
+// Solo AssessmentStats se usa activamente. Reader y Writer están deprecated.
+// Ver docs/technical/ASSESSMENT_CONSOLIDATION.md para plan de migración.
 type AssessmentRepository interface {
-	AssessmentReader
-	AssessmentWriter
-	AssessmentStats
+	AssessmentReader // DEPRECATED
+	AssessmentWriter // DEPRECATED
+	AssessmentStats  // ACTIVO
 }

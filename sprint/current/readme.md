@@ -1,9 +1,9 @@
 # Sprint: Mejoras y Refactorizaciones - edugo-api-mobile
 
 > **Fecha de inicio:** 2024-12-23  
-> **Estado:** ✅ Fase 2 Completada - Pendiente PR  
+> **Estado:** 🔄 Fase 5 En Progreso  
 > **Branch base:** `dev`  
-> **Branch activo:** `feature/auth-todos`
+> **Branch activo:** `feature/legacy-cleanup`
 
 ---
 
@@ -180,33 +180,44 @@ golangci-lint run
 
 ---
 
-## Fase 4: Refactorizaciones de Infraestructura
+## Fase 4: Refactorizaciones de Infraestructura ✅
 
 **Branch:** `feature/infra-refactor`  
 **Prioridad:** 🟡 Media  
-**Duración estimada:** 4-6 horas
+**Duración estimada:** 4-6 horas  
+**Estado:** ✅ COMPLETADA (PR #92 merged)
 
 ### Objetivo
 Mejorar la resiliencia y robustez de la infraestructura.
 
 ### Tareas
 
-- [ ] **REF-004**: Implementar Circuit Breaker para servicios externos
-  - Crear `internal/infrastructure/messaging/resilient_publisher.go`
-  - Usar `sony/gobreaker` (ya en go.mod)
-  - Integrar en bootstrap
-  - **Commit:** `feat(infra): implementar circuit breaker para RabbitMQ publisher`
+- [x] **REF-004**: Implementar Circuit Breaker para servicios externos ✅ (23 Dic 2024)
+  - ✅ Creado `internal/infrastructure/messaging/rabbitmq/resilient_publisher.go`
+  - ✅ Usa `sony/gobreaker` con configuración flexible
+  - ✅ Integrado en bootstrap con config desde YAML
+  - ✅ Tests en `resilient_publisher_test.go`
+  - **Commit:** `abcd762` - `feat(infra): implementar circuit breaker para RabbitMQ publisher`
 
-- [ ] **REF-006**: Implementar Healthcheck detallado
-  - Mejorar `HealthHandler` con checks individuales
-  - Agregar parámetro `?detail=1` para info detallada
-  - Incluir latencias y estados de cada servicio
-  - **Commit:** `feat(health): implementar healthcheck detallado con checks individuales`
+- [x] **REF-006**: Implementar Healthcheck detallado ✅ (23 Dic 2024)
+  - ✅ `HealthHandler` mejorado con checks individuales
+  - ✅ Parámetro `?detail=1` para info detallada
+  - ✅ Latencias y estados de cada servicio (PostgreSQL, MongoDB, RabbitMQ, S3)
+  - ✅ Tests en `health_handler_test.go`
+  - **Commit:** `715e98f` - `feat(health): implementar healthcheck detallado`
 
-- [ ] **TODO-008**: Implementar lógica de deshabilitación de recursos
-  - Archivo: `internal/bootstrap/config.go:96-97`
-  - Completar `WithDisabledResource` para deshabilitar recursos
-  - **Commit:** `feat(bootstrap): implementar deshabilitación completa de recursos`
+- [x] **TODO-008**: Implementar lógica de deshabilitación de recursos ✅ (23 Dic 2024)
+  - ✅ `WithDisabledResource()` implementado en bootstrap
+  - ✅ `IsResourceDisabled()` helper agregado
+  - ✅ Integrado en `adaptSharedResources()`
+  - ✅ Tests en `config_test.go`
+  - **Commit:** `75a3a3c` - `feat(bootstrap): implementar deshabilitación de recursos`
+
+- [x] **PR Review Fixes** ✅ (23 Dic 2024)
+  - ✅ Refactorizado uso de `DefaultResilientPublisherConfig()`
+  - ✅ Agregado timeout a `checkPostgres`
+  - ✅ Actualizada documentación Swagger
+  - **Commit:** `3aa2b3e` - `fix: corregir issues reportados en PR review`
 
 ### Validación
 ```bash
@@ -393,7 +404,13 @@ Fase 6 (Observabilidad)
 | 2024-12-23 | **TODO-003 completado** - Bypass admin en Progress Handler | Claude Code |
 | 2024-12-23 | **Middleware shortcuts** - RequireAdmin, RequireTeacher, etc. | Claude Code |
 | 2024-12-23 | **Router actualizado** - Middleware en endpoints sensibles | Claude Code |
-| 2024-12-23 | **✅ Fase 2 COMPLETADA** - 3/3 tareas | Claude Code |
+| 2024-12-23 | **✅ Fase 2 COMPLETADA** - 3/3 tareas, PR merged | Claude Code |
+| 2024-12-23 | **✅ Fase 3 COMPLETADA** - TODOs de funcionalidad, PR merged | Claude Code |
+| 2024-12-23 | **REF-004** - Circuit Breaker para RabbitMQ | Claude Code |
+| 2024-12-23 | **REF-006** - Healthcheck detallado con latencias | Claude Code |
+| 2024-12-23 | **TODO-008** - Deshabilitación de recursos en bootstrap | Claude Code |
+| 2024-12-23 | **✅ Fase 4 COMPLETADA** - 3/3 tareas + fixes, PR #92 merged | Claude Code |
+| 2024-12-23 | **Inicio Fase 5** - Limpieza de código legacy | Claude Code |
 
 ---
 

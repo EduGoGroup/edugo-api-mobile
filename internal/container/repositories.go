@@ -25,7 +25,7 @@ type RepositoryContainer struct {
 
 	// MongoDB Repositories
 	SummaryRepository      repository.SummaryRepository
-	AssessmentRepository   repository.AssessmentRepository // Legacy
+	AssessmentRepository   repository.AssessmentRepository // LEGACY: Solo para stats (MongoDB)
 	AssessmentDocumentRepo mongoRepo.AssessmentDocumentRepository
 }
 

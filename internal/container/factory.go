@@ -115,6 +115,11 @@ func (f *RepositoryFactory) CreateSummaryRepository() repository.SummaryReposito
 	return mongoRepo.NewMongoSummaryRepository(f.infra.MongoDB)
 }
 
+// CreateLegacyAssessmentRepository crea el repositorio legacy de assessments (MongoDB)
+//
+// LEGACY: Este repositorio solo se usa para estadísticas globales (StatsService).
+// Las operaciones de lectura/escritura están deprecated.
+// Ver docs/technical/ASSESSMENT_CONSOLIDATION.md para plan de migración.
 func (f *RepositoryFactory) CreateLegacyAssessmentRepository() repository.AssessmentRepository {
 	if f.config.Development.UseMockRepositories {
 		return mockMongo.NewMockLegacyAssessmentRepository()
