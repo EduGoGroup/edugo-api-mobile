@@ -11,7 +11,6 @@ type ServiceContainer struct {
 	MaterialService          service.MaterialService
 	ProgressService          service.ProgressService
 	SummaryService           service.SummaryService
-	AssessmentService        service.AssessmentService
 	AssessmentAttemptService service.AssessmentAttemptService // Sprint-04
 	StatsService             service.StatsService
 }
@@ -33,21 +32,16 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 		),
 
 		// ProgressService gestiona el progreso de lectura de estudiantes
+		// Publica evento material.completed cuando progress = 100%
 		ProgressService: service.NewProgressService(
 			repos.ProgressRepository,
+			infra.MessagePublisher,
 			infra.Logger,
 		),
 
 		// SummaryService gestiona resúmenes de materiales (MongoDB)
 		SummaryService: service.NewSummaryService(
 			repos.SummaryRepository,
-			infra.Logger,
-		),
-
-		// AssessmentService gestiona evaluaciones y scoring con Strategy Pattern
-		AssessmentService: service.NewAssessmentService(
-			repos.AssessmentRepository,
-			infra.MessagePublisher,
 			infra.Logger,
 		),
 
@@ -64,12 +58,12 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 
 		// StatsService gestiona estadísticas globales y por material
 		// Usa queries paralelas con goroutines para optimización
-		// ISP: Solo necesita interfaces Stats segregadas
+		// ISP: Solo necesita interfaces Stats segregadas (todas PostgreSQL)
 		StatsService: service.NewStatsService(
 			infra.Logger,
-			repos.MaterialRepository,   // También es MaterialStats
-			repos.AssessmentRepository, // También es AssessmentStats
-			repos.ProgressRepository,   // También es ProgressStats
+			repos.MaterialRepository, // MaterialStats (PostgreSQL)
+			repos.AttemptRepo,        // AssessmentStats (PostgreSQL) - migrado de MongoDB
+			repos.ProgressRepository, // ProgressStats (PostgreSQL)
 		),
 	}
 }

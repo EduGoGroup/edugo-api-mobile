@@ -38,6 +38,26 @@ func NewMaterialUploadedEvent(payload MaterialUploadedPayload) Event {
 	}
 }
 
+// MaterialCompletedPayload representa el payload del evento material.completed
+// Se publica cuando un usuario completa un material (progress = 100%)
+type MaterialCompletedPayload struct {
+	MaterialID  string    `json:"material_id"`
+	SchoolID    string    `json:"school_id"`
+	UserID      string    `json:"user_id"`
+	CompletedAt time.Time `json:"completed_at"`
+}
+
+// NewMaterialCompletedEvent crea un nuevo evento material.completed con envelope estándar
+func NewMaterialCompletedEvent(payload MaterialCompletedPayload) Event {
+	return Event{
+		EventID:      uuid.New().String(),
+		EventType:    "material.completed",
+		EventVersion: "1.0",
+		Timestamp:    time.Now().UTC(),
+		Payload:      payload,
+	}
+}
+
 // AssessmentGeneratedPayload representa el payload del evento assessment.generated
 type AssessmentGeneratedPayload struct {
 	MaterialID       string `json:"material_id"`

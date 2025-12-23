@@ -47,17 +47,22 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Insert() {
 	ctx := context.Background()
 
 	// Arrange
+	title := "Test Assessment"
+	totalQuestions := 5
+	passThreshold := 70
 	maxAttempts := 3
 	timeLimit := 60
 	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
-		Title:            "Test Assessment",
-		TotalQuestions:   5,
-		PassThreshold:    70,
+		QuestionsCount:   5,
+		Title:            &title,
+		TotalQuestions:   &totalQuestions,
+		PassThreshold:    &passThreshold,
 		MaxAttempts:      &maxAttempts,
 		TimeLimitMinutes: &timeLimit,
+		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}
@@ -84,16 +89,21 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Update() {
 	ctx := context.Background()
 
 	// Arrange - Insertar assessment inicial
+	title := "Original Title"
+	totalQuestions := 5
+	passThreshold := 70
 	maxAttempts := 3
 	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
-		Title:            "Original Title",
-		TotalQuestions:   5,
-		PassThreshold:    70,
+		QuestionsCount:   5,
+		Title:            &title,
+		TotalQuestions:   &totalQuestions,
+		PassThreshold:    &passThreshold,
 		MaxAttempts:      &maxAttempts,
 		TimeLimitMinutes: nil,
+		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}
@@ -102,9 +112,11 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Update() {
 	s.Require().NoError(err)
 
 	// Act - Actualizar el mismo assessment (UPSERT)
-	assessment.Title = "Updated Title"
-	assessment.TotalQuestions = 10
+	updatedTitle := "Updated Title"
+	updatedTotal := 10
 	newTimeLimit := 90
+	assessment.Title = &updatedTitle
+	assessment.TotalQuestions = &updatedTotal
 	assessment.TimeLimitMinutes = &newTimeLimit
 	assessment.UpdatedAt = time.Now().UTC()
 
@@ -117,8 +129,8 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_Update() {
 	found, err := s.repo.FindByID(ctx, assessment.ID)
 	s.NoError(err)
 	s.NotNil(found)
-	s.Equal("Updated Title", found.Title)
-	s.Equal(10, found.TotalQuestions)
+	s.Equal("Updated Title", *found.Title)
+	s.Equal(10, *found.TotalQuestions)
 	s.Equal(90, *found.TimeLimitMinutes)
 }
 
@@ -127,15 +139,20 @@ func (s *AssessmentRepositoryIntegrationSuite) TestSave_WithNullValues() {
 	ctx := context.Background()
 
 	// Arrange - Assessment sin MaxAttempts ni TimeLimitMinutes
+	title := "Assessment sin límites"
+	totalQuestions := 5
+	passThreshold := 70
 	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
-		Title:            "Assessment sin límites",
-		TotalQuestions:   5,
-		PassThreshold:    70,
+		QuestionsCount:   5,
+		Title:            &title,
+		TotalQuestions:   &totalQuestions,
+		PassThreshold:    &passThreshold,
 		MaxAttempts:      nil,
 		TimeLimitMinutes: nil,
+		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}
@@ -172,15 +189,20 @@ func (s *AssessmentRepositoryIntegrationSuite) TestFindByMaterialID_Success() {
 
 	// Arrange - Insertar assessment
 	materialID := uuid.New()
+	title := "Test Assessment"
+	totalQuestions := 5
+	passThreshold := 70
 	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       materialID,
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
-		Title:            "Test Assessment",
-		TotalQuestions:   5,
-		PassThreshold:    70,
+		QuestionsCount:   5,
+		Title:            &title,
+		TotalQuestions:   &totalQuestions,
+		PassThreshold:    &passThreshold,
 		MaxAttempts:      nil,
 		TimeLimitMinutes: nil,
+		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}
@@ -210,20 +232,25 @@ func (s *AssessmentRepositoryIntegrationSuite) TestFindByMaterialID_NotFound() {
 	s.Nil(found)
 }
 
-// TestDelete_Success valida que Delete elimina correctamente
+// TestDelete_Success válida que Delete elimina correctamente
 func (s *AssessmentRepositoryIntegrationSuite) TestDelete_Success() {
 	ctx := context.Background()
 
 	// Arrange - Insertar assessment
+	title := "To Delete"
+	totalQuestions := 5
+	passThreshold := 70
 	assessment := &pgentities.Assessment{
 		ID:               uuid.New(),
 		MaterialID:       uuid.New(),
 		MongoDocumentID:  "507f1f77bcf86cd799439011",
-		Title:            "To Delete",
-		TotalQuestions:   5,
-		PassThreshold:    70,
+		QuestionsCount:   5,
+		Title:            &title,
+		TotalQuestions:   &totalQuestions,
+		PassThreshold:    &passThreshold,
 		MaxAttempts:      nil,
 		TimeLimitMinutes: nil,
+		Status:           "active",
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}

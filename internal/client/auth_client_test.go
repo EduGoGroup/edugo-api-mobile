@@ -230,7 +230,7 @@ func TestAuthClient_Cache_Local_HitAndMiss(t *testing.T) {
 		t.Fatalf("Primera validación debería ser exitosa")
 	}
 
-	// Segunda llamada con mismo token - debería usar cache
+	// Segunda llamada con mismo token - debería usar caché
 	info2, _ := client.ValidateToken(context.Background(), token)
 	if !info2.Valid {
 		t.Error("Segunda validación (cache hit) debería ser exitosa")
@@ -253,7 +253,7 @@ func TestAuthClient_Cache_Disabled(t *testing.T) {
 
 	token := generateTestToken(t, "no-cache-user", "nocache@test.com", enum.SystemRoleStudent, 15*time.Minute)
 
-	// Ambas llamadas deberían funcionar sin cache
+	// Ambas llamadas deberían funcionar sin caché
 	info1, _ := client.ValidateToken(context.Background(), token)
 	info2, _ := client.ValidateToken(context.Background(), token)
 

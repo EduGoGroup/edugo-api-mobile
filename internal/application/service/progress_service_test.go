@@ -89,16 +89,21 @@ func (m *MockProgressLogger) With(keysAndValues ...interface{}) logger.Logger {
 	return m
 }
 
+// MockPublisher ya está definido en material_service_test.go
+// Se reutiliza para evitar duplicación
+
 // TestUpdateProgress_Success_ValidProgress prueba actualización exitosa con progreso válido
 func TestUpdateProgress_Success_ValidProgress(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 75
 	lastPage := 10
 
@@ -124,7 +129,7 @@ func TestUpdateProgress_Success_ValidProgress(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
@@ -136,12 +141,14 @@ func TestUpdateProgress_Success_ValidProgress(t *testing.T) {
 func TestUpdateProgress_Success_CompletedMaterial(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 100
 	lastPage := 50
 
@@ -165,15 +172,18 @@ func TestUpdateProgress_Success_CompletedMaterial(t *testing.T) {
 	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&completedProgress, nil)
 	mockLogger.On("Info", "material completed by user", mock.Anything).Return()
+	mockPublisher.On("Publish", ctx, "edugo.events", "material.completed", mock.Anything).Return(nil)
+	mockLogger.On("Info", "material.completed event published", mock.Anything).Return()
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, "completed", completedProgress.Status)
 	mockRepo.AssertExpectations(t)
+	mockPublisher.AssertExpectations(t)
 	mockLogger.AssertExpectations(t)
 }
 
@@ -181,12 +191,14 @@ func TestUpdateProgress_Success_CompletedMaterial(t *testing.T) {
 func TestUpdateProgress_Error_InvalidPercentageNegative(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := -10
 	lastPage := 5
 
@@ -195,7 +207,7 @@ func TestUpdateProgress_Error_InvalidPercentageNegative(t *testing.T) {
 	mockLogger.On("Warn", "invalid percentage value", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -208,12 +220,14 @@ func TestUpdateProgress_Error_InvalidPercentageNegative(t *testing.T) {
 func TestUpdateProgress_Error_InvalidPercentageOver100(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 150
 	lastPage := 5
 
@@ -222,7 +236,7 @@ func TestUpdateProgress_Error_InvalidPercentageOver100(t *testing.T) {
 	mockLogger.On("Warn", "invalid percentage value", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -235,12 +249,14 @@ func TestUpdateProgress_Error_InvalidPercentageOver100(t *testing.T) {
 func TestUpdateProgress_Error_InvalidMaterialID(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "invalid-uuid"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 5
 
@@ -249,7 +265,7 @@ func TestUpdateProgress_Error_InvalidMaterialID(t *testing.T) {
 	mockLogger.On("Error", "invalid material_id", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -262,12 +278,14 @@ func TestUpdateProgress_Error_InvalidMaterialID(t *testing.T) {
 func TestUpdateProgress_Error_InvalidUserID(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "invalid-uuid"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 5
 
@@ -276,7 +294,7 @@ func TestUpdateProgress_Error_InvalidUserID(t *testing.T) {
 	mockLogger.On("Error", "invalid user_id", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -289,12 +307,14 @@ func TestUpdateProgress_Error_InvalidUserID(t *testing.T) {
 func TestUpdateProgress_Error_DatabaseError(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 75
 	lastPage := 10
 
@@ -305,7 +325,7 @@ func TestUpdateProgress_Error_DatabaseError(t *testing.T) {
 	mockLogger.On("Error", "failed to upsert progress", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -318,12 +338,14 @@ func TestUpdateProgress_Error_DatabaseError(t *testing.T) {
 func TestUpdateProgress_Idempotency_MultipleCallsSameProgress(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 5
 
@@ -349,9 +371,9 @@ func TestUpdateProgress_Idempotency_MultipleCallsSameProgress(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return().Times(3)
 
 	// Act - Llamar UpdateProgress 3 veces con mismos parámetros
-	err1 := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
-	err2 := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
-	err3 := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err1 := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
+	err2 := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
+	err3 := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -367,12 +389,14 @@ func TestUpdateProgress_Idempotency_MultipleCallsSameProgress(t *testing.T) {
 func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 
 	percentages := []int{25, 50, 75, 100}
 	matID, _ := valueobject.MaterialIDFromString(materialID)
@@ -406,6 +430,8 @@ func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 
 		if p == 100 {
 			mockLogger.On("Info", "material completed by user", mock.Anything).Return().Once()
+			mockPublisher.On("Publish", ctx, "edugo.events", "material.completed", mock.Anything).Return(nil).Once()
+			mockLogger.On("Info", "material.completed event published", mock.Anything).Return().Once()
 		}
 
 		mockLogger.On("Info", "progress updated successfully", mock.Anything).Return().Once()
@@ -413,12 +439,13 @@ func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 
 	// Act - Actualizar progreso incrementalmente
 	for _, p := range percentages {
-		err := service.UpdateProgress(ctx, materialID, userID, p, p/5)
+		err := service.UpdateProgress(ctx, materialID, userID, schoolID, p, p/5)
 		assert.NoError(t, err)
 	}
 
 	// Assert
 	mockRepo.AssertExpectations(t)
+	mockPublisher.AssertExpectations(t)
 	mockLogger.AssertExpectations(t)
 	// Verificar que Upsert fue llamado exactamente 4 veces
 	mockRepo.AssertNumberOfCalls(t, "Upsert", 4)
@@ -428,12 +455,14 @@ func TestUpdateProgress_Idempotency_DifferentPercentages(t *testing.T) {
 func TestUpdateProgress_EdgeCase_ZeroPercentage(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 0
 	lastPage := 0
 
@@ -459,7 +488,7 @@ func TestUpdateProgress_EdgeCase_ZeroPercentage(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
@@ -472,12 +501,14 @@ func TestUpdateProgress_EdgeCase_ZeroPercentage(t *testing.T) {
 func TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 100
 	lastPage := 100
 
@@ -501,16 +532,19 @@ func TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage(t *testing.T) {
 	mockRepo.On("Upsert", ctx, mock.Anything).
 		Return(&completedProgress, nil)
 	mockLogger.On("Info", "material completed by user", mock.Anything).Return()
+	mockPublisher.On("Publish", ctx, "edugo.events", "material.completed", mock.Anything).Return(nil)
+	mockLogger.On("Info", "material.completed event published", mock.Anything).Return()
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, 100, completedProgress.Percentage)
 	assert.Equal(t, "completed", completedProgress.Status)
 	mockRepo.AssertExpectations(t)
+	mockPublisher.AssertExpectations(t)
 	mockLogger.AssertExpectations(t)
 }
 
@@ -518,12 +552,14 @@ func TestUpdateProgress_EdgeCase_ExactlyOneHundredPercentage(t *testing.T) {
 func TestUpdateProgress_EdgeCase_BoundaryPercentageOne(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 1
 	lastPage := 1
 
@@ -549,7 +585,7 @@ func TestUpdateProgress_EdgeCase_BoundaryPercentageOne(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
@@ -562,12 +598,14 @@ func TestUpdateProgress_EdgeCase_BoundaryPercentageOne(t *testing.T) {
 func TestUpdateProgress_EdgeCase_BoundaryPercentageNinetyNine(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 99
 	lastPage := 99
 
@@ -593,7 +631,7 @@ func TestUpdateProgress_EdgeCase_BoundaryPercentageNinetyNine(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)
@@ -610,12 +648,14 @@ func TestUpdateProgress_EdgeCase_NegativeLastPage(t *testing.T) {
 
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := -1 // Valor negativo
 
@@ -628,7 +668,7 @@ func TestUpdateProgress_EdgeCase_NegativeLastPage(t *testing.T) {
 	mockLogger.On("Error", "failed to update progress entity", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -640,12 +680,14 @@ func TestUpdateProgress_EdgeCase_NegativeLastPage(t *testing.T) {
 func TestUpdateProgress_EdgeCase_EmptyMaterialID(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := ""
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 5
 
@@ -654,7 +696,7 @@ func TestUpdateProgress_EdgeCase_EmptyMaterialID(t *testing.T) {
 	mockLogger.On("Error", "invalid material_id", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -667,12 +709,14 @@ func TestUpdateProgress_EdgeCase_EmptyMaterialID(t *testing.T) {
 func TestUpdateProgress_EdgeCase_EmptyUserID(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := ""
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 5
 
@@ -681,7 +725,7 @@ func TestUpdateProgress_EdgeCase_EmptyUserID(t *testing.T) {
 	mockLogger.On("Error", "invalid user_id", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.Error(t, err)
@@ -694,12 +738,14 @@ func TestUpdateProgress_EdgeCase_EmptyUserID(t *testing.T) {
 func TestUpdateProgress_EdgeCase_VeryLargeLastPage(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockProgressRepository)
+	mockPublisher := new(MockPublisher)
 	mockLogger := new(MockProgressLogger)
-	service := NewProgressService(mockRepo, mockLogger)
+	service := NewProgressService(mockRepo, mockPublisher, mockLogger)
 
 	ctx := context.Background()
 	materialID := "550e8400-e29b-41d4-a716-446655440000"
 	userID := "660e8400-e29b-41d4-a716-446655440001"
+	schoolID := "770e8400-e29b-41d4-a716-446655440002"
 	percentage := 50
 	lastPage := 999999 // Valor muy grande pero válido
 
@@ -725,7 +771,7 @@ func TestUpdateProgress_EdgeCase_VeryLargeLastPage(t *testing.T) {
 	mockLogger.On("Info", "progress updated successfully", mock.Anything).Return()
 
 	// Act
-	err := service.UpdateProgress(ctx, materialID, userID, percentage, lastPage)
+	err := service.UpdateProgress(ctx, materialID, userID, schoolID, percentage, lastPage)
 
 	// Assert
 	assert.NoError(t, err)

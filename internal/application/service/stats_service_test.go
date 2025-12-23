@@ -10,6 +10,21 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+// MockAssessmentRepository es un mock del repositorio de assessments para stats
+type MockAssessmentRepository struct {
+	mock.Mock
+}
+
+func (m *MockAssessmentRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockAssessmentRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(float64), args.Error(1)
+}
+
 // TestGetGlobalStats_Success valida que se obtienen estadísticas correctamente cuando todas las queries son exitosas
 func TestGetGlobalStats_Success(t *testing.T) {
 	// Arrange

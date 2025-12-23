@@ -5,6 +5,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // SetupRouter configura todas las rutas de la aplicación con sus respectivos handlers y middleware.
@@ -14,15 +15,23 @@ import (
 // a api-admin como parte de la centralización de autenticación (Sprint 3).
 // Este servicio valida tokens contra api-admin usando RemoteAuthMiddleware.
 func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *gin.Engine {
-	r := gin.Default()
+	r := gin.New() // Usar gin.New() en lugar de Default() para control total de middleware
 
-	// Middleware global
-	r.Use(gin.Recovery())
-	r.Use(middleware.CORS())
-	r.Use(middleware.ClientInfoMiddleware()) // Extraer IP y User-Agent del cliente
+	// Middleware global (orden importante)
+	r.Use(gin.Recovery())                   // 1. Recuperar de panics
+	r.Use(middleware.RequestIDMiddleware()) // 2. Generar/propagar request ID para tracing
+	r.Use(middleware.MetricsMiddlewareWithConfig(middleware.MetricsConfig{
+		SkipPaths: []string{"/health", "/metrics"}, // No registrar métricas de endpoints de infraestructura
+	})) // 3. Métricas Prometheus
+	r.Use(middleware.LoggingMiddlewareWithConfig(c.Infrastructure.Logger, middleware.LoggingConfig{
+		SkipPaths: []string{"/health", "/metrics"}, // No loguear endpoints de infraestructura
+	})) // 4. Logging estructurado con request_id
+	r.Use(middleware.CORS())                 // 5. CORS headers
+	r.Use(middleware.ClientInfoMiddleware()) // 6. Extraer IP y User-Agent del cliente
 
-	// Health check (público, sin versión)
+	// Endpoints de infraestructura (públicos, sin versión)
 	r.GET("/health", healthHandler.Check)
+	r.GET("/metrics", gin.WrapH(promhttp.Handler())) // Prometheus metrics
 
 	// Swagger UI (público) con detección dinámica de host
 	SetupSwaggerUI(r)
@@ -68,31 +77,31 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 	materials := rg.Group("/materials")
 	{
-		// CRUD básico de materiales
+		// Lectura de materiales (cualquier usuario autenticado)
 		materials.GET("", c.Handlers.MaterialHandler.ListMaterials)
-		materials.POST("", c.Handlers.MaterialHandler.CreateMaterial)
 		materials.GET("/:id", c.Handlers.MaterialHandler.GetMaterial)
-		materials.POST("/:id/upload-complete", c.Handlers.MaterialHandler.NotifyUploadComplete)
-
-		// Historial de versiones de materiales
 		materials.GET("/:id/versions", c.Handlers.MaterialHandler.GetMaterialWithVersions)
-
-		// URLs presignadas para S3
-		materials.POST("/:id/upload-url", c.Handlers.MaterialHandler.GenerateUploadURL)
 		materials.GET("/:id/download-url", c.Handlers.MaterialHandler.GenerateDownloadURL)
-
-		// Resúmenes de materiales
 		materials.GET("/:id/summary", c.Handlers.SummaryHandler.GetSummary)
-
-		// Evaluaciones (assessments) - Sprint-04
 		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetMaterialAssessment)
-		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
-
-		// Progreso del estudiante
-		materials.PATCH("/:id/progress", c.Handlers.ProgressHandler.UpdateProgress)
-
-		// Estadísticas de materiales
 		materials.GET("/:id/stats", c.Handlers.StatsHandler.GetMaterialStats)
+
+		// Creación/modificación de materiales (solo teacher, admin, super_admin)
+		materials.POST("",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.CreateMaterial,
+		)
+		materials.POST("/:id/upload-complete",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.NotifyUploadComplete,
+		)
+		materials.POST("/:id/upload-url",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.GenerateUploadURL,
+		)
+
+		// Intentos de evaluación (cualquier usuario autenticado)
+		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
 	}
 }
 
@@ -108,12 +117,6 @@ func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
 	users := rg.Group("/users")
 	{
 		users.GET("/me/attempts", c.Handlers.AssessmentHandler.GetUserAttemptHistory)
-	}
-
-	// Submit de evaluación con cálculo automático de score y feedback detallado (legacy)
-	assessments := rg.Group("/assessments")
-	{
-		assessments.POST("/:id/submit", c.Handlers.AssessmentHandler.SubmitAssessment)
 	}
 }
 
@@ -131,8 +134,11 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	stats := rg.Group("/stats")
 	{
-		// Estadísticas globales del sistema (Fase 6)
-		// TODO: Agregar middleware de autorización para solo admins
-		stats.GET("/global", c.Handlers.StatsHandler.GetGlobalStats)
+		// Estadísticas globales del sistema
+		// Solo accesible para administradores (admin, super_admin)
+		stats.GET("/global",
+			middleware.RequireAdmin(),
+			c.Handlers.StatsHandler.GetGlobalStats,
+		)
 	}
 }

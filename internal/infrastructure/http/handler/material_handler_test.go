@@ -292,11 +292,14 @@ func TestMaterialHandler_CreateMaterial_Success(t *testing.T) {
 	// Arrange
 	expectedID := "test-material-123"
 	expectedTitle := "Test Material"
+	testUserID := "user-123"
+	testSchoolID := "550e8400-e29b-41d4-a716-446655440000" // UUID válido
 
 	mockService := &MockMaterialService{
-		CreateMaterialFunc: func(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error) {
+		CreateMaterialFunc: func(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error) {
 			assert.Equal(t, expectedTitle, req.Title)
-			assert.Equal(t, "user-123", authorID)
+			assert.Equal(t, testUserID, authorID)
+			assert.Equal(t, testSchoolID, schoolID)
 
 			return &dto.MaterialResponse{
 				ID:    expectedID,
@@ -310,7 +313,7 @@ func TestMaterialHandler_CreateMaterial_Success(t *testing.T) {
 	handler := NewMaterialHandler(mockService, mockS3, logger)
 
 	router := SetupTestRouter()
-	router.POST("/materials", MockUserIDMiddleware("user-123"), handler.CreateMaterial)
+	router.POST("/materials", MockAuthMiddleware(testUserID, testSchoolID), handler.CreateMaterial)
 
 	reqBody := fmt.Sprintf(`{"title":"%s","description":"Test description"}`, expectedTitle)
 
@@ -340,7 +343,7 @@ func TestMaterialHandler_CreateMaterial_InvalidRequest(t *testing.T) {
 	handler := NewMaterialHandler(mockService, mockS3, logger)
 
 	router := SetupTestRouter()
-	router.POST("/materials", MockUserIDMiddleware("user-123"), handler.CreateMaterial)
+	router.POST("/materials", MockAuthMiddleware("user-123", "550e8400-e29b-41d4-a716-446655440000"), handler.CreateMaterial)
 
 	testCases := []struct {
 		name string

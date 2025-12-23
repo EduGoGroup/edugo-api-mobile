@@ -18,7 +18,7 @@ import (
 // BenchmarkMaterialHandler_CreateMaterial mide el rendimiento de creación de materiales
 func BenchmarkMaterialHandler_CreateMaterial(b *testing.B) {
 	mockService := &MockMaterialService{
-		CreateMaterialFunc: func(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error) {
+		CreateMaterialFunc: func(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error) {
 			time.Sleep(15 * time.Millisecond) // Simular DB insert
 			return &dto.MaterialResponse{
 				ID:    "material-benchmark",
@@ -32,7 +32,7 @@ func BenchmarkMaterialHandler_CreateMaterial(b *testing.B) {
 	handler := NewMaterialHandler(mockService, mockS3, logger)
 
 	router := SetupTestRouter()
-	router.POST("/materials", MockUserIDMiddleware("user-123"), handler.CreateMaterial)
+	router.POST("/materials", MockAuthMiddleware("user-123", "550e8400-e29b-41d4-a716-446655440000"), handler.CreateMaterial)
 
 	reqBody := `{"title":"Benchmark Material","description":"Testing performance"}`
 

@@ -22,3 +22,13 @@ type AssessmentRepository interface {
 	// Delete elimina una evaluación
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// AssessmentStats define operaciones de estadísticas para assessments (PostgreSQL)
+// Usado por StatsService para obtener métricas globales del sistema
+type AssessmentStats interface {
+	// CountCompletedAssessments cuenta el total de evaluaciones completadas
+	CountCompletedAssessments(ctx context.Context) (int64, error)
+
+	// CalculateAverageScore calcula el promedio de puntajes de evaluaciones completadas
+	CalculateAverageScore(ctx context.Context) (float64, error)
+}

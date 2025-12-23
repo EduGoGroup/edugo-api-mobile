@@ -83,6 +83,12 @@ func (r *mockAttemptRepository) Save(ctx context.Context, attempt *pgentities.As
 func (r *mockAttemptRepository) CountByStudentAndAssessment(ctx context.Context, studentID, assessmentID uuid.UUID) (int, error) {
 	return 0, nil
 }
+func (r *mockAttemptRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
+	return 100, nil // Mock: retorna valor de ejemplo
+}
+func (r *mockAttemptRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
+	return 75.5, nil // Mock: retorna valor de ejemplo
+}
 
 // Answer Repository Stub
 type mockAnswerRepository struct{}

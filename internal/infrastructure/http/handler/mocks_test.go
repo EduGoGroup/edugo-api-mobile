@@ -12,16 +12,16 @@ import (
 
 // MockMaterialService para tests de material_handler
 type MockMaterialService struct {
-	CreateMaterialFunc          func(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
+	CreateMaterialFunc          func(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error)
 	GetMaterialFunc             func(ctx context.Context, id string) (*dto.MaterialResponse, error)
 	GetMaterialWithVersionsFunc func(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	ListMaterialsFunc           func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
 	NotifyUploadCompleteFunc    func(ctx context.Context, id string, req dto.UploadCompleteRequest) error
 }
 
-func (m *MockMaterialService) CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error) {
+func (m *MockMaterialService) CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error) {
 	if m.CreateMaterialFunc != nil {
-		return m.CreateMaterialFunc(ctx, req, authorID)
+		return m.CreateMaterialFunc(ctx, req, authorID, schoolID)
 	}
 	return &dto.MaterialResponse{ID: "test-id"}, nil
 }
@@ -114,12 +114,12 @@ func (m *MockAssessmentService) CalculateScore(ctx context.Context, assessmentID
 
 // MockProgressService para tests de progress_handler
 type MockProgressService struct {
-	UpdateProgressFunc func(ctx context.Context, materialID, userID string, percentage, lastPage int) error
+	UpdateProgressFunc func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error
 }
 
-func (m *MockProgressService) UpdateProgress(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+func (m *MockProgressService) UpdateProgress(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 	if m.UpdateProgressFunc != nil {
-		return m.UpdateProgressFunc(ctx, materialID, userID, percentage, lastPage)
+		return m.UpdateProgressFunc(ctx, materialID, userID, schoolID, percentage, lastPage)
 	}
 	return nil
 }

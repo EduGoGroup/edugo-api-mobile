@@ -144,7 +144,7 @@ func GetUserRole(c *gin.Context) string {
 }
 
 // RequireRole middleware que verifica que el usuario tenga uno de los roles permitidos
-// Debe usarse DESPUÉS de RemoteAuthMiddleware
+// Debe usarse DESPUÉS de RemoteAuthMiddleware o AuthRequired
 func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 	roleMap := make(map[string]bool)
 	for _, role := range allowedRoles {
@@ -175,4 +175,28 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// ============================================
+// Shortcuts de Autorización por Rol
+// ============================================
+
+// RequireAdmin middleware que requiere rol admin o super_admin
+func RequireAdmin() gin.HandlerFunc {
+	return RequireRole("admin", "super_admin")
+}
+
+// RequireSuperAdmin middleware que requiere rol super_admin
+func RequireSuperAdmin() gin.HandlerFunc {
+	return RequireRole("super_admin")
+}
+
+// RequireTeacher middleware que requiere rol teacher, admin o super_admin
+func RequireTeacher() gin.HandlerFunc {
+	return RequireRole("teacher", "admin", "super_admin")
+}
+
+// RequireStudentOrAbove middleware que permite cualquier rol autenticado
+func RequireStudentOrAbove() gin.HandlerFunc {
+	return RequireRole("student", "teacher", "admin", "super_admin")
 }

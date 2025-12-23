@@ -10,6 +10,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
@@ -56,7 +57,10 @@ func (h *MaterialHandler) CreateMaterial(c *gin.Context) {
 	// Obtener user_id del contexto (middleware de autenticación)
 	authorID := ginmiddleware.MustGetUserID(c)
 
-	material, err := h.materialService.CreateMaterial(c.Request.Context(), req, authorID)
+	// Obtener school_id del contexto (JWT claim)
+	schoolID := middleware.MustGetSchoolIDFromContext(c).String()
+
+	material, err := h.materialService.CreateMaterial(c.Request.Context(), req, authorID, schoolID)
 	if err != nil {
 		if appErr, ok := errors.GetAppError(err); ok {
 			h.logger.Error("create material failed", "error", appErr.Message)

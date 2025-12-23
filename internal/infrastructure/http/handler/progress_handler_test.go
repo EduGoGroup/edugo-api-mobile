@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,6 +15,10 @@ import (
 
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 )
+
+// Tests de UpdateProgress (legacy) fueron eliminados
+// El endpoint PATCH /materials/:id/progress fue removido
+// Usar PUT /progress (UpsertProgress) en su lugar
 
 // TestNewProgressHandler verifica el constructor del handler
 func TestNewProgressHandler(t *testing.T) {
@@ -41,7 +44,7 @@ func TestProgressHandler_UpsertProgress_Success(t *testing.T) {
 	lastPage := 45
 
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID, usrID string, percentage, page int) error {
+		UpdateProgressFunc: func(ctx context.Context, matID, usrID, schID string, percentage, page int) error {
 			assert.Equal(t, materialID, matID)
 			assert.Equal(t, authenticatedUserID, usrID)
 			assert.Equal(t, progressPercentage, percentage)
@@ -54,7 +57,7 @@ func TestProgressHandler_UpsertProgress_Success(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -91,7 +94,7 @@ func TestProgressHandler_UpsertProgress_InvalidJSON(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware("user-123"), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware("user-123", "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	testCases := []struct {
 		name string
@@ -135,7 +138,7 @@ func TestProgressHandler_UpsertProgress_MissingRequiredFields(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware("user-123"), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware("user-123", "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	testCases := []struct {
 		name string
@@ -189,7 +192,7 @@ func TestProgressHandler_UpsertProgress_InvalidPercentage(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware("user-123"), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware("user-123", "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	testCases := []struct {
 		name       string
@@ -281,7 +284,7 @@ func TestProgressHandler_UpsertProgress_Forbidden(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -307,7 +310,7 @@ func TestProgressHandler_UpsertProgress_MaterialNotFound(t *testing.T) {
 	authenticatedUserID := "user-123"
 
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+		UpdateProgressFunc: func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 			return errors.NewNotFoundError("material not found")
 		},
 	}
@@ -316,7 +319,7 @@ func TestProgressHandler_UpsertProgress_MaterialNotFound(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -342,7 +345,7 @@ func TestProgressHandler_UpsertProgress_InvalidMaterialID(t *testing.T) {
 	authenticatedUserID := "user-123"
 
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+		UpdateProgressFunc: func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 			return errors.NewValidationError("invalid material_id")
 		},
 	}
@@ -351,7 +354,7 @@ func TestProgressHandler_UpsertProgress_InvalidMaterialID(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -377,7 +380,7 @@ func TestProgressHandler_UpsertProgress_ServiceError(t *testing.T) {
 	authenticatedUserID := "user-123"
 
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+		UpdateProgressFunc: func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 			return fmt.Errorf("database connection failed")
 		},
 	}
@@ -386,7 +389,7 @@ func TestProgressHandler_UpsertProgress_ServiceError(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -433,7 +436,7 @@ func TestProgressHandler_UpsertProgress_ValidPercentageRange(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
 			mockService := &MockProgressService{
-				UpdateProgressFunc: func(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+				UpdateProgressFunc: func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 					assert.Equal(t, tc.percentage, percentage)
 					return nil
 				},
@@ -443,7 +446,7 @@ func TestProgressHandler_UpsertProgress_ValidPercentageRange(t *testing.T) {
 			handler := NewProgressHandler(mockService, logger)
 
 			router := SetupTestRouter()
-			router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+			router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 			reqBody := fmt.Sprintf(`{
 				"user_id": "%s",
@@ -476,7 +479,7 @@ func TestProgressHandler_UpsertProgress_WithoutLastPage(t *testing.T) {
 	progressPercentage := 75
 
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID, usrID string, percentage, page int) error {
+		UpdateProgressFunc: func(ctx context.Context, matID, usrID, schID string, percentage, page int) error {
 			assert.Equal(t, materialID, matID)
 			assert.Equal(t, authenticatedUserID, usrID)
 			assert.Equal(t, progressPercentage, percentage)
@@ -489,7 +492,7 @@ func TestProgressHandler_UpsertProgress_WithoutLastPage(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -522,7 +525,7 @@ func TestProgressHandler_UpsertProgress_Idempotency(t *testing.T) {
 
 	callCount := 0
 	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID, usrID string, percentage, page int) error {
+		UpdateProgressFunc: func(ctx context.Context, matID, usrID, schID string, percentage, page int) error {
 			callCount++
 			return nil
 		},
@@ -532,7 +535,7 @@ func TestProgressHandler_UpsertProgress_Idempotency(t *testing.T) {
 	handler := NewProgressHandler(mockService, logger)
 
 	router := SetupTestRouter()
-	router.PUT("/progress", MockUserIDMiddleware(authenticatedUserID), handler.UpsertProgress)
+	router.PUT("/progress", MockAuthMiddleware(authenticatedUserID, "880e8400-e29b-41d4-a716-446655440003"), handler.UpsertProgress)
 
 	reqBody := fmt.Sprintf(`{
 		"user_id": "%s",
@@ -554,285 +557,4 @@ func TestProgressHandler_UpsertProgress_Idempotency(t *testing.T) {
 
 	// Verificar que el servicio fue llamado 3 veces
 	assert.Equal(t, 3, callCount)
-}
-
-// ============================================
-// Tests: UpdateProgress (Legacy endpoint)
-// ============================================
-
-func TestProgressHandler_UpdateProgress_Success(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			assert.Equal(t, materialID, matID)
-			assert.Equal(t, userID, usrID)
-			assert.Equal(t, 75, percentage)
-			assert.Equal(t, 10, lastPage)
-			return nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 75,
-		"last_page":  10,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	// Gin returns 200 by default when using c.Status() without body
-	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusNoContent)
-}
-
-func TestProgressHandler_UpdateProgress_InvalidJSON(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{}
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	invalidJSON := []byte(`{invalid json}`)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(invalidJSON))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	var errorResponse ErrorResponse
-	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
-	assert.NoError(t, err)
-	assert.Equal(t, "INVALID_REQUEST", errorResponse.Code)
-}
-
-func TestProgressHandler_UpdateProgress_MaterialNotFound(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			return errors.NewNotFoundError("material")
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 75,
-		"last_page":  10,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.Equal(t, http.StatusNotFound, w.Code)
-
-	var errorResponse ErrorResponse
-	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
-	assert.NoError(t, err)
-	assert.Equal(t, "NOT_FOUND", errorResponse.Code)
-}
-
-func TestProgressHandler_UpdateProgress_InvalidPercentage(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			return errors.NewValidationError("percentage must be between 0 and 100")
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 150, // Invalid percentage
-		"last_page":  10,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	var errorResponse ErrorResponse
-	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
-	assert.NoError(t, err)
-	assert.Equal(t, "VALIDATION_ERROR", errorResponse.Code)
-}
-
-func TestProgressHandler_UpdateProgress_ServiceError(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			return errors.NewDatabaseError("update progress", assert.AnError)
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 75,
-		"last_page":  10,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-
-	var errorResponse ErrorResponse
-	err := json.Unmarshal(w.Body.Bytes(), &errorResponse)
-	assert.NoError(t, err)
-	assert.Equal(t, "DATABASE_ERROR", errorResponse.Code)
-}
-
-func TestProgressHandler_UpdateProgress_ZeroPercentage(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			assert.Equal(t, 0, percentage)
-			return nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 0,
-		"last_page":  0,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusNoContent)
-}
-
-func TestProgressHandler_UpdateProgress_FullCompletion(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	materialID := "550e8400-e29b-41d4-a716-446655440001"
-	userID := "550e8400-e29b-41d4-a716-446655440002"
-
-	mockService := &MockProgressService{
-		UpdateProgressFunc: func(ctx context.Context, matID string, usrID string, percentage int, lastPage int) error {
-			assert.Equal(t, 100, percentage)
-			return nil
-		},
-	}
-
-	logger := NewTestLogger()
-	handler := NewProgressHandler(mockService, logger)
-
-	requestBody := map[string]int{
-		"percentage": 100,
-		"last_page":  50,
-	}
-	bodyBytes, _ := json.Marshal(requestBody)
-
-	req, _ := http.NewRequest("PATCH", "/v1/materials/"+materialID+"/progress", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-	c.Params = gin.Params{{Key: "id", Value: materialID}}
-	c.Set("user_id", userID)
-
-	// Act
-	handler.UpdateProgress(c)
-
-	// Assert
-	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusNoContent)
 }

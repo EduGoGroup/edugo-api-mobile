@@ -25,25 +25,26 @@ go mod tidy
 package mypackage_test
 
 import (
-    "testing"
-    "github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
-    testifySuite "github.com/stretchr/testify/suite"
+	"testing"
+
+	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
+	testifySuite "github.com/stretchr/testify/suite"
 )
 
 type MySuite struct {
-    suite.IntegrationTestSuite
+	suite.IntegrationTestSuite
 }
 
 func TestMySuite(t *testing.T) {
-    testifySuite.Run(t, new(MySuite))
+	testifySuite.Run(t, new(MySuite))
 }
 
 func (s *MySuite) TestWithPostgres() {
-    // s.PostgresDB está listo con migraciones y seeds
-    var count int
-    err := s.PostgresDB.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
-    s.NoError(err)
-    s.Greater(count, 0, "Debe haber usuarios del seed")
+	// s.PostgresDB está listo con migraciones y seeds
+	var count int
+	err := s.PostgresDB.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	s.NoError(err)
+	s.Greater(count, 0, "Debe haber usuarios del seed")
 }
 ```
 

@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/zap"
 )
+
+// HeaderRequestID es el nombre del header AMQP para propagar el request ID
+const HeaderRequestID = "X-Request-ID"
 
 // Publisher define la interfaz para publicar mensajes
 type Publisher interface {
@@ -80,13 +83,14 @@ func (p *RabbitMQPublisher) Connect(url string) error {
 	}
 
 	p.logger.Info("Connected to RabbitMQ successfully",
-		zap.String("exchange", p.exchange),
+		"exchange", p.exchange,
 	)
 
 	return nil
 }
 
 // Publish publica un mensaje en el exchange especificado
+// Propaga automáticamente el request_id del contexto en los headers AMQP
 func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey string, body []byte) error {
 	if p.channel == nil {
 		return fmt.Errorf("channel is not initialized")
@@ -94,6 +98,15 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey st
 
 	// Crear confirmaciones
 	confirms := p.channel.NotifyPublish(make(chan amqp.Confirmation, 1))
+
+	// Extraer request_id del contexto para propagarlo
+	requestID := middleware.GetRequestID(ctx)
+
+	// Construir headers AMQP con request_id para tracing distribuido
+	headers := amqp.Table{}
+	if requestID != "" {
+		headers[HeaderRequestID] = requestID
+	}
 
 	// Publicar mensaje
 	err := p.channel.PublishWithContext(
@@ -107,13 +120,14 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey st
 			ContentType:  "application/json",
 			Body:         body,
 			Timestamp:    time.Now(),
+			Headers:      headers, // Propagar request_id para tracing
 		},
 	)
 	if err != nil {
 		p.logger.Error("Failed to publish message",
-			zap.String("exchange", exchange),
-			zap.String("routing_key", routingKey),
-			zap.Error(err),
+			"exchange", exchange,
+			"routing_key", routingKey,
+			"error", err,
 		)
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
@@ -123,23 +137,24 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey st
 	case confirm := <-confirms:
 		if !confirm.Ack {
 			p.logger.Warn("Message not acknowledged by broker",
-				zap.String("exchange", exchange),
-				zap.String("routing_key", routingKey),
+				"exchange", exchange,
+				"routing_key", routingKey,
 			)
 			return fmt.Errorf("message not acknowledged by broker")
 		}
 	case <-time.After(5 * time.Second):
 		p.logger.Warn("Timeout waiting for publisher confirmation",
-			zap.String("exchange", exchange),
-			zap.String("routing_key", routingKey),
+			"exchange", exchange,
+			"routing_key", routingKey,
 		)
 		return fmt.Errorf("timeout waiting for publisher confirmation")
 	}
 
 	p.logger.Debug("Message published successfully",
-		zap.String("exchange", exchange),
-		zap.String("routing_key", routingKey),
-		zap.Int("body_size", len(body)),
+		"exchange", exchange,
+		"routing_key", routingKey,
+		"body_size", len(body),
+		"request_id", requestID,
 	)
 
 	return nil

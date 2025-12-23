@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
@@ -23,47 +24,6 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 	}
 }
 
-// UpdateProgress godoc
-// @Summary Update reading progress (legacy endpoint)
-// @Description Updates user's reading progress for a material (percentage and last page read). Legacy endpoint - consider using PUT /progress instead.
-// @Tags progress
-// @Accept json
-// @Produce json
-// @Param id path string true "Material ID (UUID format)"
-// @Param request body map[string]int true "Progress data (percentage, last_page)"
-// @Success 204 "Progress updated successfully"
-// @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
-// @Failure 401 {object} ErrorResponse "User not authenticated"
-// @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /v1/materials/{id}/progress [patch]
-// @Security BearerAuth
-func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
-	id := c.Param("id")
-	userID := ginmiddleware.MustGetUserID(c)
-
-	var req struct {
-		Percentage int `json:"percentage"`
-		LastPage   int `json:"last_page"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request", Code: "INVALID_REQUEST"})
-		return
-	}
-
-	err := h.progressService.UpdateProgress(c.Request.Context(), id, userID, req.Percentage, req.LastPage)
-	if err != nil {
-		if appErr, ok := errors.GetAppError(err); ok {
-			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal error", Code: "INTERNAL_ERROR"})
-		return
-	}
-
-	c.Status(http.StatusNoContent)
-}
-
 // UpsertProgress godoc
 // @Summary Upsert progress idempotently (new UPSERT endpoint)
 // @Description Updates user progress in a material using idempotent UPSERT operation. Multiple calls with same data are safe.
@@ -79,8 +39,9 @@ func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
 // @Router /v1/progress [put]
 // @Security BearerAuth
 func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
-	// Obtener userID del contexto (usuario autenticado)
+	// Obtener userID y schoolID del contexto (usuario autenticado)
 	authenticatedUserID := ginmiddleware.MustGetUserID(c)
+	schoolID := middleware.MustGetSchoolIDFromContext(c)
 
 	// Estructura de request
 	var req UpsertProgressRequest
@@ -106,18 +67,25 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 		return
 	}
 
-	// Autorización: Usuario solo puede actualizar su propio progreso (a menos que sea admin)
-	// TODO: Agregar verificación de rol admin cuando exista
+	// Autorización: Usuario solo puede actualizar su propio progreso
+	// Excepción: admin y super_admin pueden actualizar el progreso de cualquier usuario
 	if req.UserID != authenticatedUserID {
-		h.logger.Warn("user attempting to update progress of another user",
-			"authenticated_user_id", authenticatedUserID,
+		if !middleware.IsAdminRole(c) {
+			h.logger.Warn("user attempting to update progress of another user",
+				"authenticated_user_id", authenticatedUserID,
+				"target_user_id", req.UserID,
+			)
+			c.JSON(http.StatusForbidden, ErrorResponse{
+				Error: "you can only update your own progress",
+				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		// Admin actualizando progreso de otro usuario
+		h.logger.Info("admin updating progress of another user",
+			"admin_user_id", authenticatedUserID,
 			"target_user_id", req.UserID,
 		)
-		c.JSON(http.StatusForbidden, ErrorResponse{
-			Error: "you can only update your own progress",
-			Code:  "FORBIDDEN",
-		})
-		return
 	}
 
 	// Invocar servicio para actualizar progreso
@@ -125,6 +93,7 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 		c.Request.Context(),
 		req.MaterialID,
 		req.UserID,
+		schoolID.String(),
 		req.ProgressPercentage,
 		req.LastPage,
 	)
