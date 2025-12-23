@@ -365,13 +365,66 @@ func (r *postgresMaterialRepository) UpdateProcessingStatus(ctx context.Context,
 }
 
 func (r *postgresMaterialRepository) FindByIDWithVersions(ctx context.Context, id valueobject.MaterialID) (*pgentities.Material, []*pgentities.MaterialVersion, error) {
-	// Por ahora solo retorna el material sin versiones
-	// TODO: Implementar join con material_versions cuando se necesite
+	// Primero obtenemos el material
 	material, err := r.FindByID(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
-	return material, nil, nil
+	if material == nil {
+		return nil, nil, nil
+	}
+
+	// Luego obtenemos las versiones ordenadas por version_number descendente
+	versionsQuery := `
+		SELECT id, material_id, version_number, title, content_url, changed_by, created_at
+		FROM material_versions
+		WHERE material_id = $1
+		ORDER BY version_number DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, versionsQuery, id.UUID())
+	if err != nil {
+		return material, nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var versions []*pgentities.MaterialVersion
+	for rows.Next() {
+		var (
+			versionID     uuid.UUID
+			materialID    uuid.UUID
+			versionNumber int
+			title         string
+			contentURL    string
+			changedBy     uuid.UUID
+			createdAt     time.Time
+		)
+
+		err := rows.Scan(
+			&versionID, &materialID, &versionNumber, &title,
+			&contentURL, &changedBy, &createdAt,
+		)
+		if err != nil {
+			return material, nil, err
+		}
+
+		version := &pgentities.MaterialVersion{
+			ID:            versionID,
+			MaterialID:    materialID,
+			VersionNumber: versionNumber,
+			Title:         title,
+			ContentURL:    contentURL,
+			ChangedBy:     changedBy,
+			CreatedAt:     createdAt,
+		}
+		versions = append(versions, version)
+	}
+
+	if err := rows.Err(); err != nil {
+		return material, nil, err
+	}
+
+	return material, versions, nil
 }
 
 func (r *postgresMaterialRepository) CountPublishedMaterials(ctx context.Context) (int64, error) {

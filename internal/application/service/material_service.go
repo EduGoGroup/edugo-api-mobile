@@ -111,41 +111,8 @@ func (s *materialService) CreateMaterial(
 		"title", material.Title,
 	)
 
-	// Publicar evento de material creado (nuevo formato con envelope)
-	payload := rabbitmq.MaterialUploadedPayload{
-		MaterialID:    material.ID.String(),
-		SchoolID:      material.SchoolID.String(),
-		TeacherID:     authorID.String(),
-		FileURL:       "s3://edugo/materials/" + material.ID.String() + ".pdf", // TODO: URL real de S3
-		FileSizeBytes: 0,                                                       // TODO: obtener tamaño real del archivo
-		FileType:      "application/pdf",
-		Metadata: map[string]interface{}{
-			"title":       material.Title,
-			"description": material.Description,
-		},
-	}
-
-	event := rabbitmq.NewMaterialUploadedEvent(payload)
-	eventJSON, err := event.ToJSON()
-	if err != nil {
-		s.logger.Warn("failed to serialize material uploaded event",
-			"material_id", material.ID.String(),
-			"error", err,
-		)
-	} else {
-		// Publicar evento de forma asíncrona (no bloqueante)
-		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "material.uploaded", eventJSON); err != nil {
-			s.logger.Warn("failed to publish material uploaded event",
-				"material_id", material.ID.String(),
-				"error", err,
-			)
-		} else {
-			s.logger.Info("material uploaded event published",
-				"material_id", material.ID.String(),
-				"event_id", event.EventID,
-			)
-		}
-	}
+	// NOTA: El evento MaterialUploaded se publica en NotifyUploadComplete
+	// cuando el frontend confirma que el archivo fue subido a S3 con datos reales
 
 	return dto.ToMaterialResponse(material), nil
 }
@@ -203,8 +170,42 @@ func (s *materialService) NotifyUploadComplete(
 		"file_url", req.FileURL,
 	)
 
-	// TODO: Aquí se debería publicar evento a RabbitMQ
-	// usando shared/messaging para que el worker procese el PDF
+	// Publicar evento MaterialUploaded con datos reales de S3
+	payload := rabbitmq.MaterialUploadedPayload{
+		MaterialID:    material.ID.String(),
+		SchoolID:      material.SchoolID.String(),
+		TeacherID:     material.UploadedByTeacherID.String(),
+		FileURL:       req.FileURL,
+		FileSizeBytes: req.FileSizeBytes,
+		FileType:      req.FileType,
+		Metadata: map[string]interface{}{
+			"title":       material.Title,
+			"description": material.Description,
+		},
+	}
+
+	event := rabbitmq.NewMaterialUploadedEvent(payload)
+	eventJSON, err := event.ToJSON()
+	if err != nil {
+		s.logger.Warn("failed to serialize material uploaded event",
+			"material_id", material.ID.String(),
+			"error", err,
+		)
+	} else {
+		if err := s.messagePublisher.Publish(ctx, "edugo.materials", "material.uploaded", eventJSON); err != nil {
+			s.logger.Warn("failed to publish material uploaded event",
+				"material_id", material.ID.String(),
+				"error", err,
+			)
+		} else {
+			s.logger.Info("material uploaded event published",
+				"material_id", material.ID.String(),
+				"event_id", event.EventID,
+				"file_url", req.FileURL,
+				"file_size", req.FileSizeBytes,
+			)
+		}
+	}
 
 	return nil
 }

@@ -114,12 +114,12 @@ func (m *MockAssessmentService) CalculateScore(ctx context.Context, assessmentID
 
 // MockProgressService para tests de progress_handler
 type MockProgressService struct {
-	UpdateProgressFunc func(ctx context.Context, materialID, userID string, percentage, lastPage int) error
+	UpdateProgressFunc func(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error
 }
 
-func (m *MockProgressService) UpdateProgress(ctx context.Context, materialID, userID string, percentage, lastPage int) error {
+func (m *MockProgressService) UpdateProgress(ctx context.Context, materialID, userID, schoolID string, percentage, lastPage int) error {
 	if m.UpdateProgressFunc != nil {
-		return m.UpdateProgressFunc(ctx, materialID, userID, percentage, lastPage)
+		return m.UpdateProgressFunc(ctx, materialID, userID, schoolID, percentage, lastPage)
 	}
 	return nil
 }

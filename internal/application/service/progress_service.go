@@ -6,31 +6,34 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 )
 
 type ProgressService interface {
-	UpdateProgress(ctx context.Context, materialID string, userID string, percentage int, lastPage int) error
+	UpdateProgress(ctx context.Context, materialID string, userID string, schoolID string, percentage int, lastPage int) error
 }
 
 type progressService struct {
 	progressRepo repository.ProgressRepository
+	publisher    rabbitmq.Publisher
 	logger       logger.Logger
 }
 
-func NewProgressService(progressRepo repository.ProgressRepository, logger logger.Logger) ProgressService {
+func NewProgressService(progressRepo repository.ProgressRepository, publisher rabbitmq.Publisher, logger logger.Logger) ProgressService {
 	return &progressService{
 		progressRepo: progressRepo,
+		publisher:    publisher,
 		logger:       logger,
 	}
 }
 
 // UpdateProgress actualiza el progreso de un usuario en un material de forma idempotente.
 // Usa operación UPSERT para evitar duplicados y simplificar lógica de cliente.
-// Si progress=100, se publica evento "material_completed" a RabbitMQ (futuro).
-func (s *progressService) UpdateProgress(ctx context.Context, materialID string, userIDStr string, percentage int, lastPage int) error {
+// Si progress=100, se publica evento "material_completed" a RabbitMQ.
+func (s *progressService) UpdateProgress(ctx context.Context, materialID string, userIDStr string, schoolID string, percentage int, lastPage int) error {
 	startTime := time.Now()
 
 	// Logging de entrada con contexto
@@ -106,14 +109,39 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 			"completed_at", updatedProgress.UpdatedAt,
 		)
 
-		// TODO (Fase futura): Publicar evento "material_completed" a RabbitMQ
-		// Example:
-		// event := events.MaterialCompleted{
-		//     MaterialID: materialID,
-		//     UserID: userIDStr,
-		//     CompletedAt: updatedProgress.UpdatedAt(),
-		// }
-		// s.eventPublisher.Publish(ctx, "material.completed", event)
+		// Publicar evento "material.completed" a RabbitMQ
+		payload := rabbitmq.MaterialCompletedPayload{
+			MaterialID:  materialID,
+			SchoolID:    schoolID,
+			UserID:      userIDStr,
+			CompletedAt: updatedProgress.UpdatedAt,
+		}
+		event := rabbitmq.NewMaterialCompletedEvent(payload)
+		eventJSON, err := event.ToJSON()
+		if err != nil {
+			s.logger.Error("failed to serialize material.completed event",
+				"error", err,
+				"material_id", materialID,
+				"user_id", userIDStr,
+			)
+			// No retornamos error para no afectar el flujo principal
+			// El progreso ya fue actualizado exitosamente
+		} else {
+			if err := s.publisher.Publish(ctx, "edugo.events", "material.completed", eventJSON); err != nil {
+				s.logger.Error("failed to publish material.completed event",
+					"error", err,
+					"material_id", materialID,
+					"user_id", userIDStr,
+				)
+				// No retornamos error - el progreso ya fue guardado
+			} else {
+				s.logger.Info("material.completed event published",
+					"material_id", materialID,
+					"user_id", userIDStr,
+					"event_id", event.EventID,
+				)
+			}
+		}
 	}
 
 	// Logging de éxito con métricas de performance
