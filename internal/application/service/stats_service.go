@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
@@ -26,16 +27,16 @@ type StatsService interface {
 
 type statsService struct {
 	logger          logger.Logger
-	materialStats   repository.MaterialStats   // ISP: Solo necesita estadísticas
-	assessmentStats repository.AssessmentStats // ISP: Solo necesita estadísticas
-	progressStats   repository.ProgressStats   // ISP: Solo necesita estadísticas
+	materialStats   repository.MaterialStats     // ISP: Solo necesita estadísticas (PostgreSQL)
+	assessmentStats repositories.AssessmentStats // ISP: Solo necesita estadísticas (PostgreSQL)
+	progressStats   repository.ProgressStats     // ISP: Solo necesita estadísticas (PostgreSQL)
 }
 
 func NewStatsService(
 	logger logger.Logger,
-	materialStats repository.MaterialStats, // ISP: Solo necesita estadísticas
-	assessmentStats repository.AssessmentStats, // ISP: Solo necesita estadísticas
-	progressStats repository.ProgressStats, // ISP: Solo necesita estadísticas
+	materialStats repository.MaterialStats, // ISP: Solo necesita estadísticas (PostgreSQL)
+	assessmentStats repositories.AssessmentStats, // ISP: Solo necesita estadísticas (PostgreSQL)
+	progressStats repository.ProgressStats, // ISP: Solo necesita estadísticas (PostgreSQL)
 ) StatsService {
 	return &statsService{
 		logger:          logger,
@@ -98,7 +99,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 		totalMaterials = count
 	}()
 
-	// Goroutine 2: Contar evaluaciones completadas (MongoDB)
+	// Goroutine 2: Contar evaluaciones completadas (PostgreSQL)
 	go func() {
 		defer wg.Done()
 		count, err := s.assessmentStats.CountCompletedAssessments(ctx)
@@ -112,7 +113,7 @@ func (s *statsService) GetGlobalStats(ctx context.Context) (*dto.GlobalStatsDTO,
 		totalAssessments = count
 	}()
 
-	// Goroutine 3: Calcular promedio de puntajes (MongoDB)
+	// Goroutine 3: Calcular promedio de puntajes (PostgreSQL)
 	go func() {
 		defer wg.Done()
 		avg, err := s.assessmentStats.CalculateAverageScore(ctx)

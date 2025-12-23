@@ -8,6 +8,8 @@ import (
 	mongoRepo "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/persistence/mongodb/repository"
 )
 
+// Este archivo contiene stubs de repositorios MongoDB para desarrollo y testing
+
 // Summary Repository Stub
 type mockSummaryRepository struct{}
 
@@ -26,37 +28,6 @@ func (r *mockSummaryRepository) Save(ctx context.Context, summary *repository.Ma
 }
 func (r *mockSummaryRepository) Delete(ctx context.Context, materialID valueobject.MaterialID) error {
 	return nil
-}
-
-// Legacy Assessment Repository Stub
-type mockLegacyAssessmentRepository struct{}
-
-func NewMockLegacyAssessmentRepository() repository.AssessmentRepository {
-	return &mockLegacyAssessmentRepository{}
-}
-func (r *mockLegacyAssessmentRepository) FindAssessmentByMaterialID(ctx context.Context, materialID valueobject.MaterialID) (*repository.MaterialAssessment, error) {
-	return nil, nil
-}
-func (r *mockLegacyAssessmentRepository) FindAttemptsByUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) ([]*repository.AssessmentAttempt, error) {
-	return []*repository.AssessmentAttempt{}, nil
-}
-func (r *mockLegacyAssessmentRepository) GetBestAttempt(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*repository.AssessmentAttempt, error) {
-	return nil, nil
-}
-func (r *mockLegacyAssessmentRepository) SaveAssessment(ctx context.Context, assessment *repository.MaterialAssessment) error {
-	return nil
-}
-func (r *mockLegacyAssessmentRepository) SaveAttempt(ctx context.Context, attempt *repository.AssessmentAttempt) error {
-	return nil
-}
-func (r *mockLegacyAssessmentRepository) SaveResult(ctx context.Context, result *repository.AssessmentResult) error {
-	return nil
-}
-func (r *mockLegacyAssessmentRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
-	return 0, nil
-}
-func (r *mockLegacyAssessmentRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
-	return 0.0, nil
 }
 
 // Assessment Document Repository Stub

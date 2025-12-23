@@ -58,12 +58,12 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 
 		// StatsService gestiona estadísticas globales y por material
 		// Usa queries paralelas con goroutines para optimización
-		// ISP: Solo necesita interfaces Stats segregadas
+		// ISP: Solo necesita interfaces Stats segregadas (todas PostgreSQL)
 		StatsService: service.NewStatsService(
 			infra.Logger,
-			repos.MaterialRepository,   // También es MaterialStats
-			repos.AssessmentRepository, // También es AssessmentStats
-			repos.ProgressRepository,   // También es ProgressStats
+			repos.MaterialRepository, // MaterialStats (PostgreSQL)
+			repos.AttemptRepo,        // AssessmentStats (PostgreSQL) - migrado de MongoDB
+			repos.ProgressRepository, // ProgressStats (PostgreSQL)
 		),
 	}
 }

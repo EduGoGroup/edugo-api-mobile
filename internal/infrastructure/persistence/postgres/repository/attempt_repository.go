@@ -389,6 +389,38 @@ func (r *PostgresAttemptRepository) CountByStudentAndAssessment(ctx context.Cont
 	return count, nil
 }
 
+// CountCompletedAssessments cuenta el total de evaluaciones completadas (con completed_at != NULL)
+// Implementa repositories.AssessmentStats para estadísticas globales
+func (r *PostgresAttemptRepository) CountCompletedAssessments(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM assessment_attempt WHERE completed_at IS NOT NULL`
+
+	var count int64
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("postgres: error counting completed assessments: %w", err)
+	}
+
+	return count, nil
+}
+
+// CalculateAverageScore calcula el promedio de scores de evaluaciones completadas
+// Implementa repositories.AssessmentStats para estadísticas globales
+func (r *PostgresAttemptRepository) CalculateAverageScore(ctx context.Context) (float64, error) {
+	query := `
+		SELECT COALESCE(AVG(score), 0.0)
+		FROM assessment_attempt
+		WHERE completed_at IS NOT NULL AND score IS NOT NULL
+	`
+
+	var avgScore float64
+	err := r.db.QueryRowContext(ctx, query).Scan(&avgScore)
+	if err != nil {
+		return 0.0, fmt.Errorf("postgres: error calculating average score: %w", err)
+	}
+
+	return avgScore, nil
+}
+
 // FindByStudent busca todos los intentos de un estudiante (historial)
 func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID uuid.UUID, limit, offset int) ([]*pgentities.AssessmentAttempt, error) {
 	query := `

@@ -25,7 +25,6 @@ type RepositoryContainer struct {
 
 	// MongoDB Repositories
 	SummaryRepository      repository.SummaryRepository
-	AssessmentRepository   repository.AssessmentRepository // Legacy
 	AssessmentDocumentRepo mongoRepo.AssessmentDocumentRepository
 }
 
@@ -55,7 +54,6 @@ func NewRepositoryContainer(infra *InfrastructureContainer, cfg *config.Config) 
 
 		// MongoDB repositories - creados vía factory
 		SummaryRepository:      factory.CreateSummaryRepository(),
-		AssessmentRepository:   factory.CreateLegacyAssessmentRepository(),
 		AssessmentDocumentRepo: factory.CreateAssessmentDocumentRepository(),
 	}
 }
