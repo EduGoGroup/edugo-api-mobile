@@ -5,6 +5,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // SetupRouter configura todas las rutas de la aplicación con sus respectivos handlers y middleware.
@@ -14,15 +15,23 @@ import (
 // a api-admin como parte de la centralización de autenticación (Sprint 3).
 // Este servicio valida tokens contra api-admin usando RemoteAuthMiddleware.
 func SetupRouter(c *container.Container, healthHandler *handler.HealthHandler) *gin.Engine {
-	r := gin.Default()
+	r := gin.New() // Usar gin.New() en lugar de Default() para control total de middleware
 
-	// Middleware global
-	r.Use(gin.Recovery())
-	r.Use(middleware.CORS())
-	r.Use(middleware.ClientInfoMiddleware()) // Extraer IP y User-Agent del cliente
+	// Middleware global (orden importante)
+	r.Use(gin.Recovery())                   // 1. Recuperar de panics
+	r.Use(middleware.RequestIDMiddleware()) // 2. Generar/propagar request ID para tracing
+	r.Use(middleware.MetricsMiddlewareWithConfig(middleware.MetricsConfig{
+		SkipPaths: []string{"/health", "/metrics"}, // No registrar métricas de endpoints de infraestructura
+	})) // 3. Métricas Prometheus
+	r.Use(middleware.LoggingMiddlewareWithConfig(c.Infrastructure.Logger, middleware.LoggingConfig{
+		SkipPaths: []string{"/health", "/metrics"}, // No loguear endpoints de infraestructura
+	})) // 4. Logging estructurado con request_id
+	r.Use(middleware.CORS())                 // 5. CORS headers
+	r.Use(middleware.ClientInfoMiddleware()) // 6. Extraer IP y User-Agent del cliente
 
-	// Health check (público, sin versión)
+	// Endpoints de infraestructura (públicos, sin versión)
 	r.GET("/health", healthHandler.Check)
+	r.GET("/metrics", gin.WrapH(promhttp.Handler())) // Prometheus metrics
 
 	// Swagger UI (público) con detección dinámica de host
 	SetupSwaggerUI(r)
