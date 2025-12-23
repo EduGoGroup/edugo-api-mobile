@@ -138,7 +138,7 @@ func bridgeToSharedBootstrap(
 	lifecycleManagerWithLogger := lifecycle.NewManager(loggerAdapter)
 
 	// 9. Adaptar recursos de shared a tipos de api-mobile usando los tipos retenidos
-	resources, err := adaptSharedResources(wrapper, loggerAdapter, cfg)
+	resources, err := adaptSharedResources(wrapper, loggerAdapter, cfg, opts)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to adapt shared resources: %w", err)
 	}
@@ -151,6 +151,7 @@ func adaptSharedResources(
 	wrapper *customFactoriesWrapper,
 	loggerAdapter sharedLogger.Logger,
 	cfg *config.Config,
+	opts *BootstrapOptions,
 ) (*Resources, error) {
 
 	// 2. PostgreSQL: ya tenemos *sql.DB retenido
@@ -165,8 +166,12 @@ func adaptSharedResources(
 	mongoDatabase := wrapper.mongoClient.Database(cfg.Database.MongoDB.Database)
 
 	// 4. RabbitMQ: crear adapter con el channel retenido y envolver con circuit breaker
+	// Si está deshabilitado, usar noop publisher
 	var rabbitMQPublisher rabbitmq.Publisher
-	if wrapper.rabbitChannel != nil {
+	if opts.IsResourceDisabled("rabbitmq") {
+		loggerAdapter.Info("RabbitMQ está deshabilitado, usando noop publisher")
+		// rabbitMQPublisher permanece nil, el container usará noop
+	} else if wrapper.rabbitChannel != nil {
 		basePublisher := adapter.NewMessagePublisherAdapter(
 			wrapper.rabbitChannel,
 			cfg.Messaging.RabbitMQ.Exchanges.Materials,
@@ -216,8 +221,12 @@ func adaptSharedResources(
 	}
 
 	// 5. S3: crear adapter con el cliente retenido
+	// Si está deshabilitado, usar noop storage
 	var s3Storage S3Storage
-	if wrapper.s3Client != nil {
+	if opts.IsResourceDisabled("s3") {
+		loggerAdapter.Info("S3 está deshabilitado, usando noop storage")
+		// s3Storage permanece nil, el container usará noop
+	} else if wrapper.s3Client != nil {
 		s3Storage = adapter.NewStorageClientAdapter(
 			wrapper.s3Client,
 			cfg.Storage.S3.BucketName,

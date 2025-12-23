@@ -67,8 +67,11 @@ type BootstrapOptions struct {
 	RabbitMQPublisher rabbitmq.Publisher
 	S3Client          S3Storage
 
-	// Configuración de recursos opcionales
+	// Configuración de recursos opcionales (si falla, continúa con noop)
 	OptionalResources map[string]bool
+
+	// Configuración de recursos deshabilitados (no se inicializan, usan noop)
+	DisabledResources map[string]bool
 
 	// Factories personalizadas (para testing avanzado)
 	LoggerFactory    LoggerFactory
