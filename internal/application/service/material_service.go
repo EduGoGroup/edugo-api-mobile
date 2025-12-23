@@ -17,7 +17,7 @@ import (
 
 // MaterialService define las operaciones de negocio para materiales
 type MaterialService interface {
-	CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string) (*dto.MaterialResponse, error)
+	CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error)
 	GetMaterial(ctx context.Context, id string) (*dto.MaterialResponse, error)
 	GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	NotifyUploadComplete(ctx context.Context, materialID string, req dto.UploadCompleteRequest) error
@@ -46,6 +46,7 @@ func (s *materialService) CreateMaterial(
 	ctx context.Context,
 	req dto.CreateMaterialRequest,
 	authorIDStr string,
+	schoolIDStr string,
 ) (*dto.MaterialResponse, error) {
 	// Validar request
 	if err := req.Validate(); err != nil {
@@ -59,9 +60,12 @@ func (s *materialService) CreateMaterial(
 		return nil, errors.NewValidationError("invalid author_id format")
 	}
 
-	// Crear entidad Material manualmente
-	// TODO: Obtener schoolID del contexto de autenticación
-	schoolID := uuid.New() // Temporal
+	// Parsear school ID del contexto de autenticación (JWT)
+	schoolID, err := uuid.Parse(schoolIDStr)
+	if err != nil {
+		s.logger.Warn("invalid school_id format", "school_id", schoolIDStr, "error", err)
+		return nil, errors.NewValidationError("invalid school_id format in authentication context")
+	}
 
 	var description *string
 	if req.Description != "" {

@@ -1,8 +1,9 @@
 # Sprint: Mejoras y Refactorizaciones - edugo-api-mobile
 
 > **Fecha de inicio:** 2024-12-23  
-> **Estado:** En Planificación  
-> **Branch base:** `dev`
+> **Estado:** En Ejecución - Fase 1  
+> **Branch base:** `dev`  
+> **Branch activo:** `feature/unify-config-standard` (reutilizado para Fase 1)
 
 ---
 
@@ -42,12 +43,14 @@ Resolver la deuda técnica más crítica que afecta la funcionalidad del sistema
 
 ### Tareas
 
-- [ ] **DEBT-003**: Resolver SchoolID hardcodeado
+- [x] **DEBT-003**: Resolver SchoolID hardcodeado ✅ (23 Dic 2024)
   - Archivo: `internal/application/service/material_service.go:63-64`
-  - Crear helper `GetSchoolIDFromContext()` en middleware
-  - Actualizar `MaterialService.CreateMaterial` para usar contexto
-  - Agregar fallback temporal si JWT no tiene school_id
-  - **Commit:** `fix(material): obtener schoolID del contexto de autenticación`
+  - ✅ Agregado `SchoolID` a JWT Claims en `edugo-shared` (release auth/v0.10.0)
+  - ✅ Creado helper `GetSchoolIDFromContext()` en middleware
+  - ✅ Creado helper `MustGetSchoolIDFromContext()` en middleware
+  - ✅ Actualizado `MaterialService.CreateMaterial` para usar schoolID del contexto
+  - ✅ Actualizados tests y mocks con nuevo parámetro
+  - **Commit:** `fix(material): obtener schoolID del contexto de autenticación (DEBT-003)`
 
 - [ ] **DEBT-005**: Resolver tests unitarios con TODOs
   - Archivos afectados:
@@ -286,16 +289,16 @@ golangci-lint run
 
 ## Dependencias Externas
 
-### Requiere cambios en api-admin (Fase 1)
+### ✅ Cambios en api-admin - COMPLETADO (23 Dic 2024)
 
-Para resolver completamente **DEBT-003** (SchoolID hardcodeado), se requiere:
+La dependencia de api-admin para resolver **DEBT-003** ya fue implementada:
 
-1. **Agregar `school_id` al JWT** en api-admin
-2. Ver detalles en `documents/improvements/API-ADMIN-REQUIREMENTS.md`
+1. ✅ **`school_id` agregado al JWT** en api-admin (PR #64 - merged)
+2. ✅ **Columna `school_id` en User** en infrastructure (postgres/v0.13.0)
+3. ✅ **Endpoint `POST /auth/switch-context`** para cambio de escuela
+4. ✅ Ver detalles actualizados en `documents/improvements/API-ADMIN-REQUIREMENTS.md`
 
-**Workaround temporal:**
-- Implementar fallback que obtenga `school_id` de la tabla de usuarios
-- O usar un valor por defecto configurable
+**Estado:** Ya no se requiere workaround temporal. Se puede usar directamente el `school_id` del JWT.
 
 ---
 
@@ -366,6 +369,9 @@ Fase 6 (Observabilidad)
 | Fecha | Cambio | Autor |
 |-------|--------|-------|
 | 2024-12-23 | Creación del plan | Claude Code |
+| 2024-12-23 | Dependencia api-admin completada (school_id en JWT) | Claude Code |
+| 2024-12-23 | Inicio de Fase 1 | Claude Code |
+| 2024-12-23 | **DEBT-003 completado** - SchoolID del contexto JWT | Claude Code |
 
 ---
 
