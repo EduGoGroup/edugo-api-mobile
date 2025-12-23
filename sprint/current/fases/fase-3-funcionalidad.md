@@ -1,7 +1,7 @@
 # Fase 3: TODOs de Funcionalidad
 
 > **Estado:** ✅ COMPLETADA
-> **PR:** Pendiente crear
+> **PR:** #91
 > **Branch:** `feature/functionality-todos`
 > **Estimado:** 6-8 horas
 > **Real:** ~4 horas
@@ -54,7 +54,7 @@
 - **Tipo:** Documentación
 - **Problema:** Eventos de assessment comentados, necesitan schema en infrastructure
 - **Solución:** Documentar requerimientos para edugo-infrastructure
-- **Commit:** Pendiente
+- **Commit:** `6bbc4ec`
 
 **Entregable:**
 - ✅ Documento `documents/improvements/ASSESSMENT-EVENTS-REQUIREMENTS.md`

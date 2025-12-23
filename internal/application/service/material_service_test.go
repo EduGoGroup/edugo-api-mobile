@@ -313,37 +313,10 @@ func TestMaterialService_CreateMaterial_RepositoryError(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
-func TestMaterialService_CreateMaterial_PublishEventFailure(t *testing.T) {
-	// Arrange
-	mockRepo := new(MockMaterialRepository)
-	mockPublisher := new(MockPublisher)
-	mockLogger := new(MockLogger)
-
-	service := NewMaterialService(mockRepo, mockPublisher, mockLogger)
-
-	ctx := context.Background()
-	authorID := valueobject.NewUserID()
-	schoolID := uuid.New()
-	req := dto.CreateMaterialRequest{
-		Title:       "Test Material",
-		Description: "Test Description",
-	}
-
-	mockRepo.On("Create", ctx, mock.MatchedBy(func(m *pgentities.Material) bool { return m != nil })).Return(nil)
-	mockPublisher.On("Publish", ctx, "edugo.materials", "material.uploaded", mock.Anything).Return(errors.New("rabbitmq connection failed"))
-	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
-	mockLogger.On("Warn", mock.Anything, mock.Anything).Return()
-
-	// Act - Should succeed even if event publishing fails
-	result, err := service.CreateMaterial(ctx, req, authorID.String(), schoolID.String())
-
-	// Assert
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-
-	mockRepo.AssertExpectations(t)
-	mockPublisher.AssertExpectations(t)
-}
+// NOTA: El test TestMaterialService_CreateMaterial_PublishEventFailure fue eliminado
+// porque CreateMaterial ya NO publica eventos directamente.
+// El evento MaterialUploaded se publica en NotifyUploadComplete cuando el frontend
+// confirma que el archivo fue subido a S3 con los datos reales.
 
 // Tests para GetMaterial
 
@@ -502,6 +475,8 @@ func TestMaterialService_NotifyUploadComplete_Success(t *testing.T) {
 
 	mockRepo.On("FindByID", ctx, materialID).Return(material, nil)
 	mockRepo.On("Update", ctx, mock.MatchedBy(func(m *pgentities.Material) bool { return m != nil })).Return(nil)
+	// NotifyUploadComplete publica evento material.uploaded después de actualizar
+	mockPublisher.On("Publish", ctx, "edugo.materials", "material.uploaded", mock.Anything).Return(nil)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Return()
 
 	// Act

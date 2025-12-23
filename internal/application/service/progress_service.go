@@ -13,7 +13,7 @@ import (
 )
 
 type ProgressService interface {
-	UpdateProgress(ctx context.Context, materialID string, userID string, percentage int, lastPage int) error
+	UpdateProgress(ctx context.Context, materialID string, userID string, schoolID string, percentage int, lastPage int) error
 }
 
 type progressService struct {
@@ -32,8 +32,8 @@ func NewProgressService(progressRepo repository.ProgressRepository, publisher ra
 
 // UpdateProgress actualiza el progreso de un usuario en un material de forma idempotente.
 // Usa operación UPSERT para evitar duplicados y simplificar lógica de cliente.
-// Si progress=100, se publica evento "material_completed" a RabbitMQ (futuro).
-func (s *progressService) UpdateProgress(ctx context.Context, materialID string, userIDStr string, percentage int, lastPage int) error {
+// Si progress=100, se publica evento "material_completed" a RabbitMQ.
+func (s *progressService) UpdateProgress(ctx context.Context, materialID string, userIDStr string, schoolID string, percentage int, lastPage int) error {
 	startTime := time.Now()
 
 	// Logging de entrada con contexto
@@ -112,6 +112,7 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 		// Publicar evento "material.completed" a RabbitMQ
 		payload := rabbitmq.MaterialCompletedPayload{
 			MaterialID:  materialID,
+			SchoolID:    schoolID,
 			UserID:      userIDStr,
 			CompletedAt: updatedProgress.UpdatedAt,
 		}

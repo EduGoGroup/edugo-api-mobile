@@ -39,8 +39,9 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 // @Router /v1/progress [put]
 // @Security BearerAuth
 func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
-	// Obtener userID del contexto (usuario autenticado)
+	// Obtener userID y schoolID del contexto (usuario autenticado)
 	authenticatedUserID := ginmiddleware.MustGetUserID(c)
+	schoolID := middleware.MustGetSchoolIDFromContext(c)
 
 	// Estructura de request
 	var req UpsertProgressRequest
@@ -92,6 +93,7 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 		c.Request.Context(),
 		req.MaterialID,
 		req.UserID,
+		schoolID.String(),
 		req.ProgressPercentage,
 		req.LastPage,
 	)

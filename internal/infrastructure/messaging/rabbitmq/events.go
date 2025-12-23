@@ -42,6 +42,7 @@ func NewMaterialUploadedEvent(payload MaterialUploadedPayload) Event {
 // Se publica cuando un usuario completa un material (progress = 100%)
 type MaterialCompletedPayload struct {
 	MaterialID  string    `json:"material_id"`
+	SchoolID    string    `json:"school_id"`
 	UserID      string    `json:"user_id"`
 	CompletedAt time.Time `json:"completed_at"`
 }
