@@ -32,8 +32,10 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 		),
 
 		// ProgressService gestiona el progreso de lectura de estudiantes
+		// Publica evento material.completed cuando progress = 100%
 		ProgressService: service.NewProgressService(
 			repos.ProgressRepository,
+			infra.MessagePublisher,
 			infra.Logger,
 		),
 

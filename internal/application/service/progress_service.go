@@ -6,6 +6,7 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
@@ -17,12 +18,14 @@ type ProgressService interface {
 
 type progressService struct {
 	progressRepo repository.ProgressRepository
+	publisher    rabbitmq.Publisher
 	logger       logger.Logger
 }
 
-func NewProgressService(progressRepo repository.ProgressRepository, logger logger.Logger) ProgressService {
+func NewProgressService(progressRepo repository.ProgressRepository, publisher rabbitmq.Publisher, logger logger.Logger) ProgressService {
 	return &progressService{
 		progressRepo: progressRepo,
+		publisher:    publisher,
 		logger:       logger,
 	}
 }
@@ -106,14 +109,38 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 			"completed_at", updatedProgress.UpdatedAt,
 		)
 
-		// TODO (Fase futura): Publicar evento "material_completed" a RabbitMQ
-		// Example:
-		// event := events.MaterialCompleted{
-		//     MaterialID: materialID,
-		//     UserID: userIDStr,
-		//     CompletedAt: updatedProgress.UpdatedAt(),
-		// }
-		// s.eventPublisher.Publish(ctx, "material.completed", event)
+		// Publicar evento "material.completed" a RabbitMQ
+		payload := rabbitmq.MaterialCompletedPayload{
+			MaterialID:  materialID,
+			UserID:      userIDStr,
+			CompletedAt: updatedProgress.UpdatedAt,
+		}
+		event := rabbitmq.NewMaterialCompletedEvent(payload)
+		eventJSON, err := event.ToJSON()
+		if err != nil {
+			s.logger.Error("failed to serialize material.completed event",
+				"error", err,
+				"material_id", materialID,
+				"user_id", userIDStr,
+			)
+			// No retornamos error para no afectar el flujo principal
+			// El progreso ya fue actualizado exitosamente
+		} else {
+			if err := s.publisher.Publish(ctx, "edugo.events", "material.completed", eventJSON); err != nil {
+				s.logger.Error("failed to publish material.completed event",
+					"error", err,
+					"material_id", materialID,
+					"user_id", userIDStr,
+				)
+				// No retornamos error - el progreso ya fue guardado
+			} else {
+				s.logger.Info("material.completed event published",
+					"material_id", materialID,
+					"user_id", userIDStr,
+					"event_id", event.EventID,
+				)
+			}
+		}
 	}
 
 	// Logging de éxito con métricas de performance
