@@ -66,7 +66,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_AtomicTransaction() {
 	answer1 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q1",
+		QuestionIndex:    0,
 		StudentAnswer:    ptrStr("a"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(30),
@@ -76,7 +76,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_AtomicTransaction() {
 	answer2 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q2",
+		QuestionIndex:    1,
 		StudentAnswer:    ptrStr("b"),
 		IsCorrect:        ptrBool(false),
 		TimeSpentSeconds: ptrInt(45),
@@ -86,7 +86,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_AtomicTransaction() {
 	answer3 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q3",
+		QuestionIndex:    2,
 		StudentAnswer:    ptrStr("c"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(60),
@@ -94,37 +94,49 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_AtomicTransaction() {
 		CreatedAt:        now,
 	}
 
+	score := 66.0 // 2 correctas de 3 = (2*100)/3 = 66 (división entera)
+	maxScore := 100.0
+	timeSpent := 135
+	completedAt := now
 	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
-		Score:            66, // 2 correctas de 3 = (2*100)/3 = 66 (división entera)
-		MaxScore:         100,
-		TimeSpentSeconds: 135,
+		Score:            &score,
+		MaxScore:         &maxScore,
+		TimeSpentSeconds: &timeSpent,
 		StartedAt:        now.Add(-3 * time.Minute),
-		CompletedAt:      now,
+		CompletedAt:      &completedAt,
 		CreatedAt:        now,
-		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3},
 		IdempotencyKey:   nil,
 	}
 
-	// Act
+	// Act - Guardar attempt
 	err := s.repo.Save(ctx, attempt)
+	s.Require().NoError(err)
+
+	// Guardar answers por separado
+	answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+	err = answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3})
 
 	// Assert
 	s.NoError(err, "Save debe completar transacción sin errores")
 
-	// Verificar que se guardaron attempt Y answers (transacción atómica)
+	// Verificar que se guardó el attempt
 	found, err := s.repo.FindByID(ctx, attemptID)
 	s.NoError(err)
 	s.NotNil(found)
 	s.Equal(attemptID, found.ID)
-	s.Equal(66, found.Score, "Score debe coincidir con el calculado")
-	s.Equal(3, len(found.Answers), "Todas las answers deben haberse guardado")
-	s.Equal("q1", found.Answers[0].QuestionID)
-	s.Equal(true, found.Answers[0].IsCorrect)
-	s.Equal("q2", found.Answers[1].QuestionID)
-	s.Equal(false, found.Answers[1].IsCorrect)
+	s.Equal(66.0, *found.Score, "Score debe coincidir con el calculado")
+
+	// Verificar que se guardaron las answers
+	foundAnswers, err := answerRepo.FindByAttemptID(ctx, attemptID)
+	s.NoError(err)
+	s.Equal(3, len(foundAnswers), "Todas las answers deben haberse guardado")
+	s.Equal(0, foundAnswers[0].QuestionIndex)
+	s.Equal(true, *foundAnswers[0].IsCorrect)
+	s.Equal(1, foundAnswers[1].QuestionIndex)
+	s.Equal(false, *foundAnswers[1].IsCorrect)
 }
 
 // TestSave_WithIdempotencyKey valida que Save maneja idempotency_key correctamente
@@ -137,7 +149,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_WithIdempotencyKey() {
 	answer1 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q1",
+		QuestionIndex:    0,
 		StudentAnswer:    ptrStr("a"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(30),
@@ -145,23 +157,30 @@ func (s *AttemptRepositoryIntegrationSuite) TestSave_WithIdempotencyKey() {
 		CreatedAt:        now,
 	}
 	idempotencyKey := "attempt-" + attemptID.String()
-
+	score := 100.0
+	maxScore := 100.0
+	timeSpent := 30
+	completedAt := now
 	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
-		Score:            100,
-		MaxScore:         100,
-		TimeSpentSeconds: 30,
+		Score:            &score,
+		MaxScore:         &maxScore,
+		TimeSpentSeconds: &timeSpent,
 		StartedAt:        now.Add(-1 * time.Minute),
-		CompletedAt:      now,
+		CompletedAt:      &completedAt,
 		CreatedAt:        now,
-		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1},
 		IdempotencyKey:   &idempotencyKey,
 	}
 
+	// Guardar answers por separado
+	answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+	err := answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer1})
+	s.Require().NoError(err)
+
 	// Act
-	err := s.repo.Save(ctx, attempt)
+	err = s.repo.Save(ctx, attempt)
 
 	// Assert
 	s.NoError(err)
@@ -184,7 +203,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 	answer1 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q1",
+		QuestionIndex:    0,
 		StudentAnswer:    ptrStr("a"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(20),
@@ -194,7 +213,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 	answer2 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q2",
+		QuestionIndex:    1,
 		StudentAnswer:    ptrStr("b"),
 		IsCorrect:        ptrBool(false),
 		TimeSpentSeconds: ptrInt(30),
@@ -204,7 +223,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 	answer3 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q3",
+		QuestionIndex:    2,
 		StudentAnswer:    ptrStr("a"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(40),
@@ -214,7 +233,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 	answer4 := &pgentities.AssessmentAttemptAnswer{
 		ID:               uuid.New(),
 		AttemptID:        attemptID,
-		QuestionID:       "q4",
+		QuestionIndex:    3,
 		StudentAnswer:    ptrStr("d"),
 		IsCorrect:        ptrBool(true),
 		TimeSpentSeconds: ptrInt(25),
@@ -222,21 +241,29 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 		CreatedAt:        now,
 	}
 
+	score := 75.0
+	maxScore := 100.0
+	timeSpent := 115
+	completedAt := now
 	attempt := &pgentities.AssessmentAttempt{
 		ID:               attemptID,
 		AssessmentID:     uuid.New(),
 		StudentID:        uuid.New(),
-		Score:            75,
-		MaxScore:         100,
-		TimeSpentSeconds: 115,
+		Score:            &score,
+		MaxScore:         &maxScore,
+		TimeSpentSeconds: &timeSpent,
 		StartedAt:        now.Add(-2 * time.Minute),
-		CompletedAt:      now,
+		CompletedAt:      &completedAt,
 		CreatedAt:        now,
-		Answers:          []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3, answer4},
 		IdempotencyKey:   nil,
 	}
 
 	err := s.repo.Save(ctx, attempt)
+	s.Require().NoError(err)
+
+	// Guardar answers por separado
+	answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+	err = answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer1, answer2, answer3, answer4})
 	s.Require().NoError(err)
 
 	// Act
@@ -245,13 +272,17 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByID_WithAnswers() {
 	// Assert
 	s.NoError(err)
 	s.NotNil(found)
-	s.Equal(4, len(found.Answers), "Debe cargar todas las answers con JOIN")
 
-	// Verificar orden por created_at
-	s.Equal("q1", found.Answers[0].QuestionID)
-	s.Equal("q2", found.Answers[1].QuestionID)
-	s.Equal("q3", found.Answers[2].QuestionID)
-	s.Equal("q4", found.Answers[3].QuestionID)
+	// Verificar que las answers se guardaron
+	foundAnswers, err := answerRepo.FindByAttemptID(ctx, attemptID)
+	s.NoError(err)
+	s.Equal(4, len(foundAnswers), "Debe tener todas las answers")
+
+	// Verificar orden por question_index
+	s.Equal(0, foundAnswers[0].QuestionIndex)
+	s.Equal(1, foundAnswers[1].QuestionIndex)
+	s.Equal(2, foundAnswers[2].QuestionIndex)
+	s.Equal(3, foundAnswers[3].QuestionIndex)
 }
 
 // TestFindByID_NotFound valida que retorna nil cuando no encuentra
@@ -280,7 +311,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudentAndAssessment_Succe
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       "q1",
+			QuestionIndex:    0,
 			StudentAnswer:    ptrStr("a"),
 			IsCorrect:        ptrBool(true),
 			TimeSpentSeconds: ptrInt(30),
@@ -288,21 +319,29 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudentAndAssessment_Succe
 			CreatedAt:        now,
 		}
 
+		score := 100.0 // 1 correcta de 1 = (1*100)/1 = 100
+		maxScore := 100.0
+		timeSpent := 30
+		completedAt := now.Add(-time.Duration(i) * time.Minute)
 		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     assessmentID,
 			StudentID:        studentID,
-			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
-			MaxScore:         100,
-			TimeSpentSeconds: 30,
+			Score:            &score,
+			MaxScore:         &maxScore,
+			TimeSpentSeconds: &timeSpent,
 			StartedAt:        now.Add(-time.Duration(i+1) * time.Minute),
-			CompletedAt:      now.Add(-time.Duration(i) * time.Minute),
+			CompletedAt:      &completedAt,
 			CreatedAt:        now.Add(-time.Duration(i) * time.Minute),
-			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 
 		err := s.repo.Save(ctx, attempt)
+		s.Require().NoError(err)
+
+		// Guardar answers por separado
+		answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+		err = answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 
@@ -316,14 +355,13 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudentAndAssessment_Succe
 	// Verificar orden descendente por completed_at (el más reciente primero)
 	// Todos tienen el mismo score (100), así que verificamos el orden temporal
 	if len(found) >= 2 {
-		s.True(found[0].CompletedAt.After(found[1].CompletedAt) || found[0].CompletedAt.Equal(found[1].CompletedAt),
+		s.True(found[0].CompletedAt.After(*found[1].CompletedAt) || found[0].CompletedAt.Equal(*found[1].CompletedAt),
 			"Debe estar ordenado por completed_at DESC")
 	}
 
-	// Verificar que cada attempt tiene sus answers
+	// Verificar scores
 	for _, attempt := range found {
-		s.NotEmpty(attempt.Answers, "Cada attempt debe tener sus answers cargadas")
-		s.Equal(100, attempt.Score, "Todos deben tener score 100")
+		s.Equal(100.0, *attempt.Score, "Todos deben tener score 100")
 	}
 }
 
@@ -353,7 +391,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestCountByStudentAndAssessment_Succ
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       "q1",
+			QuestionIndex:    0,
 			StudentAnswer:    ptrStr("a"),
 			IsCorrect:        ptrBool(true),
 			TimeSpentSeconds: ptrInt(30),
@@ -361,21 +399,29 @@ func (s *AttemptRepositoryIntegrationSuite) TestCountByStudentAndAssessment_Succ
 			CreatedAt:        now,
 		}
 
+		score := 100.0 // 1 correcta de 1 = (1*100)/1 = 100
+		maxScore := 100.0
+		timeSpent := 30
+		completedAt := now
 		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     assessmentID,
 			StudentID:        studentID,
-			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
-			MaxScore:         100,
-			TimeSpentSeconds: 30,
+			Score:            &score,
+			MaxScore:         &maxScore,
+			TimeSpentSeconds: &timeSpent,
 			StartedAt:        now.Add(-1 * time.Minute),
-			CompletedAt:      now,
+			CompletedAt:      &completedAt,
 			CreatedAt:        now,
-			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 
 		err := s.repo.Save(ctx, attempt)
+		s.Require().NoError(err)
+
+		// Guardar answers por separado
+		answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+		err = answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 
@@ -400,7 +446,7 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudent_WithPagination() {
 		answer := &pgentities.AssessmentAttemptAnswer{
 			ID:               uuid.New(),
 			AttemptID:        attemptID,
-			QuestionID:       "q1",
+			QuestionIndex:    0,
 			StudentAnswer:    ptrStr("a"),
 			IsCorrect:        ptrBool(true),
 			TimeSpentSeconds: ptrInt(30),
@@ -408,21 +454,29 @@ func (s *AttemptRepositoryIntegrationSuite) TestFindByStudent_WithPagination() {
 			CreatedAt:        now,
 		}
 
+		score := 100.0 // 1 correcta de 1 = (1*100)/1 = 100
+		maxScore := 100.0
+		timeSpent := 30
+		completedAt := now.Add(-time.Duration(i) * time.Minute)
 		attempt := &pgentities.AssessmentAttempt{
 			ID:               attemptID,
 			AssessmentID:     uuid.New(),
 			StudentID:        studentID,
-			Score:            100, // 1 correcta de 1 = (1*100)/1 = 100
-			MaxScore:         100,
-			TimeSpentSeconds: 30,
+			Score:            &score,
+			MaxScore:         &maxScore,
+			TimeSpentSeconds: &timeSpent,
 			StartedAt:        now.Add(-time.Duration(i+1) * time.Minute),
-			CompletedAt:      now.Add(-time.Duration(i) * time.Minute),
+			CompletedAt:      &completedAt,
 			CreatedAt:        now.Add(-time.Duration(i) * time.Minute),
-			Answers:          []*pgentities.AssessmentAttemptAnswer{answer},
 			IdempotencyKey:   nil,
 		}
 
 		err := s.repo.Save(ctx, attempt)
+		s.Require().NoError(err)
+
+		// Guardar answers por separado
+		answerRepo := repository.NewPostgresAnswerRepository(s.PostgresDB)
+		err = answerRepo.Save(ctx, []*pgentities.AssessmentAttemptAnswer{answer})
 		s.Require().NoError(err)
 	}
 

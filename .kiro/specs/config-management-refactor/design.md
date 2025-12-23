@@ -73,10 +73,12 @@ tools/
 package config
 
 import (
-    "fmt"
-    "os"
-    "strings"
-    "github.com/spf13/viper"
+
+"fmt"
+"os"
+"strings"
+
+"github.com/spf13/viper"
 )
 
 func Load() (*Config, error) {
@@ -271,9 +273,11 @@ func Validate(cfg *Config) error {
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/spf13/cobra"
+
+"fmt"
+"os"
+
+"github.com/spf13/cobra"
 )
 
 func main() {
@@ -293,29 +297,28 @@ func main() {
 }
 ```
 
-
-
 ```go
 // tools/configctl/add.go
 package main
 
 import (
-    "fmt"
-    "github.com/spf13/cobra"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
 func addCmd() *cobra.Command {
-    var (
-        varType    string
-        isSecret   bool
-        defaultVal string
-        description string
-    )
+	var (
+		varType     string
+		isSecret    bool
+		defaultVal  string
+		description string
+	)
 
-    cmd := &cobra.Command{
-        Use:   "add [hierarchy.path] [name]",
-        Short: "Add a new configuration variable",
-        Long: `Add a new configuration variable to the system.
+	cmd := &cobra.Command{
+		Use:   "add [hierarchy.path] [name]",
+		Short: "Add a new configuration variable",
+		Long: `Add a new configuration variable to the system.
 
 Examples:
   # Add a public config variable
@@ -324,66 +327,66 @@ Examples:
   # Add a secret variable
   configctl add auth.jwt.secret --type string --secret --desc "JWT signing secret"
 `,
-        Args: cobra.ExactArgs(1),
-        RunE: func(cmd *cobra.Command, args []string) error {
-            path := args[0]
-            return addVariable(path, varType, isSecret, defaultVal, description)
-        },
-    }
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+			return addVariable(path, varType, isSecret, defaultVal, description)
+		},
+	}
 
-    cmd.Flags().StringVar(&varType, "type", "string", "Variable type (string, int, bool, duration)")
-    cmd.Flags().BoolVar(&isSecret, "secret", false, "Mark as secret (ENV only)")
-    cmd.Flags().StringVar(&defaultVal, "default", "", "Default value")
-    cmd.Flags().StringVar(&description, "desc", "", "Description")
-    cmd.MarkFlagRequired("desc")
+	cmd.Flags().StringVar(&varType, "type", "string", "Variable type (string, int, bool, duration)")
+	cmd.Flags().BoolVar(&isSecret, "secret", false, "Mark as secret (ENV only)")
+	cmd.Flags().StringVar(&defaultVal, "default", "", "Default value")
+	cmd.Flags().StringVar(&description, "desc", "", "Description")
+	cmd.MarkFlagRequired("desc")
 
-    return cmd
+	return cmd
 }
 
 func addVariable(path, varType string, isSecret bool, defaultVal, description string) error {
-    // 1. Validar path
-    if err := validatePath(path); err != nil {
-        return err
-    }
+	// 1. Validar path
+	if err := validatePath(path); err != nil {
+		return err
+	}
 
-    // 2. Actualizar config.go (agregar campo al struct)
-    if err := updateConfigStruct(path, varType, description); err != nil {
-        return fmt.Errorf("failed to update config.go: %w", err)
-    }
+	// 2. Actualizar config.go (agregar campo al struct)
+	if err := updateConfigStruct(path, varType, description); err != nil {
+		return fmt.Errorf("failed to update config.go: %w", err)
+	}
 
-    // 3. Si es secreto, actualizar .env.example
-    if isSecret {
-        if err := updateEnvExample(path, description); err != nil {
-            return fmt.Errorf("failed to update .env.example: %w", err)
-        }
-        fmt.Printf("✓ Added secret variable to .env.example\n")
-        fmt.Printf("  ENV var: %s\n", pathToEnvVar(path))
-    } else {
-        // 4. Si es público, actualizar YAMLs
-        if err := updateYAMLFiles(path, defaultVal); err != nil {
-            return fmt.Errorf("failed to update YAML files: %w", err)
-        }
-        fmt.Printf("✓ Added public variable to YAML files\n")
-    }
+	// 3. Si es secreto, actualizar .env.example
+	if isSecret {
+		if err := updateEnvExample(path, description); err != nil {
+			return fmt.Errorf("failed to update .env.example: %w", err)
+		}
+		fmt.Printf("✓ Added secret variable to .env.example\n")
+		fmt.Printf("  ENV var: %s\n", pathToEnvVar(path))
+	} else {
+		// 4. Si es público, actualizar YAMLs
+		if err := updateYAMLFiles(path, defaultVal); err != nil {
+			return fmt.Errorf("failed to update YAML files: %w", err)
+		}
+		fmt.Printf("✓ Added public variable to YAML files\n")
+	}
 
-    // 5. Actualizar validator.go si es requerido
-    if isSecret {
-        if err := updateValidator(path); err != nil {
-            return fmt.Errorf("failed to update validator: %w", err)
-        }
-    }
+	// 5. Actualizar validator.go si es requerido
+	if isSecret {
+		if err := updateValidator(path); err != nil {
+			return fmt.Errorf("failed to update validator: %w", err)
+		}
+	}
 
-    fmt.Println("\n✓ Configuration variable added successfully!")
-    fmt.Println("\nNext steps:")
-    if isSecret {
-        fmt.Printf("  1. Add %s to your .env file\n", pathToEnvVar(path))
-        fmt.Println("  2. Update deployment secrets in your cloud provider")
-    } else {
-        fmt.Println("  1. Review the default values in config-*.yaml files")
-        fmt.Println("  2. Adjust per-environment values as needed")
-    }
+	fmt.Println("\n✓ Configuration variable added successfully!")
+	fmt.Println("\nNext steps:")
+	if isSecret {
+		fmt.Printf("  1. Add %s to your .env file\n", pathToEnvVar(path))
+		fmt.Println("  2. Update deployment secrets in your cloud provider")
+	} else {
+		fmt.Println("  1. Review the default values in config-*.yaml files")
+		fmt.Println("  2. Adjust per-environment values as needed")
+	}
 
-    return nil
+	return nil
 }
 ```
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	testifySuite "github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/valueobject"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/testing/suite"
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
-	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 )
 
 // UserRepositoryIntegrationSuite tests de integración para UserRepository
@@ -67,11 +67,11 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserExists() {
 	// Assert
 	s.NoError(err, "FindByEmail should not return error when user exists")
 	s.NotNil(user)
-	s.Equal(email, user.Email().String())
-	s.Equal("John", user.FirstName())
-	s.Equal("Doe", user.LastName())
-	s.Equal(enum.SystemRoleStudent, user.Role())
-	s.True(user.IsActive())
+	s.Equal(email, user.Email)
+	s.Equal("John", user.FirstName)
+	s.Equal("Doe", user.LastName)
+	s.Equal("student", user.Role)
+	s.True(user.IsActive)
 }
 
 // TestFindByEmail_UserNotFound valida que FindByEmail retorna error cuando no existe
@@ -115,11 +115,11 @@ func (s *UserRepositoryIntegrationSuite) TestFindByID_UserExists() {
 	// Assert
 	s.NoError(err, "FindByID should not return error when user exists")
 	s.NotNil(user)
-	s.Equal(userID, user.ID().String())
-	s.Equal("jane@example.com", user.Email().String())
-	s.Equal("Jane", user.FirstName())
-	s.Equal("Smith", user.LastName())
-	s.Equal(enum.SystemRoleTeacher, user.Role())
+	s.Equal(userID, user.ID.String())
+	s.Equal("jane@example.com", user.Email)
+	s.Equal("Jane", user.FirstName)
+	s.Equal("Smith", user.LastName)
+	s.Equal("teacher", user.Role)
 }
 
 // TestFindByID_UserNotFound valida que FindByID retorna error cuando no existe
@@ -169,8 +169,8 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_MultipleUsersWithSameEm
 	// Assert
 	s.NoError(err)
 	s.NotNil(user)
-	s.Equal("User", user.FirstName())
-	s.Equal("One", user.LastName())
+	s.Equal("User", user.FirstName)
+	s.Equal("One", user.LastName)
 }
 
 // TestUpdate valida que Update actualiza correctamente un usuario
@@ -189,17 +189,17 @@ func (s *UserRepositoryIntegrationSuite) TestUpdate() {
 	`, email.String(), string(hashedPassword)).Scan(&userID)
 	s.Require().NoError(err)
 
-	userIDValue, err := valueobject.UserIDFromString(userID)
+	userIDUUID, err := uuid.Parse(userID)
 	s.Require().NoError(err)
 
 	// Reconstruir user con cambios
-	updatedUser := pgentities.User{
-		ID:           userIDValue.UUID().UUID,
-		Email:        email,
+	updatedUser := &pgentities.User{
+		ID:           userIDUUID,
+		Email:        email.String(),
 		PasswordHash: string(hashedPassword),
 		FirstName:    "Updated",
 		LastName:     "Name",
-		Role:         enum.SystemRoleStudent,
+		Role:         "student",
 		IsActive:     false, // Cambiar isActive
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),

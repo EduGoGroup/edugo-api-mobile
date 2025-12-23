@@ -2,15 +2,12 @@ package bootstrap
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
 	mockmessaging "github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/mock"
-	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Bootstrapper orquesta la inicialización de todos los recursos de infraestructura
@@ -130,37 +127,4 @@ func (b *Bootstrapper) initializeMockMode(ctx context.Context, startTime time.Ti
 	}
 
 	return resources, cleanup, nil
-}
-
-// Mantener compatibilidad con métodos inyectados para tests (deprecated)
-// Estos métodos son wrappers sobre las opciones funcionales existentes
-
-// WithInjectedLogger permite inyectar un logger pre-construido (para tests)
-// DEPRECATED: Usar WithLogger() directamente
-func WithInjectedLogger(log logger.Logger) BootstrapOption {
-	return WithLogger(log)
-}
-
-// WithInjectedPostgreSQL permite inyectar una conexión PostgreSQL (para tests)
-// DEPRECATED: Usar WithPostgreSQL() directamente
-func WithInjectedPostgreSQL(db *sql.DB) BootstrapOption {
-	return WithPostgreSQL(db)
-}
-
-// WithInjectedMongoDB permite inyectar una conexión MongoDB (para tests)
-// DEPRECATED: Usar WithMongoDB() directamente
-func WithInjectedMongoDB(db *mongo.Database) BootstrapOption {
-	return WithMongoDB(db)
-}
-
-// WithInjectedRabbitMQ permite inyectar un publisher RabbitMQ (para tests)
-// DEPRECATED: Usar WithRabbitMQ() directamente
-func WithInjectedRabbitMQ(pub rabbitmq.Publisher) BootstrapOption {
-	return WithRabbitMQ(pub)
-}
-
-// WithInjectedS3Client permite inyectar un cliente S3 (para tests)
-// DEPRECATED: Usar WithS3Client() directamente
-func WithInjectedS3Client(client S3Storage) BootstrapOption {
-	return WithS3Client(client)
 }

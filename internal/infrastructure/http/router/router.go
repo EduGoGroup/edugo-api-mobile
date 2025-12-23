@@ -88,9 +88,6 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetMaterialAssessment)
 		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
 
-		// Progreso del estudiante
-		materials.PATCH("/:id/progress", c.Handlers.ProgressHandler.UpdateProgress)
-
 		// Estadísticas de materiales
 		materials.GET("/:id/stats", c.Handlers.StatsHandler.GetMaterialStats)
 	}
@@ -109,12 +106,6 @@ func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
 	{
 		users.GET("/me/attempts", c.Handlers.AssessmentHandler.GetUserAttemptHistory)
 	}
-
-	// Submit de evaluación con cálculo automático de score y feedback detallado (legacy)
-	assessments := rg.Group("/assessments")
-	{
-		assessments.POST("/:id/submit", c.Handlers.AssessmentHandler.SubmitAssessment)
-	}
 }
 
 // setupProgressRoutes configura todas las rutas relacionadas con progreso de usuarios.
@@ -132,7 +123,10 @@ func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	stats := rg.Group("/stats")
 	{
 		// Estadísticas globales del sistema (Fase 6)
-		// TODO: Agregar middleware de autorización para solo admins
-		stats.GET("/global", c.Handlers.StatsHandler.GetGlobalStats)
+		// Solo accesible para administradores
+		stats.GET("/global",
+			middleware.RequireRole("admin", "super_admin"),
+			c.Handlers.StatsHandler.GetGlobalStats,
+		)
 	}
 }

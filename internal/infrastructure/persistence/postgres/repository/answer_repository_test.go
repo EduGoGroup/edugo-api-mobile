@@ -301,16 +301,3 @@ func TestPostgresAnswerRepository_GetQuestionDifficultyStats_ErrorRateCalculatio
 	expectedErrorRate := float64(total-correct) / float64(total)
 	assert.InDelta(t, expectedErrorRate, errorRate, 0.01)
 }
-
-// TODO: Claude Local - Tests de integración con testcontainers
-// func TestPostgresAnswerRepository_Integration_BatchInsert(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration test")
-// 	}
-//
-// 	// Test que verifica:
-// 	// 1. Batch insert de múltiples respuestas
-// 	// 2. Recuperación por attempt_id
-// 	// 3. Recuperación por question_id con paginación
-// 	// 4. Estadísticas de dificultad de preguntas
-// }

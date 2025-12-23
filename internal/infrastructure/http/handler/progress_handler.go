@@ -23,47 +23,6 @@ func NewProgressHandler(progressService service.ProgressService, logger logger.L
 	}
 }
 
-// UpdateProgress godoc
-// @Summary Update reading progress (legacy endpoint)
-// @Description Updates user's reading progress for a material (percentage and last page read). Legacy endpoint - consider using PUT /progress instead.
-// @Tags progress
-// @Accept json
-// @Produce json
-// @Param id path string true "Material ID (UUID format)"
-// @Param request body map[string]int true "Progress data (percentage, last_page)"
-// @Success 204 "Progress updated successfully"
-// @Failure 400 {object} ErrorResponse "Invalid request body or material ID"
-// @Failure 401 {object} ErrorResponse "User not authenticated"
-// @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /v1/materials/{id}/progress [patch]
-// @Security BearerAuth
-func (h *ProgressHandler) UpdateProgress(c *gin.Context) {
-	id := c.Param("id")
-	userID := ginmiddleware.MustGetUserID(c)
-
-	var req struct {
-		Percentage int `json:"percentage"`
-		LastPage   int `json:"last_page"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid request", Code: "INVALID_REQUEST"})
-		return
-	}
-
-	err := h.progressService.UpdateProgress(c.Request.Context(), id, userID, req.Percentage, req.LastPage)
-	if err != nil {
-		if appErr, ok := errors.GetAppError(err); ok {
-			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "internal error", Code: "INTERNAL_ERROR"})
-		return
-	}
-
-	c.Status(http.StatusNoContent)
-}
-
 // UpsertProgress godoc
 // @Summary Upsert progress idempotently (new UPSERT endpoint)
 // @Description Updates user progress in a material using idempotent UPSERT operation. Multiple calls with same data are safe.

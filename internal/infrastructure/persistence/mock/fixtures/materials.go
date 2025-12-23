@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	// UUIDs fijos para materiales de prueba - coherentes con api-administracion
+	// MaterialGuidaSumasID UUIDs fijos para materiales de prueba - coherentes con api-administracion
 	MaterialGuidaSumasID = uuid.MustParse("f1eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
 	MaterialGuiaRestasID = uuid.MustParse("f2eebc99-9c0b-4ef8-bb6d-6bb9bd380a22")
 	MaterialLasPlantasID = uuid.MustParse("f3eebc99-9c0b-4ef8-bb6d-6bb9bd380a33")

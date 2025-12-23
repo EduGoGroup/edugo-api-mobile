@@ -154,7 +154,7 @@ func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questio
 	}
 
 	// Nota: Esta función debería recibir questionIndex (int) en lugar de questionID (string)
-	// Por ahora mantenemos la firma de la interfaz pero esto es un code smell
+	// Por ahora mantenemos la firma de la interfaz, pero esto es un code smell
 	query := `
 		SELECT id, attempt_id, question_index, student_answer,
 		       is_correct, points_earned, max_points, time_spent_seconds,
@@ -223,7 +223,7 @@ func (r *PostgresAnswerRepository) FindByQuestionID(ctx context.Context, questio
 	return answers, nil
 }
 
-// Analytics: GetQuestionDifficultyStats obtiene estadísticas de dificultad de una pregunta
+// GetQuestionDifficultyStats Analytics: GetQuestionDifficultyStats obtiene estadísticas de dificultad de una pregunta
 // Esta es una función helper para analytics (no en la interfaz del repositorio)
 func (r *PostgresAnswerRepository) GetQuestionDifficultyStats(ctx context.Context, questionID string) (totalAnswers int, correctAnswers int, errorRate float64, err error) {
 	if questionID == "" {
@@ -235,7 +235,7 @@ func (r *PostgresAnswerRepository) GetQuestionDifficultyStats(ctx context.Contex
 			COUNT(*) as total,
 			COUNT(*) FILTER (WHERE is_correct = true) as correct
 		FROM assessment_attempt_answer
-		WHERE question_id = $1
+		WHERE question_index::text = $1
 	`
 
 	var total, correct int
