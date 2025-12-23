@@ -1,9 +1,9 @@
 # Sprint: Mejoras y Refactorizaciones - edugo-api-mobile
 
 > **Fecha de inicio:** 2024-12-23  
-> **Estado:** En Ejecución - Fase 1  
+> **Estado:** ✅ Fase 1 Completada - Pendiente PR  
 > **Branch base:** `dev`  
-> **Branch activo:** `feature/unify-config-standard` (reutilizado para Fase 1)
+> **Branch activo:** `feature/sprint-improvements-plan`
 
 ---
 
@@ -52,18 +52,27 @@ Resolver la deuda técnica más crítica que afecta la funcionalidad del sistema
   - ✅ Actualizados tests y mocks con nuevo parámetro
   - **Commit:** `fix(material): obtener schoolID del contexto de autenticación (DEBT-003)`
 
-- [ ] **DEBT-005**: Resolver tests unitarios con TODOs
-  - Archivos afectados:
+- [x] **DEBT-005**: Resolver tests unitarios con TODOs ✅ (23 Dic 2024)
+  - Archivos eliminados:
     - `answer_repository_test.go`
     - `assessment_repository_test.go`
     - `assessment_document_repository_test.go`
-  - Decisión: Eliminar tests unitarios comentados (los de integración son suficientes)
-  - **Commit:** `test: eliminar tests unitarios redundantes con TODOs`
+  - ✅ Tests de integración existentes son suficientes
+  - **Commit:** `test: eliminar tests unitarios redundantes con TODOs (DEBT-005)`
 
-- [ ] **DEBT-006**: Estandarizar uso de logger
-  - Auditar archivos con logging inconsistente
-  - Estandarizar en formato key-value pairs
-  - **Commit:** `refactor(logger): estandarizar formato de logging`
+- [x] **DEBT-006**: Estandarizar uso de logger ✅ (23 Dic 2024)
+  - ✅ 8 archivos corregidos (eliminados imports de `go.uber.org/zap`)
+  - ✅ Convertido `zap.Field` a formato key-value pairs
+  - Archivos actualizados:
+    - `assessment_attempt_service.go`
+    - `material_service.go`
+    - `progress_service.go`
+    - `stats_service.go`
+    - `noop/publisher.go`
+    - `noop/storage.go`
+    - `rabbitmq/publisher.go`
+    - `s3/client.go`
+  - **Commit:** `refactor(logger): estandarizar formato de logging (DEBT-006)`
 
 ### Validación
 ```bash
@@ -372,7 +381,10 @@ Fase 6 (Observabilidad)
 | 2024-12-23 | Dependencia api-admin completada (school_id en JWT) | Claude Code |
 | 2024-12-23 | Inicio de Fase 1 | Claude Code |
 | 2024-12-23 | **DEBT-003 completado** - SchoolID del contexto JWT | Claude Code |
+| 2024-12-23 | **DEBT-005 completado** - Tests unitarios redundantes eliminados | Claude Code |
+| 2024-12-23 | **DEBT-006 completado** - Logger estandarizado en 8 archivos | Claude Code |
+| 2024-12-23 | **✅ Fase 1 COMPLETADA** - 3/3 tareas | Claude Code |
 
 ---
 
-**Próximo paso:** Comenzar con Fase 1 - crear rama `feature/debt-critical` desde `dev`
+**Próximo paso:** Crear PR de Fase 1 a `dev` y comenzar Fase 2 (TODOs de Autorización)
