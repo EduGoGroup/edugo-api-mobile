@@ -86,15 +86,23 @@ func WithOptionalResource(resourceName string) BootstrapOption {
 
 // WithDisabledResource deshabilita completamente un recurso
 // El recurso no se inicializa y se usa una implementación noop
+// Recursos soportados: "rabbitmq", "s3"
+// Nota: "postgresql", "mongodb" y "logger" no pueden ser deshabilitados
 func WithDisabledResource(resourceName string) BootstrapOption {
 	return func(opts *BootstrapOptions) {
-		if opts.OptionalResources == nil {
-			opts.OptionalResources = make(map[string]bool)
+		if opts.DisabledResources == nil {
+			opts.DisabledResources = make(map[string]bool)
 		}
-		// Marcar como opcional para que use noop
-		opts.OptionalResources[resourceName] = true
-		// TODO: Implementar lógica de deshabilitación en el bootstrapper
+		opts.DisabledResources[resourceName] = true
 	}
+}
+
+// IsResourceDisabled verifica si un recurso está deshabilitado
+func (opts *BootstrapOptions) IsResourceDisabled(resourceName string) bool {
+	if opts == nil || opts.DisabledResources == nil {
+		return false
+	}
+	return opts.DisabledResources[resourceName]
 }
 
 // WithLoggerFactory inyecta una factory personalizada para crear loggers

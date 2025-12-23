@@ -31,6 +31,13 @@ messaging:
     exchanges:
       materials: "edugo.materials"
     prefetch_count: 10
+    # Circuit Breaker para resiliencia ante fallos de RabbitMQ
+    circuit_breaker:
+      enabled: true # Habilitar circuit breaker
+      max_requests: 3 # Requests permitidos en estado half-open
+      interval: 60s # Intervalo para resetear contadores
+      timeout: 30s # Tiempo en estado open antes de half-open
+      failure_threshold: 5 # Fallos consecutivos para abrir circuito
 
 storage:
   s3:
@@ -49,15 +56,15 @@ logging:
 auth:
   jwt:
     # secret: Set via AUTH_JWT_SECRET environment variable (DEBE ser el mismo que api-admin)
-    issuer: "edugo-central"  # Issuer del token JWT (DEBE ser el mismo que api-admin)
+    issuer: "edugo-central" # Issuer del token JWT (DEBE ser el mismo que api-admin)
   api_admin:
     # Validación remota DESHABILITADA por defecto - se usa validación local con JWT
     # base_url: Set via AUTH_API_ADMIN_BASE_URL if remote validation is needed
     timeout: 5s
     cache_ttl: 60s
     cache_enabled: true
-    remote_enabled: false      # Validación remota deshabilitada por defecto
-    fallback_enabled: false    # Fallback remoto deshabilitado por defecto
+    remote_enabled: false # Validación remota deshabilitada por defecto
+    fallback_enabled: false # Fallback remoto deshabilitado por defecto
 
 bootstrap:
   optional_resources:
