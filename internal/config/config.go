@@ -60,10 +60,20 @@ type MessagingConfig struct {
 
 // RabbitMQConfig configuración de RabbitMQ
 type RabbitMQConfig struct {
-	URL           string         `mapstructure:"url"` // ENV: MESSAGING_RABBITMQ_URL (required, format: amqp://user:pass@host:port/)
-	Queues        QueuesConfig   `mapstructure:"queues"`
-	Exchanges     ExchangeConfig `mapstructure:"exchanges"`
-	PrefetchCount int            `mapstructure:"prefetch_count"`
+	URL            string               `mapstructure:"url"` // ENV: MESSAGING_RABBITMQ_URL (required, format: amqp://user:pass@host:port/)
+	Queues         QueuesConfig         `mapstructure:"queues"`
+	Exchanges      ExchangeConfig       `mapstructure:"exchanges"`
+	PrefetchCount  int                  `mapstructure:"prefetch_count"`
+	CircuitBreaker CircuitBreakerConfig `mapstructure:"circuit_breaker"`
+}
+
+// CircuitBreakerConfig configuración del circuit breaker para servicios externos
+type CircuitBreakerConfig struct {
+	Enabled          bool          `mapstructure:"enabled"`           // Habilitar circuit breaker (default: true)
+	MaxRequests      uint32        `mapstructure:"max_requests"`      // Requests permitidos en half-open (default: 3)
+	Interval         time.Duration `mapstructure:"interval"`          // Intervalo para resetear contadores (default: 60s)
+	Timeout          time.Duration `mapstructure:"timeout"`           // Tiempo en estado open antes de half-open (default: 30s)
+	FailureThreshold uint32        `mapstructure:"failure_threshold"` // Fallos consecutivos para abrir circuito (default: 5)
 }
 
 // QueuesConfig nombres de colas

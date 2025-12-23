@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap/adapter"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
@@ -10,6 +11,7 @@ import (
 	sharedBootstrap "github.com/EduGoGroup/edugo-shared/bootstrap"
 	"github.com/EduGoGroup/edugo-shared/lifecycle"
 	sharedLogger "github.com/EduGoGroup/edugo-shared/logger"
+	"github.com/sony/gobreaker"
 	"gorm.io/gorm/logger"
 )
 
@@ -162,14 +164,55 @@ func adaptSharedResources(
 	}
 	mongoDatabase := wrapper.mongoClient.Database(cfg.Database.MongoDB.Database)
 
-	// 4. RabbitMQ: crear adapter con el channel retenido
+	// 4. RabbitMQ: crear adapter con el channel retenido y envolver con circuit breaker
 	var rabbitMQPublisher rabbitmq.Publisher
 	if wrapper.rabbitChannel != nil {
-		rabbitMQPublisher = adapter.NewMessagePublisherAdapter(
+		basePublisher := adapter.NewMessagePublisherAdapter(
 			wrapper.rabbitChannel,
 			cfg.Messaging.RabbitMQ.Exchanges.Materials,
 			loggerAdapter,
 		)
+
+		// Envolver con Circuit Breaker si está habilitado
+		cbConfig := cfg.Messaging.RabbitMQ.CircuitBreaker
+		if cbConfig.Enabled {
+			resilientConfig := rabbitmq.ResilientPublisherConfig{
+				Name:             "rabbitmq-publisher",
+				MaxRequests:      cbConfig.MaxRequests,
+				Interval:         cbConfig.Interval,
+				Timeout:          cbConfig.Timeout,
+				FailureThreshold: cbConfig.FailureThreshold,
+				OnStateChange: func(name string, from, to gobreaker.State) {
+					loggerAdapter.Warn("circuit breaker state changed",
+						"name", name,
+						"from", from.String(),
+						"to", to.String(),
+					)
+				},
+			}
+			// Aplicar valores por defecto si no están configurados
+			if resilientConfig.MaxRequests == 0 {
+				resilientConfig.MaxRequests = 3
+			}
+			if resilientConfig.Interval == 0 {
+				resilientConfig.Interval = 60 * time.Second
+			}
+			if resilientConfig.Timeout == 0 {
+				resilientConfig.Timeout = 30 * time.Second
+			}
+			if resilientConfig.FailureThreshold == 0 {
+				resilientConfig.FailureThreshold = 5
+			}
+
+			rabbitMQPublisher = rabbitmq.NewResilientPublisher(basePublisher, resilientConfig)
+			loggerAdapter.Info("RabbitMQ publisher wrapped with circuit breaker",
+				"max_requests", resilientConfig.MaxRequests,
+				"timeout", resilientConfig.Timeout.String(),
+				"failure_threshold", resilientConfig.FailureThreshold,
+			)
+		} else {
+			rabbitMQPublisher = basePublisher
+		}
 	}
 
 	// 5. S3: crear adapter con el cliente retenido
