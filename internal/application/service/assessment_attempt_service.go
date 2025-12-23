@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repositories"
@@ -67,7 +66,7 @@ func (s *assessmentAttemptService) GetAssessmentByMaterialID(ctx context.Context
 	// 1. Buscar assessment en PostgreSQL
 	assessment, err := s.assessmentRepo.FindByMaterialID(ctx, materialID)
 	if err != nil {
-		s.logger.Error("failed to find assessment", zap.Error(err))
+		s.logger.Error("failed to find assessment", "error", err)
 		return nil, errors.NewDatabaseError("find assessment", err)
 	}
 	if assessment == nil {
@@ -77,7 +76,7 @@ func (s *assessmentAttemptService) GetAssessmentByMaterialID(ctx context.Context
 	// 2. Buscar preguntas en MongoDB usando mongo_document_id
 	mongoDoc, err := s.mongoRepo.FindByID(ctx, assessment.MongoDocumentID)
 	if err != nil {
-		s.logger.Error("failed to find mongo document", zap.Error(err))
+		s.logger.Error("failed to find mongo document", "error", err)
 		return nil, errors.NewDatabaseError("find mongo document", err)
 	}
 	if mongoDoc == nil {
@@ -130,7 +129,7 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 	// 2. Verificar si puede hacer otro intento (max_attempts)
 	attemptCount, err := s.attemptRepo.CountByStudentAndAssessment(ctx, studentID, assessment.ID)
 	if err != nil {
-		s.logger.Error("failed to count attempts", zap.Error(err))
+		s.logger.Error("failed to count attempts", "error", err)
 		return nil, errors.NewDatabaseError("count attempts", err)
 	}
 
@@ -183,13 +182,13 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 
 	// 8. Persistir intento (PostgreSQL con transacción ACID)
 	if err := s.attemptRepo.Save(ctx, attempt); err != nil {
-		s.logger.Error("failed to save attempt", zap.Error(err))
+		s.logger.Error("failed to save attempt", "error", err)
 		return nil, errors.NewDatabaseError("save attempt", err)
 	}
 
 	// 9. Persistir respuestas
 	if err := s.answerRepo.Save(ctx, answers); err != nil {
-		s.logger.Error("failed to save answers", zap.Error(err))
+		s.logger.Error("failed to save answers", "error", err)
 		return nil, errors.NewDatabaseError("save answers", err)
 	}
 
@@ -213,10 +212,10 @@ func (s *assessmentAttemptService) CreateAttempt(ctx context.Context, studentID,
 	}
 
 	s.logger.Info("attempt created successfully",
-		zap.String("attempt_id", attempt.ID.String()),
-		zap.String("student_id", studentID.String()),
-		zap.Float64("score", score),
-		zap.Int("correct_answers", correctCount),
+		"attempt_id", attempt.ID.String(),
+		"student_id", studentID.String(),
+		"score", score,
+		"correct_answers", correctCount,
 	)
 
 	// 12. Obtener pass threshold (nullable, default 60)
@@ -249,7 +248,7 @@ func (s *assessmentAttemptService) GetAttemptResult(ctx context.Context, attempt
 	// 1. Buscar intento
 	attempt, err := s.attemptRepo.FindByID(ctx, attemptID)
 	if err != nil {
-		s.logger.Error("failed to find attempt", zap.Error(err))
+		s.logger.Error("failed to find attempt", "error", err)
 		return nil, errors.NewDatabaseError("find attempt", err)
 	}
 	if attempt == nil {
@@ -276,7 +275,7 @@ func (s *assessmentAttemptService) GetAttemptResult(ctx context.Context, attempt
 	// 5. Cargar respuestas del intento (no están en la entity)
 	answers, err := s.answerRepo.FindByAttemptID(ctx, attemptID)
 	if err != nil {
-		s.logger.Error("failed to find answers", zap.Error(err))
+		s.logger.Error("failed to find answers", "error", err)
 		return nil, errors.NewDatabaseError("find answers", err)
 	}
 
@@ -344,7 +343,7 @@ func (s *assessmentAttemptService) GetAttemptHistory(ctx context.Context, studen
 	// 1. Buscar intentos del estudiante
 	attempts, err := s.attemptRepo.FindByStudent(ctx, studentID, limit, offset)
 	if err != nil {
-		s.logger.Error("failed to find attempts", zap.Error(err))
+		s.logger.Error("failed to find attempts", "error", err)
 		return nil, errors.NewDatabaseError("find attempts", err)
 	}
 
@@ -456,7 +455,7 @@ func (s *assessmentAttemptService) validateAndScoreAnswers(
 		// Buscar pregunta correspondiente
 		question, exists := questionMap[userAnswer.QuestionID]
 		if !exists {
-			s.logger.Warn("invalid question_id", zap.String("question_id", userAnswer.QuestionID))
+			s.logger.Warn("invalid question_id", "question_id", userAnswer.QuestionID)
 			continue
 		}
 
@@ -524,7 +523,7 @@ func (s *assessmentAttemptService) generateFeedback(questions []mongoRepo.Questi
 	for _, answer := range answers {
 		// Validar que el índice esté dentro del rango
 		if answer.QuestionIndex < 0 || answer.QuestionIndex >= len(questions) {
-			s.logger.Warn("invalid question_index", zap.Int("index", answer.QuestionIndex))
+			s.logger.Warn("invalid question_index", "index", answer.QuestionIndex)
 			continue
 		}
 

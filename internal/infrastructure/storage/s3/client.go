@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"go.uber.org/zap"
 )
 
 // S3Client maneja las operaciones con AWS S3
@@ -65,8 +64,8 @@ func NewS3Client(ctx context.Context, cfg S3Config, log logger.Logger) (*S3Clien
 	})
 
 	log.Info("Cliente S3 inicializado correctamente",
-		zap.String("region", cfg.Region),
-		zap.String("bucket", cfg.BucketName),
+		"region", cfg.Region,
+		"bucket", cfg.BucketName,
 	)
 
 	return &S3Client{
@@ -95,15 +94,15 @@ func (c *S3Client) GeneratePresignedUploadURL(ctx context.Context, key string, c
 	})
 	if err != nil {
 		c.logger.Error("error generando URL presignada para upload",
-			zap.String("key", key),
-			zap.Error(err),
+			"key", key,
+			"error", err,
 		)
 		return "", errors.NewInternalError("error generando URL presignada", err)
 	}
 
 	c.logger.Info("URL presignada para upload generada",
-		zap.String("key", key),
-		zap.Duration("expires_in", expiresIn),
+		"key", key,
+		"expires_in", expiresIn,
 	)
 
 	return presignedReq.URL, nil
@@ -126,15 +125,15 @@ func (c *S3Client) GeneratePresignedDownloadURL(ctx context.Context, key string,
 	})
 	if err != nil {
 		c.logger.Error("error generando URL presignada para download",
-			zap.String("key", key),
-			zap.Error(err),
+			"key", key,
+			"error", err,
 		)
 		return "", errors.NewInternalError("error generando URL presignada", err)
 	}
 
 	c.logger.Info("URL presignada para download generada",
-		zap.String("key", key),
-		zap.Duration("expires_in", expiresIn),
+		"key", key,
+		"expires_in", expiresIn,
 	)
 
 	return presignedReq.URL, nil

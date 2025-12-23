@@ -7,7 +7,6 @@ import (
 
 	"github.com/EduGoGroup/edugo-shared/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/zap"
 )
 
 // Publisher define la interfaz para publicar mensajes
@@ -80,7 +79,7 @@ func (p *RabbitMQPublisher) Connect(url string) error {
 	}
 
 	p.logger.Info("Connected to RabbitMQ successfully",
-		zap.String("exchange", p.exchange),
+		"exchange", p.exchange,
 	)
 
 	return nil
@@ -111,9 +110,9 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey st
 	)
 	if err != nil {
 		p.logger.Error("Failed to publish message",
-			zap.String("exchange", exchange),
-			zap.String("routing_key", routingKey),
-			zap.Error(err),
+			"exchange", exchange,
+			"routing_key", routingKey,
+			"error", err,
 		)
 		return fmt.Errorf("failed to publish message: %w", err)
 	}
@@ -123,23 +122,23 @@ func (p *RabbitMQPublisher) Publish(ctx context.Context, exchange, routingKey st
 	case confirm := <-confirms:
 		if !confirm.Ack {
 			p.logger.Warn("Message not acknowledged by broker",
-				zap.String("exchange", exchange),
-				zap.String("routing_key", routingKey),
+				"exchange", exchange,
+				"routing_key", routingKey,
 			)
 			return fmt.Errorf("message not acknowledged by broker")
 		}
 	case <-time.After(5 * time.Second):
 		p.logger.Warn("Timeout waiting for publisher confirmation",
-			zap.String("exchange", exchange),
-			zap.String("routing_key", routingKey),
+			"exchange", exchange,
+			"routing_key", routingKey,
 		)
 		return fmt.Errorf("timeout waiting for publisher confirmation")
 	}
 
 	p.logger.Debug("Message published successfully",
-		zap.String("exchange", exchange),
-		zap.String("routing_key", routingKey),
-		zap.Int("body_size", len(body)),
+		"exchange", exchange,
+		"routing_key", routingKey,
+		"body_size", len(body),
 	)
 
 	return nil

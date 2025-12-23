@@ -9,7 +9,6 @@ import (
 	pgentities "github.com/EduGoGroup/edugo-infrastructure/postgres/entities"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.uber.org/zap"
 )
 
 type ProgressService interface {
@@ -36,17 +35,17 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 
 	// Logging de entrada con contexto
 	s.logger.Info("updating progress",
-		zap.String("material_id", materialID),
-		zap.String("user_id", userIDStr),
-		zap.Int("percentage", percentage),
-		zap.Int("last_page", lastPage),
+		"material_id", materialID,
+		"user_id", userIDStr,
+		"percentage", percentage,
+		"last_page", lastPage,
 	)
 
 	// Validar que percentage está en rango [0-100]
 	if percentage < 0 || percentage > 100 {
 		s.logger.Warn("invalid percentage value",
-			zap.Int("percentage", percentage),
-			zap.String("user_id", userIDStr),
+			"percentage", percentage,
+			"user_id", userIDStr,
 		)
 		return errors.NewValidationError("percentage must be between 0 and 100")
 	}
@@ -54,14 +53,14 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 	// Validar materialID
 	matID, err := valueobject.MaterialIDFromString(materialID)
 	if err != nil {
-		s.logger.Error("invalid material_id", zap.Error(err))
+		s.logger.Error("invalid material_id", "error", err)
 		return errors.NewValidationError("invalid material_id")
 	}
 
 	// Validar userID
 	userID, err := valueobject.UserIDFromString(userIDStr)
 	if err != nil {
-		s.logger.Error("invalid user_id", zap.Error(err))
+		s.logger.Error("invalid user_id", "error", err)
 		return errors.NewValidationError("invalid user_id")
 	}
 
@@ -91,9 +90,9 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 	updatedProgress, err := s.progressRepo.Upsert(ctx, progress)
 	if err != nil {
 		s.logger.Error("failed to upsert progress",
-			zap.Error(err),
-			zap.String("material_id", materialID),
-			zap.String("user_id", userIDStr),
+			"error", err,
+			"material_id", materialID,
+			"user_id", userIDStr,
 		)
 		return errors.NewDatabaseError("upsert progress", err)
 	}
@@ -102,9 +101,9 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 	isCompleted := updatedProgress.Percentage == 100
 	if isCompleted {
 		s.logger.Info("material completed by user",
-			zap.String("material_id", materialID),
-			zap.String("user_id", userIDStr),
-			zap.Time("completed_at", updatedProgress.UpdatedAt),
+			"material_id", materialID,
+			"user_id", userIDStr,
+			"completed_at", updatedProgress.UpdatedAt,
 		)
 
 		// TODO (Fase futura): Publicar evento "material_completed" a RabbitMQ
@@ -120,11 +119,11 @@ func (s *progressService) UpdateProgress(ctx context.Context, materialID string,
 	// Logging de éxito con métricas de performance
 	elapsed := time.Since(startTime)
 	s.logger.Info("progress updated successfully",
-		zap.String("material_id", materialID),
-		zap.String("user_id", userIDStr),
-		zap.Int("percentage", percentage),
-		zap.Bool("is_completed", isCompleted),
-		zap.Duration("elapsed_ms", elapsed),
+		"material_id", materialID,
+		"user_id", userIDStr,
+		"percentage", percentage,
+		"is_completed", isCompleted,
+		"elapsed_ms", elapsed,
 	)
 
 	return nil
