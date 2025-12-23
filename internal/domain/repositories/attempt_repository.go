@@ -9,6 +9,7 @@ import (
 )
 
 // AttemptRepository define el contrato para persistencia de intentos
+// También implementa AssessmentStats para estadísticas globales
 type AttemptRepository interface {
 	// FindByID busca un intento por ID
 	FindByID(ctx context.Context, id uuid.UUID) (*pgentities.AssessmentAttempt, error)
@@ -24,4 +25,12 @@ type AttemptRepository interface {
 
 	// FindByStudent busca todos los intentos de un estudiante (historial)
 	FindByStudent(ctx context.Context, studentID uuid.UUID, limit, offset int) ([]*pgentities.AssessmentAttempt, error)
+
+	// === Métodos de Estadísticas (implementa AssessmentStats) ===
+
+	// CountCompletedAssessments cuenta el total de evaluaciones completadas
+	CountCompletedAssessments(ctx context.Context) (int64, error)
+
+	// CalculateAverageScore calcula el promedio de puntajes de evaluaciones completadas
+	CalculateAverageScore(ctx context.Context) (float64, error)
 }
