@@ -68,28 +68,31 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 	materials := rg.Group("/materials")
 	{
-		// CRUD básico de materiales
+		// Lectura de materiales (cualquier usuario autenticado)
 		materials.GET("", c.Handlers.MaterialHandler.ListMaterials)
-		materials.POST("", c.Handlers.MaterialHandler.CreateMaterial)
 		materials.GET("/:id", c.Handlers.MaterialHandler.GetMaterial)
-		materials.POST("/:id/upload-complete", c.Handlers.MaterialHandler.NotifyUploadComplete)
-
-		// Historial de versiones de materiales
 		materials.GET("/:id/versions", c.Handlers.MaterialHandler.GetMaterialWithVersions)
-
-		// URLs presignadas para S3
-		materials.POST("/:id/upload-url", c.Handlers.MaterialHandler.GenerateUploadURL)
 		materials.GET("/:id/download-url", c.Handlers.MaterialHandler.GenerateDownloadURL)
-
-		// Resúmenes de materiales
 		materials.GET("/:id/summary", c.Handlers.SummaryHandler.GetSummary)
-
-		// Evaluaciones (assessments) - Sprint-04
 		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetMaterialAssessment)
-		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
-
-		// Estadísticas de materiales
 		materials.GET("/:id/stats", c.Handlers.StatsHandler.GetMaterialStats)
+
+		// Creación/modificación de materiales (solo teacher, admin, super_admin)
+		materials.POST("",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.CreateMaterial,
+		)
+		materials.POST("/:id/upload-complete",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.NotifyUploadComplete,
+		)
+		materials.POST("/:id/upload-url",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.GenerateUploadURL,
+		)
+
+		// Intentos de evaluación (cualquier usuario autenticado)
+		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
 	}
 }
 
@@ -122,10 +125,10 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	stats := rg.Group("/stats")
 	{
-		// Estadísticas globales del sistema (Fase 6)
-		// Solo accesible para administradores
+		// Estadísticas globales del sistema
+		// Solo accesible para administradores (admin, super_admin)
 		stats.GET("/global",
-			middleware.RequireRole("admin", "super_admin"),
+			middleware.RequireAdmin(),
 			c.Handlers.StatsHandler.GetGlobalStats,
 		)
 	}

@@ -1,9 +1,9 @@
 # Sprint: Mejoras y Refactorizaciones - edugo-api-mobile
 
 > **Fecha de inicio:** 2024-12-23  
-> **Estado:** ✅ Fase 1 Completada - Pendiente PR  
+> **Estado:** ✅ Fase 2 Completada - Pendiente PR  
 > **Branch base:** `dev`  
-> **Branch activo:** `feature/sprint-improvements-plan`
+> **Branch activo:** `feature/auth-todos`
 
 ---
 
@@ -99,20 +99,26 @@ Completar funcionalidades de autorización pendientes.
 
 ### Tareas
 
-- [ ] **TODO-003**: Verificación de rol admin en Progress Handler
-  - Archivo: `internal/infrastructure/http/handler/progress_handler.go:109-110`
-  - Agregar bypass para roles `admin` y `super_admin`
-  - **Commit:** `feat(progress): agregar bypass de admin para actualizar progreso de otros usuarios`
+- [x] **TODO-003**: Verificación de rol admin en Progress Handler ✅ (23 Dic 2024)
+  - Archivo: `internal/infrastructure/http/handler/progress_handler.go`
+  - ✅ Agregado bypass para roles `admin` y `super_admin`
+  - ✅ Helpers `IsAdminRole()` y `HasRole()` en middleware/auth.go
+  - **Commit:** `14f949b` - `feat(progress): agregar bypass de admin para actualizar progreso de otros usuarios`
 
-- [ ] **Crear middleware genérico de autorización por rol**
-  - Archivo: `internal/infrastructure/http/middleware/authorization.go`
-  - Crear `RequireRole(roles ...string)` middleware
-  - Crear `RequireAnyRole(roles ...string)` middleware
-  - **Commit:** `feat(middleware): crear middleware genérico de autorización por rol`
+- [x] **Crear middleware genérico de autorización por rol** ✅ (23 Dic 2024)
+  - Archivo: `internal/infrastructure/http/middleware/remote_auth.go` (extendido)
+  - ✅ `RequireAdmin()` - admin o super_admin
+  - ✅ `RequireSuperAdmin()` - solo super_admin
+  - ✅ `RequireTeacher()` - teacher, admin o super_admin
+  - ✅ `RequireStudentOrAbove()` - cualquier rol autenticado
+  - **Commit:** `1de2caf` - `feat(middleware): agregar shortcuts de autorización por rol`
 
-- [ ] **Aplicar middleware a endpoints sensibles**
-  - Revisar router y aplicar donde sea necesario
-  - **Commit:** `feat(router): aplicar middleware de autorización a endpoints sensibles`
+- [x] **Aplicar middleware a endpoints sensibles** ✅ (23 Dic 2024)
+  - ✅ `POST /materials` → RequireTeacher()
+  - ✅ `POST /materials/:id/upload-complete` → RequireTeacher()
+  - ✅ `POST /materials/:id/upload-url` → RequireTeacher()
+  - ✅ `GET /stats/global` → RequireAdmin() (refactorizado)
+  - **Commit:** `072c7fe` - `feat(router): aplicar middleware de autorización a endpoints sensibles`
 
 ### Validación
 ```bash
@@ -383,8 +389,12 @@ Fase 6 (Observabilidad)
 | 2024-12-23 | **DEBT-003 completado** - SchoolID del contexto JWT | Claude Code |
 | 2024-12-23 | **DEBT-005 completado** - Tests unitarios redundantes eliminados | Claude Code |
 | 2024-12-23 | **DEBT-006 completado** - Logger estandarizado en 8 archivos | Claude Code |
-| 2024-12-23 | **✅ Fase 1 COMPLETADA** - 3/3 tareas | Claude Code |
+| 2024-12-23 | **✅ Fase 1 COMPLETADA** - 3/3 tareas, PR #89 merged | Claude Code |
+| 2024-12-23 | **TODO-003 completado** - Bypass admin en Progress Handler | Claude Code |
+| 2024-12-23 | **Middleware shortcuts** - RequireAdmin, RequireTeacher, etc. | Claude Code |
+| 2024-12-23 | **Router actualizado** - Middleware en endpoints sensibles | Claude Code |
+| 2024-12-23 | **✅ Fase 2 COMPLETADA** - 3/3 tareas | Claude Code |
 
 ---
 
-**Próximo paso:** Crear PR de Fase 1 a `dev` y comenzar Fase 2 (TODOs de Autorización)
+**Próximo paso:** Crear PR de Fase 2 a `dev` y comenzar Fase 3 (TODOs de Funcionalidad)

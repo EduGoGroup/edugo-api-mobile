@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
+	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
@@ -65,18 +66,25 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 		return
 	}
 
-	// Autorización: Usuario solo puede actualizar su propio progreso (a menos que sea admin)
-	// TODO: Agregar verificación de rol admin cuando exista
+	// Autorización: Usuario solo puede actualizar su propio progreso
+	// Excepción: admin y super_admin pueden actualizar el progreso de cualquier usuario
 	if req.UserID != authenticatedUserID {
-		h.logger.Warn("user attempting to update progress of another user",
-			"authenticated_user_id", authenticatedUserID,
+		if !middleware.IsAdminRole(c) {
+			h.logger.Warn("user attempting to update progress of another user",
+				"authenticated_user_id", authenticatedUserID,
+				"target_user_id", req.UserID,
+			)
+			c.JSON(http.StatusForbidden, ErrorResponse{
+				Error: "you can only update your own progress",
+				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		// Admin actualizando progreso de otro usuario
+		h.logger.Info("admin updating progress of another user",
+			"admin_user_id", authenticatedUserID,
 			"target_user_id", req.UserID,
 		)
-		c.JSON(http.StatusForbidden, ErrorResponse{
-			Error: "you can only update your own progress",
-			Code:  "FORBIDDEN",
-		})
-		return
 	}
 
 	// Invocar servicio para actualizar progreso
