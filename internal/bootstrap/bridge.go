@@ -3,7 +3,6 @@ package bootstrap
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/bootstrap/adapter"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/config"
@@ -181,32 +180,30 @@ func adaptSharedResources(
 		// Envolver con Circuit Breaker si está habilitado
 		cbConfig := cfg.Messaging.RabbitMQ.CircuitBreaker
 		if cbConfig.Enabled {
-			resilientConfig := rabbitmq.ResilientPublisherConfig{
-				Name:             "rabbitmq-publisher",
-				MaxRequests:      cbConfig.MaxRequests,
-				Interval:         cbConfig.Interval,
-				Timeout:          cbConfig.Timeout,
-				FailureThreshold: cbConfig.FailureThreshold,
-				OnStateChange: func(name string, from, to gobreaker.State) {
-					loggerAdapter.Warn("circuit breaker state changed",
-						"name", name,
-						"from", from.String(),
-						"to", to.String(),
-					)
-				},
+			// Usar configuración por defecto y sobrescribir con valores del config si están definidos
+			resilientConfig := rabbitmq.DefaultResilientPublisherConfig()
+
+			// Sobrescribir solo valores configurados (diferentes de zero value)
+			if cbConfig.MaxRequests > 0 {
+				resilientConfig.MaxRequests = cbConfig.MaxRequests
 			}
-			// Aplicar valores por defecto si no están configurados
-			if resilientConfig.MaxRequests == 0 {
-				resilientConfig.MaxRequests = 3
+			if cbConfig.Interval > 0 {
+				resilientConfig.Interval = cbConfig.Interval
 			}
-			if resilientConfig.Interval == 0 {
-				resilientConfig.Interval = 60 * time.Second
+			if cbConfig.Timeout > 0 {
+				resilientConfig.Timeout = cbConfig.Timeout
 			}
-			if resilientConfig.Timeout == 0 {
-				resilientConfig.Timeout = 30 * time.Second
+			if cbConfig.FailureThreshold > 0 {
+				resilientConfig.FailureThreshold = cbConfig.FailureThreshold
 			}
-			if resilientConfig.FailureThreshold == 0 {
-				resilientConfig.FailureThreshold = 5
+
+			// Configurar callback de cambio de estado
+			resilientConfig.OnStateChange = func(name string, from, to gobreaker.State) {
+				loggerAdapter.Warn("circuit breaker state changed",
+					"name", name,
+					"from", from.String(),
+					"to", to.String(),
+				)
 			}
 
 			rabbitMQPublisher = rabbitmq.NewResilientPublisher(basePublisher, resilientConfig)

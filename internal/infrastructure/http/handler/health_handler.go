@@ -77,12 +77,14 @@ type ComponentHealth struct {
 
 // Check godoc
 // @Summary Health check
-// @Description Verifica que la API y sus dependencias (PostgreSQL, MongoDB) estén funcionando correctamente
+// @Description Verifica que la API y sus dependencias (PostgreSQL, MongoDB, RabbitMQ, S3) estén funcionando correctamente.
+// @Description Use el parámetro detail=1 para obtener información detallada con latencias de cada componente.
 // @Tags health
 // @Produce json
-// @Param detail query string false "Incluir detalles de cada componente (1=detallado)"
-// @Success 200 {object} HealthResponse "System is healthy or degraded with status details"
-// @Failure 500 {object} ErrorResponse "System is unhealthy"
+// @Param detail query string false "Incluir detalles de cada componente (1=detallado, retorna DetailedHealthResponse)"
+// @Success 200 {object} HealthResponse "Sistema saludable (respuesta básica sin detail param)"
+// @Success 200 {object} DetailedHealthResponse "Sistema saludable (respuesta detallada con detail=1)"
+// @Failure 500 {object} ErrorResponse "Sistema no disponible"
 // @Router /health [get]
 func (h *HealthHandler) Check(c *gin.Context) {
 	// Si se solicita detalle, retornar respuesta detallada
@@ -184,7 +186,9 @@ func (h *HealthHandler) checkPostgres(ctx context.Context) ComponentHealth {
 	}
 
 	start := time.Now()
-	err := h.db.PingContext(ctx)
+	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	err := h.db.PingContext(pingCtx)
 	latency := time.Since(start)
 
 	if err != nil {
