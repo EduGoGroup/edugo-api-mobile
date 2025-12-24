@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AnswerFeedbackDTO:
+  dto.AnswerFeedbackDTO:
     properties:
       correct_answer:
         type: string
@@ -15,7 +15,7 @@ definitions:
       selected_option:
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AssessmentResponse:
+  dto.AssessmentResponse:
     properties:
       assessment_id:
         type: string
@@ -29,7 +29,7 @@ definitions:
         type: integer
       questions:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.QuestionDTO'
+          $ref: '#/definitions/dto.QuestionDTO'
         type: array
       time_limit_minutes:
         type: integer
@@ -38,11 +38,11 @@ definitions:
       total_questions:
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptHistoryResponse:
+  dto.AttemptHistoryResponse:
     properties:
       attempts:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptSummaryDTO'
+          $ref: '#/definitions/dto.AttemptSummaryDTO'
         type: array
       limit:
         type: integer
@@ -51,7 +51,7 @@ definitions:
       total_count:
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse:
+  dto.AttemptResultResponse:
     properties:
       assessment_id:
         type: string
@@ -65,7 +65,7 @@ definitions:
         type: integer
       feedback:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AnswerFeedbackDTO'
+          $ref: '#/definitions/dto.AnswerFeedbackDTO'
         type: array
       max_score:
         type: integer
@@ -84,7 +84,7 @@ definitions:
       total_questions:
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptSummaryDTO:
+  dto.AttemptSummaryDTO:
     properties:
       assessment_id:
         type: string
@@ -105,11 +105,11 @@ definitions:
       time_spent_seconds:
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateAttemptRequest:
+  dto.CreateAttemptRequest:
     properties:
       answers:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UserAnswerDTO'
+          $ref: '#/definitions/dto.UserAnswerDTO'
         minItems: 1
         type: array
       time_spent_seconds:
@@ -120,7 +120,7 @@ definitions:
     - answers
     - time_spent_seconds
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateMaterialRequest:
+  dto.CreateMaterialRequest:
     properties:
       description:
         example: A comprehensive guide to differential and integral calculus
@@ -140,7 +140,7 @@ definitions:
     required:
     - title
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateDownloadURLResponse:
+  dto.GenerateDownloadURLResponse:
     properties:
       download_url:
         example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf?X-Amz-Algorithm=...
@@ -150,7 +150,7 @@ definitions:
         example: 3600
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLRequest:
+  dto.GenerateUploadURLRequest:
     properties:
       content_type:
         example: application/pdf
@@ -162,7 +162,7 @@ definitions:
     - content_type
     - file_name
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLResponse:
+  dto.GenerateUploadURLResponse:
     properties:
       expires_in:
         description: En segundos
@@ -175,7 +175,7 @@ definitions:
         example: https://s3.amazonaws.com/bucket/materials/550e8400.pdf?X-Amz-Algorithm=...
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse:
+  dto.MaterialResponse:
     properties:
       academic_unit_id:
         example: 880e8400-e29b-41d4-a716-446655440003
@@ -232,7 +232,7 @@ definitions:
         example: 770e8400-e29b-41d4-a716-446655440002
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialVersionResponse:
+  dto.MaterialVersionResponse:
     properties:
       changed_by:
         example: 660e8400-e29b-41d4-a716-446655440001
@@ -256,36 +256,60 @@ definitions:
         example: 2
         type: integer
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialWithVersionsResponse:
+  dto.MaterialWithVersionsResponse:
     properties:
       material:
-        $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse'
+        $ref: '#/definitions/dto.MaterialResponse'
       versions:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialVersionResponse'
+          $ref: '#/definitions/dto.MaterialVersionResponse'
         type: array
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.OptionDTO:
+  dto.OptionDTO:
     properties:
       id:
         type: string
       text:
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.QuestionDTO:
+  dto.QuestionDTO:
     properties:
       id:
         type: string
       options:
         items:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.OptionDTO'
+          $ref: '#/definitions/dto.OptionDTO'
         type: array
       text:
         type: string
       type:
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UploadCompleteRequest:
+  dto.UpdateMaterialRequest:
+    properties:
+      academic_unit_id:
+        example: 880e8400-e29b-41d4-a716-446655440003
+        type: string
+      description:
+        example: Updated description
+        maxLength: 1000
+        type: string
+      grade:
+        example: 11th Grade
+        type: string
+      is_public:
+        example: true
+        type: boolean
+      subject:
+        example: Physics
+        type: string
+      title:
+        example: Updated Material Title
+        maxLength: 200
+        minLength: 3
+        type: string
+    type: object
+  dto.UploadCompleteRequest:
     properties:
       file_size_bytes:
         example: 1048576
@@ -297,7 +321,7 @@ definitions:
         example: https://s3.amazonaws.com/bucket/materials/file.pdf
         type: string
     type: object
-  github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UserAnswerDTO:
+  dto.UserAnswerDTO:
     properties:
       question_id:
         type: string
@@ -311,7 +335,7 @@ definitions:
     - selected_answer_id
     - time_spent_seconds
     type: object
-  internal_infrastructure_http_handler.ComponentHealth:
+  handler.ComponentHealth:
     properties:
       error:
         type: string
@@ -322,11 +346,11 @@ definitions:
       status:
         type: string
     type: object
-  internal_infrastructure_http_handler.DetailedHealthResponse:
+  handler.DetailedHealthResponse:
     properties:
       components:
         additionalProperties:
-          $ref: '#/definitions/internal_infrastructure_http_handler.ComponentHealth'
+          $ref: '#/definitions/handler.ComponentHealth'
         type: object
       service:
         type: string
@@ -339,7 +363,7 @@ definitions:
       version:
         type: string
     type: object
-  internal_infrastructure_http_handler.ErrorResponse:
+  handler.ErrorResponse:
     properties:
       code:
         example: INVALID_REQUEST
@@ -348,7 +372,7 @@ definitions:
         example: invalid request body
         type: string
     type: object
-  internal_infrastructure_http_handler.HealthResponse:
+  handler.HealthResponse:
     properties:
       mongodb:
         type: string
@@ -363,7 +387,7 @@ definitions:
       version:
         type: string
     type: object
-  internal_infrastructure_http_handler.ProgressResponse:
+  handler.ProgressResponse:
     properties:
       last_page:
         example: 45
@@ -381,7 +405,7 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-  internal_infrastructure_http_handler.UpsertProgressRequest:
+  handler.UpsertProgressRequest:
     properties:
       last_page:
         example: 45
@@ -430,11 +454,11 @@ paths:
         "200":
           description: Sistema saludable (respuesta detallada con detail=1)
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.DetailedHealthResponse'
+            $ref: '#/definitions/handler.DetailedHealthResponse'
         "500":
           description: Sistema no disponible
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Health check
       tags:
       - health
@@ -452,27 +476,27 @@ paths:
         "200":
           description: Resultados obtenidos exitosamente
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse'
+            $ref: '#/definitions/dto.AttemptResultResponse'
         "400":
           description: Invalid attempt ID
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden - attempt does not belong to user
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Attempt not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Obtener resultados de un intento específico
@@ -489,12 +513,12 @@ paths:
           description: List of materials retrieved successfully
           schema:
             items:
-              $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse'
+              $ref: '#/definitions/dto.MaterialResponse'
             type: array
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all materials
@@ -511,26 +535,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateMaterialRequest'
+          $ref: '#/definitions/dto.CreateMaterialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Material created successfully
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse'
+            $ref: '#/definitions/dto.MaterialResponse'
         "400":
           description: Invalid request body or validation error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: User not authenticated
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new material
@@ -551,22 +575,67 @@ paths:
         "200":
           description: Material found successfully
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse'
+            $ref: '#/definitions/dto.MaterialResponse'
         "400":
           description: Invalid material ID format
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Material not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get material by ID
+      tags:
+      - materials
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing material's metadata (title, description, subject,
+        grade, academic_unit_id, is_public)
+      parameters:
+      - description: Material ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMaterialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Material updated successfully
+          schema:
+            $ref: '#/definitions/dto.MaterialResponse'
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Not authorized to update this material
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Material not found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update material
       tags:
       - materials
   /v1/materials/{id}/assessment:
@@ -583,23 +652,23 @@ paths:
         "200":
           description: Assessment obtenido exitosamente
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AssessmentResponse'
+            $ref: '#/definitions/dto.AssessmentResponse'
         "400":
           description: Invalid material ID
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Assessment not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Obtener cuestionario de un material (SIN respuestas correctas)
@@ -620,28 +689,28 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateAttemptRequest'
+          $ref: '#/definitions/dto.CreateAttemptRequest'
       responses:
         "201":
           description: Attempt creado exitosamente
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse'
+            $ref: '#/definitions/dto.AttemptResultResponse'
         "400":
           description: Invalid request or material ID
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Assessment not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Crear intento de evaluación y obtener calificación
@@ -662,11 +731,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateDownloadURLResponse'
+            $ref: '#/definitions/dto.GenerateDownloadURLResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Generate presigned download URL
@@ -693,15 +762,15 @@ paths:
         "400":
           description: Invalid material ID format
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Material not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get material statistics
@@ -727,15 +796,15 @@ paths:
         "400":
           description: Invalid material ID format
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Summary not found for this material
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get material summary
@@ -758,7 +827,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UploadCompleteRequest'
+          $ref: '#/definitions/dto.UploadCompleteRequest'
       produces:
       - application/json
       responses:
@@ -767,15 +836,15 @@ paths:
         "400":
           description: Invalid request body or material ID
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Material not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Notify upload complete
@@ -797,22 +866,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLRequest'
+          $ref: '#/definitions/dto.GenerateUploadURLRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLResponse'
+            $ref: '#/definitions/dto.GenerateUploadURLResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Generate presigned upload URL
@@ -833,19 +902,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialWithVersionsResponse'
+            $ref: '#/definitions/dto.MaterialWithVersionsResponse'
         "400":
           description: Invalid UUID format
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Material not found
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get material with version history
@@ -863,30 +932,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_infrastructure_http_handler.UpsertProgressRequest'
+          $ref: '#/definitions/handler.UpsertProgressRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Progress updated successfully
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ProgressResponse'
+            $ref: '#/definitions/handler.ProgressResponse'
         "400":
           description: Invalid request (bad UUID, percentage out of range)
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden (user can only update own progress)
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Upsert progress idempotently (new UPSERT endpoint)
@@ -906,11 +975,11 @@ paths:
         "403":
           description: Forbidden - solo admins
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get global system statistics
@@ -935,19 +1004,19 @@ paths:
         "200":
           description: Historial obtenido exitosamente
           schema:
-            $ref: '#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptHistoryResponse'
+            $ref: '#/definitions/dto.AttemptHistoryResponse'
         "400":
           description: Invalid query parameters
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Obtener historial de intentos del usuario autenticado

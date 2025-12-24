@@ -21,6 +21,7 @@ type MaterialService interface {
 	GetMaterialWithVersions(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	NotifyUploadComplete(ctx context.Context, materialID string, req dto.UploadCompleteRequest) error
 	ListMaterials(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
+	UpdateMaterial(ctx context.Context, materialID string, req dto.UpdateMaterialRequest, userID string) (*dto.MaterialResponse, error)
 }
 
 type materialService struct {
@@ -271,4 +272,95 @@ func (s *materialService) GetMaterialWithVersions(ctx context.Context, id string
 	)
 
 	return response, nil
+}
+
+// UpdateMaterial actualiza los campos de un material existente
+// Solo el creador del material puede actualizarlo
+func (s *materialService) UpdateMaterial(
+	ctx context.Context,
+	materialIDStr string,
+	req dto.UpdateMaterialRequest,
+	userIDStr string,
+) (*dto.MaterialResponse, error) {
+	// Validar request
+	if err := req.Validate(); err != nil {
+		s.logger.Warn("validation failed", "error", err)
+		return nil, err
+	}
+
+	// Parsear IDs
+	materialID, err := valueobject.MaterialIDFromString(materialIDStr)
+	if err != nil {
+		return nil, errors.NewValidationError("invalid material_id format")
+	}
+
+	userID, err := valueobject.UserIDFromString(userIDStr)
+	if err != nil {
+		return nil, errors.NewValidationError("invalid user_id format")
+	}
+
+	// Obtener material existente
+	material, err := s.materialRepo.FindByID(ctx, materialID)
+	if err != nil || material == nil {
+		s.logger.Warn("material not found", "material_id", materialIDStr, "error", err)
+		return nil, errors.NewNotFoundError("material")
+	}
+
+	// Verificar permisos: solo el creador puede actualizar
+	if material.UploadedByTeacherID.String() != userID.UUID().UUID.String() {
+		s.logger.Warn("unauthorized update attempt",
+			"material_id", materialIDStr,
+			"owner_id", material.UploadedByTeacherID.String(),
+			"user_id", userIDStr,
+		)
+		return nil, errors.NewForbiddenError("only the material creator can update it")
+	}
+
+	// Aplicar cambios solo si fueron provistos
+	if req.Title != nil {
+		material.Title = *req.Title
+	}
+
+	if req.Description != nil {
+		material.Description = req.Description
+	}
+
+	if req.Subject != nil {
+		material.Subject = req.Subject
+	}
+
+	if req.Grade != nil {
+		material.Grade = req.Grade
+	}
+
+	if req.AcademicUnitID != nil {
+		if *req.AcademicUnitID == "" {
+			material.AcademicUnitID = nil
+		} else {
+			academicUnitID, err := uuid.Parse(*req.AcademicUnitID)
+			if err != nil {
+				return nil, errors.NewValidationError("invalid academic_unit_id format")
+			}
+			material.AcademicUnitID = &academicUnitID
+		}
+	}
+
+	if req.IsPublic != nil {
+		material.IsPublic = *req.IsPublic
+	}
+
+	material.UpdatedAt = time.Now()
+
+	// Persistir cambios
+	if err := s.materialRepo.Update(ctx, material); err != nil {
+		s.logger.Error("failed to update material", "material_id", materialIDStr, "error", err)
+		return nil, errors.NewDatabaseError("update material", err)
+	}
+
+	s.logger.Info("material updated successfully",
+		"material_id", materialIDStr,
+		"user_id", userIDStr,
+	)
+
+	return dto.ToMaterialResponse(material), nil
 }

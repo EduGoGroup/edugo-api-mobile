@@ -160,3 +160,30 @@ func ToMaterialWithVersionsResponse(material *pgentities.Material, versions []*p
 		Versions: versionResponses,
 	}
 }
+
+// UpdateMaterialRequest representa los campos actualizables de un material
+// Todos los campos son opcionales (punteros) para permitir actualizaciones parciales
+type UpdateMaterialRequest struct {
+	Title          *string `json:"title,omitempty" binding:"omitempty,min=3,max=200" example:"Updated Material Title"`
+	Description    *string `json:"description,omitempty" binding:"omitempty,max=1000" example:"Updated description"`
+	Subject        *string `json:"subject,omitempty" example:"Physics"`
+	Grade          *string `json:"grade,omitempty" example:"11th Grade"`
+	AcademicUnitID *string `json:"academic_unit_id,omitempty" example:"880e8400-e29b-41d4-a716-446655440003"`
+	IsPublic       *bool   `json:"is_public,omitempty" example:"true"`
+}
+
+func (r *UpdateMaterialRequest) Validate() error {
+	v := validator.New()
+
+	// Solo validar campos que fueron provistos
+	if r.Title != nil {
+		v.MinLength(*r.Title, 3, "title")
+		v.MaxLength(*r.Title, 200, "title")
+	}
+
+	if r.Description != nil {
+		v.MaxLength(*r.Description, 1000, "description")
+	}
+
+	return v.GetError()
+}
