@@ -363,6 +363,75 @@ func (h *MaterialHandler) GenerateDownloadURL(c *gin.Context) {
 	})
 }
 
+// UpdateMaterial godoc
+// @Summary Update material
+// @Description Updates an existing material's metadata (title, description, subject, grade, academic_unit_id, is_public)
+// @Tags materials
+// @Accept json
+// @Produce json
+// @Param id path string true "Material ID (UUID format)"
+// @Param request body dto.UpdateMaterialRequest true "Update data"
+// @Success 200 {object} dto.MaterialResponse "Material updated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request body or validation error"
+// @Failure 403 {object} ErrorResponse "Not authorized to update this material"
+// @Failure 404 {object} ErrorResponse "Material not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /v1/materials/{id} [put]
+// @Security BearerAuth
+func (h *MaterialHandler) UpdateMaterial(c *gin.Context) {
+	materialID := c.Param("id")
+	userID := ginmiddleware.MustGetUserID(c)
+
+	var req dto.UpdateMaterialRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Warn("invalid request body", "error", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "invalid request body",
+			Code:  "INVALID_REQUEST",
+		})
+		return
+	}
+
+	// Actualizar material
+	material, err := h.materialService.UpdateMaterial(
+		c.Request.Context(),
+		materialID,
+		req,
+		userID,
+	)
+	if err != nil {
+		if appErr, ok := errors.GetAppError(err); ok {
+			h.logger.Warn("update material failed",
+				"material_id", materialID,
+				"user_id", userID,
+				"error", appErr.Message,
+			)
+			c.JSON(appErr.StatusCode, ErrorResponse{
+				Error: appErr.Message,
+				Code:  string(appErr.Code),
+			})
+			return
+		}
+
+		h.logger.Error("unexpected error updating material",
+			"material_id", materialID,
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: "internal server error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	h.logger.Info("material updated",
+		"material_id", materialID,
+		"user_id", userID,
+	)
+
+	c.JSON(http.StatusOK, material)
+}
+
 type ErrorResponse struct {
 	Error string `json:"error" example:"invalid request body"`
 	Code  string `json:"code" example:"INVALID_REQUEST"`

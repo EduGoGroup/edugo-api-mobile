@@ -99,6 +99,10 @@ func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 			middleware.RequireTeacher(),
 			c.Handlers.MaterialHandler.GenerateUploadURL,
 		)
+		materials.PUT("/:id",
+			middleware.RequireTeacher(),
+			c.Handlers.MaterialHandler.UpdateMaterial,
+		)
 
 		// Intentos de evaluación (cualquier usuario autenticado)
 		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
