@@ -27,16 +27,20 @@ type AssessmentDocumentRepository interface {
 	Delete(ctx context.Context, objectID string) error
 }
 
-// AssessmentDocument representa el schema MongoDB de material_assessment
+// AssessmentDocument representa el schema MongoDB de material_assessment_worker
 type AssessmentDocument struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	MaterialID string             `bson:"material_id"`
-	Title      string             `bson:"title"`
-	Questions  []Question         `bson:"questions"`
-	Metadata   Metadata           `bson:"metadata"`
-	Version    int                `bson:"version"`
-	CreatedAt  time.Time          `bson:"created_at"`
-	UpdatedAt  time.Time          `bson:"updated_at"`
+	ID               primitive.ObjectID `bson:"_id,omitempty"`
+	MaterialID       string             `bson:"material_id"`
+	Title            string             `bson:"title"`
+	Questions        []Question         `bson:"questions"`
+	TotalQuestions   int                `bson:"total_questions"`
+	TotalPoints      int                `bson:"total_points"`
+	AIModel          string             `bson:"ai_model"`
+	ProcessingTimeMs int                `bson:"processing_time_ms"`
+	Metadata         Metadata           `bson:"metadata"`
+	Version          int                `bson:"version"`
+	CreatedAt        time.Time          `bson:"created_at"`
+	UpdatedAt        time.Time          `bson:"updated_at"`
 }
 
 // Question representa una pregunta del assessment
@@ -80,7 +84,7 @@ type MongoAssessmentDocumentRepository struct {
 // NewMongoAssessmentDocumentRepository crea una nueva instancia del repositorio
 func NewMongoAssessmentDocumentRepository(db *mongo.Database) AssessmentDocumentRepository {
 	return &MongoAssessmentDocumentRepository{
-		collection: db.Collection("material_assessment"),
+		collection: db.Collection("material_assessment_worker"),
 	}
 }
 
