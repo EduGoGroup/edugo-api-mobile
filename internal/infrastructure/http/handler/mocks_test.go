@@ -17,6 +17,7 @@ type MockMaterialService struct {
 	GetMaterialWithVersionsFunc func(ctx context.Context, id string) (*dto.MaterialWithVersionsResponse, error)
 	ListMaterialsFunc           func(ctx context.Context, filters repository.ListFilters) ([]*dto.MaterialResponse, error)
 	NotifyUploadCompleteFunc    func(ctx context.Context, id string, req dto.UploadCompleteRequest) error
+	UpdateMaterialFunc          func(ctx context.Context, materialID string, req dto.UpdateMaterialRequest, userID string) (*dto.MaterialResponse, error)
 }
 
 func (m *MockMaterialService) CreateMaterial(ctx context.Context, req dto.CreateMaterialRequest, authorID string, schoolID string) (*dto.MaterialResponse, error) {
@@ -55,6 +56,13 @@ func (m *MockMaterialService) NotifyUploadComplete(ctx context.Context, id strin
 		return m.NotifyUploadCompleteFunc(ctx, id, req)
 	}
 	return nil
+}
+
+func (m *MockMaterialService) UpdateMaterial(ctx context.Context, materialID string, req dto.UpdateMaterialRequest, userID string) (*dto.MaterialResponse, error) {
+	if m.UpdateMaterialFunc != nil {
+		return m.UpdateMaterialFunc(ctx, materialID, req, userID)
+	}
+	return &dto.MaterialResponse{ID: materialID}, nil
 }
 
 // MockS3Storage para tests de S3 (implementa s3.S3Storage interface)

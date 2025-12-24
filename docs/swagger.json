@@ -18,7 +18,7 @@
     "paths": {
         "/health": {
             "get": {
-                "description": "Verifica que la API y sus dependencias (PostgreSQL, MongoDB) estén funcionando correctamente",
+                "description": "Verifica que la API y sus dependencias (PostgreSQL, MongoDB, RabbitMQ, S3) estén funcionando correctamente.\nUse el parámetro detail=1 para obtener información detallada con latencias de cada componente.",
                 "produces": [
                     "application/json"
                 ],
@@ -26,86 +26,23 @@
                     "health"
                 ],
                 "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "System is healthy or degraded with status details",
-                        "schema": {
-                            "$ref": "#/definitions/handler.HealthResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "System is unhealthy",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/assessments/{id}/submit": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Calcula automáticamente el puntaje de una evaluación y genera feedback detallado por pregunta",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assessments"
-                ],
-                "summary": "Submit assessment with automatic scoring and detailed feedback",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Assessment ID (Material ID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "User responses",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.SubmitAssessmentRequest"
-                        }
+                        "description": "Incluir detalles de cada componente (1=detallado, retorna DetailedHealthResponse)",
+                        "name": "detail",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Resultado con score y feedback detallado",
+                        "description": "Sistema saludable (respuesta detallada con detail=1)",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or assessment_id",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Assessment not found",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Assessment already completed by user",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.DetailedHealthResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Sistema no disponible",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
@@ -313,6 +250,74 @@
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing material's metadata (title, description, subject, grade, academic_unit_id, is_public)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "materials"
+                ],
+                "summary": "Update material",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Material ID (UUID format)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateMaterialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Material updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MaterialResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Not authorized to update this material",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Material not found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/v1/materials/{id}/assessment": {
@@ -467,70 +472,6 @@
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/materials/{id}/progress": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates user's reading progress for a material (percentage and last page read). Legacy endpoint - consider using PUT /progress instead.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "progress"
-                ],
-                "summary": "Update reading progress (legacy endpoint)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Material ID (UUID format)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Progress data (percentage, last_page)",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Progress updated successfully"
-                    },
-                    "400": {
-                        "description": "Invalid request body or material ID",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "User not authenticated",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
@@ -1386,6 +1327,38 @@
                 }
             }
         },
+        "dto.UpdateMaterialRequest": {
+            "type": "object",
+            "properties": {
+                "academic_unit_id": {
+                    "type": "string",
+                    "example": "880e8400-e29b-41d4-a716-446655440003"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Updated description"
+                },
+                "grade": {
+                    "type": "string",
+                    "example": "11th Grade"
+                },
+                "is_public": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "subject": {
+                    "type": "string",
+                    "example": "Physics"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 3,
+                    "example": "Updated Material Title"
+                }
+            }
+        },
         "dto.UploadCompleteRequest": {
             "type": "object",
             "properties": {
@@ -1420,6 +1393,49 @@
                 "time_spent_seconds": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "handler.ComponentHealth": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "latency": {
+                    "type": "string"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.DetailedHealthResponse": {
+            "type": "object",
+            "properties": {
+                "components": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/handler.ComponentHealth"
+                    }
+                },
+                "service": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
@@ -1483,9 +1499,6 @@
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
-        },
-        "handler.SubmitAssessmentRequest": {
-            "type": "object"
         },
         "handler.UpsertProgressRequest": {
             "type": "object",

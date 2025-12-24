@@ -147,8 +147,9 @@ func (r *postgresMaterialRepository) Update(ctx context.Context, material *pgent
 	query := `
 		UPDATE materials
 		SET title = $1, description = $2, subject = $3, grade = $4,
-		    file_url = $5, status = $6, is_public = $7, updated_at = $8
-		WHERE id = $9
+		    file_url = $5, file_type = $6, file_size_bytes = $7,
+		    status = $8, is_public = $9, academic_unit_id = $10, updated_at = $11
+		WHERE id = $12
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -157,8 +158,11 @@ func (r *postgresMaterialRepository) Update(ctx context.Context, material *pgent
 		material.Subject,
 		material.Grade,
 		material.FileURL,
+		material.FileType,
+		material.FileSizeBytes,
 		material.Status,
 		material.IsPublic,
+		material.AcademicUnitID,
 		material.UpdatedAt,
 		material.ID,
 	)

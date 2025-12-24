@@ -51,7 +51,7 @@ func (s *AssessmentDocumentRepositoryIntegrationSuite) SetupTest() {
 
 	// Limpiar colección MongoDB antes de cada test
 	ctx := context.Background()
-	_ = s.MongoDB.Collection("material_assessment").Drop(ctx)
+	_ = s.MongoDB.Collection("material_assessment_worker").Drop(ctx)
 }
 
 // TestAssessmentDocumentRepositoryIntegration ejecuta la suite
