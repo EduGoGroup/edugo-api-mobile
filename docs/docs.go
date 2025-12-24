@@ -25,7 +25,7 @@ const docTemplate = `{
     "paths": {
         "/health": {
             "get": {
-                "description": "Verifica que la API y sus dependencias (PostgreSQL, MongoDB) estén funcionando correctamente",
+                "description": "Verifica que la API y sus dependencias (PostgreSQL, MongoDB, RabbitMQ, S3) estén funcionando correctamente.\nUse el parámetro detail=1 para obtener información detallada con latencias de cada componente.",
                 "produces": [
                     "application/json"
                 ],
@@ -33,88 +33,25 @@ const docTemplate = `{
                     "health"
                 ],
                 "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "System is healthy or degraded with status details",
-                        "schema": {
-                            "$ref": "#/definitions/handler.HealthResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "System is unhealthy",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/assessments/{id}/submit": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Calcula automáticamente el puntaje de una evaluación y genera feedback detallado por pregunta",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assessments"
-                ],
-                "summary": "Submit assessment with automatic scoring and detailed feedback",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Assessment ID (Material ID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "User responses",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.SubmitAssessmentRequest"
-                        }
+                        "description": "Incluir detalles de cada componente (1=detallado, retorna DetailedHealthResponse)",
+                        "name": "detail",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Resultado con score y feedback detallado",
+                        "description": "Sistema saludable (respuesta detallada con detail=1)",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or assessment_id",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Assessment not found",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Assessment already completed by user",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.DetailedHealthResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Sistema no disponible",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -145,37 +82,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Resultados obtenidos exitosamente",
                         "schema": {
-                            "$ref": "#/definitions/dto.AttemptResultResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid attempt ID",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden - attempt does not belong to user",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Attempt not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -202,14 +139,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.MaterialResponse"
+                                "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -238,7 +175,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateMaterialRequest"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateMaterialRequest"
                         }
                     }
                 ],
@@ -246,25 +183,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Material created successfully",
                         "schema": {
-                            "$ref": "#/definitions/dto.MaterialResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or validation error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "User not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -298,25 +235,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Material found successfully",
                         "schema": {
-                            "$ref": "#/definitions/dto.MaterialResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid material ID format",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Material not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -347,31 +284,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Assessment obtenido exitosamente",
                         "schema": {
-                            "$ref": "#/definitions/dto.AssessmentResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AssessmentResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid material ID",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Assessment not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -403,7 +340,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAttemptRequest"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateAttemptRequest"
                         }
                     }
                 ],
@@ -411,31 +348,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Attempt creado exitosamente",
                         "schema": {
-                            "$ref": "#/definitions/dto.AttemptResultResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or material ID",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Assessment not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -469,77 +406,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GenerateDownloadURLResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateDownloadURLResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/materials/{id}/progress": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Updates user's reading progress for a material (percentage and last page read). Legacy endpoint - consider using PUT /progress instead.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "progress"
-                ],
-                "summary": "Update reading progress (legacy endpoint)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Material ID (UUID format)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Progress data (percentage, last_page)",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Progress updated successfully"
-                    },
-                    "400": {
-                        "description": "Invalid request body or material ID",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "User not authenticated",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -580,19 +453,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid material ID format",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Material not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -633,19 +506,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid material ID format",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Summary not found for this material",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -683,7 +556,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UploadCompleteRequest"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UploadCompleteRequest"
                         }
                     }
                 ],
@@ -694,19 +567,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body or material ID",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Material not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -744,7 +617,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GenerateUploadURLRequest"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLRequest"
                         }
                     }
                 ],
@@ -752,19 +625,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GenerateUploadURLResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -798,25 +671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.MaterialWithVersionsResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialWithVersionsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid UUID format",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Material not found",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -847,7 +720,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpsertProgressRequest"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.UpsertProgressRequest"
                         }
                     }
                 ],
@@ -855,31 +728,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Progress updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/handler.ProgressResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ProgressResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request (bad UUID, percentage out of range)",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden (user can only update own progress)",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -911,13 +784,13 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden - solo admins",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -955,25 +828,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Historial obtenido exitosamente",
                         "schema": {
-                            "$ref": "#/definitions/dto.AttemptHistoryResponse"
+                            "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptHistoryResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid query parameters",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handler.ErrorResponse"
                         }
                     }
                 }
@@ -981,7 +854,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.AnswerFeedbackDTO": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AnswerFeedbackDTO": {
             "type": "object",
             "properties": {
                 "correct_answer": {
@@ -1004,7 +877,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AssessmentResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AssessmentResponse": {
             "type": "object",
             "properties": {
                 "assessment_id": {
@@ -1025,7 +898,7 @@ const docTemplate = `{
                 "questions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.QuestionDTO"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.QuestionDTO"
                     }
                 },
                 "time_limit_minutes": {
@@ -1039,13 +912,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AttemptHistoryResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptHistoryResponse": {
             "type": "object",
             "properties": {
                 "attempts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AttemptSummaryDTO"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptSummaryDTO"
                     }
                 },
                 "limit": {
@@ -1059,7 +932,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AttemptResultResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptResultResponse": {
             "type": "object",
             "properties": {
                 "assessment_id": {
@@ -1080,7 +953,7 @@ const docTemplate = `{
                 "feedback": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AnswerFeedbackDTO"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AnswerFeedbackDTO"
                     }
                 },
                 "max_score": {
@@ -1109,7 +982,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AttemptSummaryDTO": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.AttemptSummaryDTO": {
             "type": "object",
             "properties": {
                 "assessment_id": {
@@ -1141,7 +1014,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateAttemptRequest": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateAttemptRequest": {
             "type": "object",
             "required": [
                 "answers",
@@ -1152,7 +1025,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/dto.UserAnswerDTO"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UserAnswerDTO"
                     }
                 },
                 "time_spent_seconds": {
@@ -1162,7 +1035,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateMaterialRequest": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.CreateMaterialRequest": {
             "type": "object",
             "required": [
                 "title"
@@ -1189,7 +1062,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GenerateDownloadURLResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateDownloadURLResponse": {
             "type": "object",
             "properties": {
                 "download_url": {
@@ -1203,7 +1076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GenerateUploadURLRequest": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLRequest": {
             "type": "object",
             "required": [
                 "content_type",
@@ -1220,7 +1093,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GenerateUploadURLResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.GenerateUploadURLResponse": {
             "type": "object",
             "properties": {
                 "expires_in": {
@@ -1238,7 +1111,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MaterialResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse": {
             "type": "object",
             "properties": {
                 "academic_unit_id": {
@@ -1315,7 +1188,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MaterialVersionResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialVersionResponse": {
             "type": "object",
             "properties": {
                 "changed_by": {
@@ -1348,21 +1221,21 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MaterialWithVersionsResponse": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialWithVersionsResponse": {
             "type": "object",
             "properties": {
                 "material": {
-                    "$ref": "#/definitions/dto.MaterialResponse"
+                    "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialResponse"
                 },
                 "versions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.MaterialVersionResponse"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.MaterialVersionResponse"
                     }
                 }
             }
         },
-        "dto.OptionDTO": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.OptionDTO": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1373,7 +1246,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.QuestionDTO": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.QuestionDTO": {
             "type": "object",
             "properties": {
                 "id": {
@@ -1382,7 +1255,7 @@ const docTemplate = `{
                 "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.OptionDTO"
+                        "$ref": "#/definitions/github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.OptionDTO"
                     }
                 },
                 "text": {
@@ -1393,7 +1266,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UploadCompleteRequest": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UploadCompleteRequest": {
             "type": "object",
             "properties": {
                 "file_size_bytes": {
@@ -1410,7 +1283,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserAnswerDTO": {
+        "github_com_EduGoGroup_edugo-api-mobile_internal_application_dto.UserAnswerDTO": {
             "type": "object",
             "required": [
                 "question_id",
@@ -1430,7 +1303,50 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.ErrorResponse": {
+        "internal_infrastructure_http_handler.ComponentHealth": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "latency": {
+                    "type": "string"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handler.DetailedHealthResponse": {
+            "type": "object",
+            "properties": {
+                "components": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handler.ComponentHealth"
+                    }
+                },
+                "service": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "total_time": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handler.ErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -1443,7 +1359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.HealthResponse": {
+        "internal_infrastructure_http_handler.HealthResponse": {
             "type": "object",
             "properties": {
                 "mongodb": {
@@ -1466,7 +1382,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.ProgressResponse": {
+        "internal_infrastructure_http_handler.ProgressResponse": {
             "type": "object",
             "properties": {
                 "last_page": {
@@ -1491,10 +1407,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.SubmitAssessmentRequest": {
-            "type": "object"
-        },
-        "handler.UpsertProgressRequest": {
+        "internal_infrastructure_http_handler.UpsertProgressRequest": {
             "type": "object",
             "required": [
                 "material_id",
