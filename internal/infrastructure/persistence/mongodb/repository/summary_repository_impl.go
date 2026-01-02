@@ -17,7 +17,7 @@ type mongoSummaryRepository struct {
 
 func NewMongoSummaryRepository(db *mongo.Database) repository.SummaryRepository {
 	return &mongoSummaryRepository{
-		collection: db.Collection("material_summary"),
+		collection: db.Collection("material_summaries"),
 	}
 }
 
