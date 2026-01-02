@@ -5,6 +5,14 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-01-02
+
+### Tipo de Release: patch
+
+- release: Merge dev → main (#101)
+
+---
+
 ## [0.16.0] - 2025-12-24
 
 ### Tipo de Release: patch
