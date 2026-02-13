@@ -27,7 +27,22 @@ func init() {
 func generateTestToken(t *testing.T, userID, email string, role enum.SystemRole, expiresIn time.Duration) string {
 	t.Helper()
 	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
-	token, err := manager.GenerateToken(userID, email, role, expiresIn)
+
+	// Crear contexto RBAC básico para tests
+	activeContext := &auth.UserContext{
+		RoleID:      "role-" + string(role),
+		RoleName:    string(role),
+		SchoolID:    "test-school-123",
+		SchoolName:  "Test School",
+		Permissions: []string{"read", "write"},
+	}
+
+	// Si expiresIn es negativo o menor a 1 minuto, usar helper compartido
+	if expiresIn < time.Minute {
+		return generateExpiredTokenManually(t, userID, email, activeContext, expiresIn)
+	}
+
+	token, _, err := manager.GenerateTokenWithContext(userID, email, activeContext, expiresIn)
 	if err != nil {
 		t.Fatalf("Error generando token de prueba: %v", err)
 	}

@@ -9,7 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/client"
+	"github.com/EduGoGroup/edugo-shared/auth"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"github.com/EduGoGroup/edugo-shared/logger"
+)
+
+const (
+	// ContextKeyActiveContext key para el contexto RBAC del usuario en Gin
+	ContextKeyActiveContext = "active_context"
 )
 
 // RemoteAuthConfig configuración del middleware de autenticación remota
@@ -78,14 +85,20 @@ func RemoteAuthMiddleware(config RemoteAuthConfig) gin.HandlerFunc {
 		// Estos valores estarán disponibles en los handlers
 		c.Set("user_id", tokenInfo.UserID)
 		c.Set("email", tokenInfo.Email)
-		c.Set("role", tokenInfo.Role)
 		c.Set("token_expires_at", tokenInfo.ExpiresAt)
 
+		// RBAC: Inyectar ActiveContext si está disponible
+		if tokenInfo.ActiveContext != nil {
+			c.Set(ContextKeyActiveContext, tokenInfo.ActiveContext)
+			c.Set("role", tokenInfo.ActiveContext.RoleName)
+		}
+
 		if config.Logger != nil {
-			config.Logger.Debug("autenticación exitosa",
-				"user_id", tokenInfo.UserID,
-				"role", tokenInfo.Role,
-			)
+			logFields := []interface{}{"user_id", tokenInfo.UserID}
+			if tokenInfo.ActiveContext != nil {
+				logFields = append(logFields, "role", tokenInfo.ActiveContext.RoleName)
+			}
+			config.Logger.Debug("autenticación exitosa", logFields...)
 		}
 
 		// 7. Continuar con el siguiente handler
@@ -178,25 +191,89 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 }
 
 // ============================================
-// Shortcuts de Autorización por Rol
+// Autorización basada en Permisos (RBAC)
 // ============================================
 
-// RequireAdmin middleware que requiere rol admin o super_admin
-func RequireAdmin() gin.HandlerFunc {
-	return RequireRole("admin", "super_admin")
+// GetActiveContext obtiene el UserContext RBAC del contexto de Gin
+func GetActiveContext(c *gin.Context) *auth.UserContext {
+	if ctx, exists := c.Get(ContextKeyActiveContext); exists {
+		if uc, ok := ctx.(*auth.UserContext); ok {
+			return uc
+		}
+	}
+	return nil
 }
 
-// RequireSuperAdmin middleware que requiere rol super_admin
-func RequireSuperAdmin() gin.HandlerFunc {
-	return RequireRole("super_admin")
+// RequirePermission middleware que verifica que el usuario tenga el permiso especificado.
+// Requiere que el token JWT incluya ActiveContext con permisos RBAC.
+// Debe usarse DESPUES de RemoteAuthMiddleware.
+func RequirePermission(permission enum.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		activeCtx := GetActiveContext(c)
+		if activeCtx == nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "forbidden",
+				"message": "Se requiere contexto RBAC activo",
+				"code":    "FORBIDDEN",
+			})
+			c.Abort()
+			return
+		}
+
+		for _, perm := range activeCtx.Permissions {
+			if perm == permission.String() {
+				c.Next()
+				return
+			}
+		}
+
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":    "forbidden",
+			"message":  "No tiene el permiso requerido",
+			"code":     "FORBIDDEN",
+			"required": permission.String(),
+		})
+		c.Abort()
+	}
 }
 
-// RequireTeacher middleware que requiere rol teacher, admin o super_admin
-func RequireTeacher() gin.HandlerFunc {
-	return RequireRole("teacher", "admin", "super_admin")
-}
+// RequireAnyPermission middleware que verifica que el usuario tenga al menos uno de los permisos.
+// Debe usarse DESPUES de RemoteAuthMiddleware.
+func RequireAnyPermission(permissions ...enum.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		activeCtx := GetActiveContext(c)
+		if activeCtx == nil {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "forbidden",
+				"message": "Se requiere contexto RBAC activo",
+				"code":    "FORBIDDEN",
+			})
+			c.Abort()
+			return
+		}
 
-// RequireStudentOrAbove middleware que permite cualquier rol autenticado
-func RequireStudentOrAbove() gin.HandlerFunc {
-	return RequireRole("student", "teacher", "admin", "super_admin")
+		permSet := make(map[string]bool, len(activeCtx.Permissions))
+		for _, p := range activeCtx.Permissions {
+			permSet[p] = true
+		}
+
+		for _, perm := range permissions {
+			if permSet[perm.String()] {
+				c.Next()
+				return
+			}
+		}
+
+		required := make([]string, len(permissions))
+		for i, p := range permissions {
+			required[i] = p.String()
+		}
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":    "forbidden",
+			"message":  "No tiene ninguno de los permisos requeridos",
+			"code":     "FORBIDDEN",
+			"required": required,
+		})
+		c.Abort()
+	}
 }

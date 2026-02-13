@@ -68,9 +68,13 @@ func (h *ProgressHandler) UpsertProgress(c *gin.Context) {
 	}
 
 	// Autorización: Usuario solo puede actualizar su propio progreso
-	// Excepción: admin y super_admin pueden actualizar el progreso de cualquier usuario
+	// Excepción: usuarios con rol admin o super_admin pueden actualizar el progreso de cualquier usuario
 	if req.UserID != authenticatedUserID {
-		if !middleware.IsAdminRole(c) {
+		isAdmin := false
+		if activeCtx := middleware.GetActiveContext(c); activeCtx != nil {
+			isAdmin = activeCtx.RoleName == "admin" || activeCtx.RoleName == "super_admin"
+		}
+		if !isAdmin {
 			h.logger.Warn("user attempting to update progress of another user",
 				"authenticated_user_id", authenticatedUserID,
 				"target_user_id", req.UserID,

@@ -21,12 +21,12 @@ import (
 
 // TokenInfo contiene la información de un token validado
 type TokenInfo struct {
-	Valid     bool      `json:"valid"`
-	UserID    string    `json:"user_id,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Role      string    `json:"role,omitempty"`
-	ExpiresAt time.Time `json:"expires_at,omitempty"`
-	Error     string    `json:"error,omitempty"`
+	Valid         bool              `json:"valid"`
+	UserID        string            `json:"user_id,omitempty"`
+	Email         string            `json:"email,omitempty"`
+	ExpiresAt     time.Time         `json:"expires_at,omitempty"`
+	Error         string            `json:"error,omitempty"`
+	ActiveContext *auth.UserContext `json:"active_context,omitempty"`
 }
 
 // AuthClientConfig configuración del cliente de autenticación
@@ -213,11 +213,11 @@ func (c *AuthClient) validateTokenLocally(token string) (*TokenInfo, error) {
 	}
 
 	return &TokenInfo{
-		Valid:     true,
-		UserID:    claims.UserID,
-		Email:     claims.Email,
-		Role:      string(claims.Role),
-		ExpiresAt: expiresAt,
+		Valid:         true,
+		UserID:        claims.UserID,
+		Email:         claims.Email,
+		ExpiresAt:     expiresAt,
+		ActiveContext: claims.ActiveContext,
 	}, nil
 }
 

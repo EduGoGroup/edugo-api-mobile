@@ -150,3 +150,50 @@ func TestConvertToLogrusFields(t *testing.T) {
 		})
 	}
 }
+
+// TestLoggerAdapter_Debug_WithFields verifica cobertura de Debug con fields
+func TestLoggerAdapter_Debug_WithFields(t *testing.T) {
+	logrusLogger := logrus.New()
+	logrusLogger.SetLevel(logrus.DebugLevel)
+	adapter := NewLoggerAdapter(logrusLogger)
+
+	adapter.Debug("debug with fields", "key", "value")
+}
+
+// TestLoggerAdapter_Warn_WithFields verifica cobertura de Warn con fields
+func TestLoggerAdapter_Warn_WithFields(t *testing.T) {
+	logrusLogger := logrus.New()
+	adapter := NewLoggerAdapter(logrusLogger)
+
+	adapter.Warn("warn with fields", "key", "value")
+}
+
+// TestLoggerEntryAdapter_Debug verifica Debug en entry adapter
+func TestLoggerEntryAdapter_Debug(t *testing.T) {
+	logrusLogger := logrus.New()
+	logrusLogger.SetLevel(logrus.DebugLevel)
+	adapter := NewLoggerAdapter(logrusLogger)
+
+	entryLogger := adapter.With("context", "test")
+	entryLogger.Debug("entry debug")
+}
+
+// TestLoggerEntryAdapter_Warn verifica Warn en entry adapter
+func TestLoggerEntryAdapter_Warn(t *testing.T) {
+	logrusLogger := logrus.New()
+	adapter := NewLoggerAdapter(logrusLogger)
+
+	entryLogger := adapter.With("context", "test")
+	entryLogger.Warn("entry warn")
+}
+
+// TestLoggerEntryAdapter_Sync verifica Sync en entry adapter
+func TestLoggerEntryAdapter_Sync(t *testing.T) {
+	logrusLogger := logrus.New()
+	adapter := NewLoggerAdapter(logrusLogger)
+
+	entryLogger := adapter.With("context", "test")
+	err := entryLogger.Sync()
+
+	assert.NoError(t, err)
+}
