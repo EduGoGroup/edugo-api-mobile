@@ -85,19 +85,20 @@ func RemoteAuthMiddleware(config RemoteAuthConfig) gin.HandlerFunc {
 		// Estos valores estarán disponibles en los handlers
 		c.Set("user_id", tokenInfo.UserID)
 		c.Set("email", tokenInfo.Email)
-		c.Set("role", tokenInfo.Role)
 		c.Set("token_expires_at", tokenInfo.ExpiresAt)
 
 		// RBAC: Inyectar ActiveContext si está disponible
 		if tokenInfo.ActiveContext != nil {
 			c.Set(ContextKeyActiveContext, tokenInfo.ActiveContext)
+			c.Set("role", tokenInfo.ActiveContext.RoleName)
 		}
 
 		if config.Logger != nil {
-			config.Logger.Debug("autenticación exitosa",
-				"user_id", tokenInfo.UserID,
-				"role", tokenInfo.Role,
-			)
+			logFields := []interface{}{"user_id", tokenInfo.UserID}
+			if tokenInfo.ActiveContext != nil {
+				logFields = append(logFields, "role", tokenInfo.ActiveContext.RoleName)
+			}
+			config.Logger.Debug("autenticación exitosa", logFields...)
 		}
 
 		// 7. Continuar con el siguiente handler
@@ -276,32 +277,4 @@ func RequireAnyPermission(permissions ...enum.Permission) gin.HandlerFunc {
 		})
 		c.Abort()
 	}
-}
-
-// ============================================
-// Shortcuts de Autorización por Rol (Deprecated)
-// ============================================
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// RequireAdmin middleware que requiere rol admin o super_admin
-func RequireAdmin() gin.HandlerFunc {
-	return RequireRole("admin", "super_admin")
-}
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// RequireSuperAdmin middleware que requiere rol super_admin
-func RequireSuperAdmin() gin.HandlerFunc {
-	return RequireRole("super_admin")
-}
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// RequireTeacher middleware que requiere rol teacher, admin o super_admin
-func RequireTeacher() gin.HandlerFunc {
-	return RequireRole("teacher", "admin", "super_admin")
-}
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// RequireStudentOrAbove middleware que permite cualquier rol autenticado
-func RequireStudentOrAbove() gin.HandlerFunc {
-	return RequireRole("student", "teacher", "admin", "super_admin")
 }

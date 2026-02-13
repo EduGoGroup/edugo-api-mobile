@@ -11,15 +11,6 @@ func SetupTestRouter() *gin.Engine {
 	return gin.New()
 }
 
-// MockUserIDMiddleware simula middleware de autenticación (solo user_id)
-// Deprecated: usar MockAuthMiddleware para tests que requieren school_id
-func MockUserIDMiddleware(userID string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("user_id", userID)
-		c.Next()
-	}
-}
-
 // MockAuthMiddleware simula middleware de autenticación completo (user_id y school_id)
 func MockAuthMiddleware(userID, schoolID string) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -165,28 +165,3 @@ func GetEmailFromContext(c *gin.Context) (string, bool) {
 	str, ok := email.(string)
 	return str, ok
 }
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// IsAdminRole verifica si el usuario autenticado tiene rol admin o super_admin
-func IsAdminRole(c *gin.Context) bool {
-	role, ok := GetRoleFromContext(c)
-	if !ok {
-		return false
-	}
-	return role == "admin" || role == "super_admin"
-}
-
-// Deprecated: Usar RequirePermission() en su lugar.
-// HasRole verifica si el usuario autenticado tiene alguno de los roles especificados
-func HasRole(c *gin.Context, roles ...string) bool {
-	role, ok := GetRoleFromContext(c)
-	if !ok {
-		return false
-	}
-	for _, r := range roles {
-		if role == r {
-			return true
-		}
-	}
-	return false
-}

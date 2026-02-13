@@ -65,8 +65,8 @@ func TestAuthClient_ValidateToken_Local_Success(t *testing.T) {
 	if info.Email != "test@test.com" {
 		t.Errorf("Email incorrecto: esperado 'test@test.com', obtenido '%s'", info.Email)
 	}
-	if info.Role != "teacher" {
-		t.Errorf("Role incorrecto: esperado 'teacher', obtenido '%s'", info.Role)
+	if info.ActiveContext == nil || info.ActiveContext.RoleName != "teacher" {
+		t.Errorf("Role incorrecto: esperado 'teacher', obtenido '%v'", info.ActiveContext)
 	}
 }
 
@@ -155,7 +155,6 @@ func TestAuthClient_ValidateToken_Remote_Success(t *testing.T) {
 			Valid:  true,
 			UserID: "user-456",
 			Email:  "remote@test.com",
-			Role:   "admin",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)
@@ -192,7 +191,6 @@ func TestAuthClient_ValidateToken_Fallback_ToRemote(t *testing.T) {
 			Valid:  true,
 			UserID: "fallback-user",
 			Email:  "fallback@test.com",
-			Role:   "student",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)

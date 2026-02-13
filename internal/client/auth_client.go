@@ -21,14 +21,11 @@ import (
 
 // TokenInfo contiene la información de un token validado
 type TokenInfo struct {
-	Valid     bool      `json:"valid"`
-	UserID    string    `json:"user_id,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Role      string    `json:"role,omitempty"` // Deprecated: usar ActiveContext
-	ExpiresAt time.Time `json:"expires_at,omitempty"`
-	Error     string    `json:"error,omitempty"`
-
-	// RBAC: Contexto activo del usuario (tokens nuevos)
+	Valid         bool              `json:"valid"`
+	UserID        string            `json:"user_id,omitempty"`
+	Email         string            `json:"email,omitempty"`
+	ExpiresAt     time.Time         `json:"expires_at,omitempty"`
+	Error         string            `json:"error,omitempty"`
 	ActiveContext *auth.UserContext `json:"active_context,omitempty"`
 }
 
@@ -215,20 +212,13 @@ func (c *AuthClient) validateTokenLocally(token string) (*TokenInfo, error) {
 		expiresAt = claims.ExpiresAt.Time
 	}
 
-	info := &TokenInfo{
+	return &TokenInfo{
 		Valid:         true,
 		UserID:        claims.UserID,
 		Email:         claims.Email,
 		ExpiresAt:     expiresAt,
 		ActiveContext: claims.ActiveContext,
-	}
-
-	// Si hay ActiveContext, extraer role del contexto RBAC
-	if claims.ActiveContext != nil {
-		info.Role = claims.ActiveContext.RoleName
-	}
-
-	return info, nil
+	}, nil
 }
 
 // doValidateTokenRemote realiza la llamada HTTP a api-admin /v1/auth/verify
