@@ -219,7 +219,6 @@ func (c *AuthClient) validateTokenLocally(token string) (*TokenInfo, error) {
 		Valid:         true,
 		UserID:        claims.UserID,
 		Email:         claims.Email,
-		Role:          string(claims.Role),
 		ExpiresAt:     expiresAt,
 		ActiveContext: claims.ActiveContext,
 	}

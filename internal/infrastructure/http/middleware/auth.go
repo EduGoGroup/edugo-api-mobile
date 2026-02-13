@@ -54,21 +54,24 @@ func AuthRequired(jwtManager *auth.JWTManager, log logger.Logger) gin.HandlerFun
 		// Agregar claims al contexto para uso en handlers
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyEmail, claims.Email)
-		c.Set(ContextKeyRole, claims.Role)
-		c.Set(ContextKeySchoolID, claims.SchoolID)
 
 		// RBAC: Inyectar ActiveContext si está disponible
 		if claims.ActiveContext != nil {
 			c.Set(ContextKeyActiveContext, claims.ActiveContext)
-			// Sobreescribir role con el del contexto RBAC
 			c.Set(ContextKeyRole, claims.ActiveContext.RoleName)
-		}
+			c.Set(ContextKeySchoolID, claims.ActiveContext.SchoolID)
 
-		log.Debug("auth successful",
-			"user_id", claims.UserID,
-			"role", claims.Role,
-			"school_id", claims.SchoolID,
-		)
+			log.Debug("auth successful",
+				"user_id", claims.UserID,
+				"role", claims.ActiveContext.RoleName,
+				"school_id", claims.ActiveContext.SchoolID,
+			)
+		} else {
+			// Token sin ActiveContext (legacy o sin contexto RBAC)
+			log.Debug("auth successful (no RBAC context)",
+				"user_id", claims.UserID,
+			)
+		}
 
 		c.Next()
 	}

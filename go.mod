@@ -3,21 +3,22 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.25
 
 require (
-	github.com/EduGoGroup/edugo-infrastructure/postgres v0.14.0
+	github.com/EduGoGroup/edugo-infrastructure/postgres v0.15.0
 	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1
 	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0
-	github.com/EduGoGroup/edugo-shared/auth v0.11.0
+	github.com/EduGoGroup/edugo-shared/auth v0.13.0
 	github.com/EduGoGroup/edugo-shared/bootstrap v0.9.0
-	github.com/EduGoGroup/edugo-shared/common v0.9.0
+	github.com/EduGoGroup/edugo-shared/common v0.10.0
 	github.com/EduGoGroup/edugo-shared/lifecycle v0.9.0
 	github.com/EduGoGroup/edugo-shared/logger v0.9.0
-	github.com/EduGoGroup/edugo-shared/middleware/gin v0.9.0
+	github.com/EduGoGroup/edugo-shared/middleware/gin v0.11.0
 	github.com/EduGoGroup/edugo-shared/testing v0.9.0
 	github.com/aws/aws-sdk-go-v2 v1.39.5
 	github.com/aws/aws-sdk-go-v2/config v1.31.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.20
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.89.1
 	github.com/gin-gonic/gin v1.11.0
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/prometheus/client_golang v1.23.2
@@ -95,7 +96,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
