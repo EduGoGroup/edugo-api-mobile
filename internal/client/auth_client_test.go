@@ -22,7 +22,7 @@ const (
 func generateTestToken(t *testing.T, userID, email string, role enum.SystemRole, expiresIn time.Duration) string {
 	t.Helper()
 	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
-	token, err := manager.GenerateToken(userID, email, role, expiresIn)
+	token, err := manager.GenerateToken(userID, email, role, expiresIn) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 	if err != nil {
 		t.Fatalf("Error generando token de prueba: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestAuthClient_ValidateToken_Local_Expired(t *testing.T) {
 
 	// Generar token que ya expiró (duración negativa)
 	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
-	token, _ := manager.GenerateToken("user-123", "test@test.com", enum.SystemRoleStudent, -1*time.Hour)
+	token, _ := manager.GenerateToken("user-123", "test@test.com", enum.SystemRoleStudent, -1*time.Hour) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 
 	info, err := client.ValidateToken(context.Background(), token)
 	if err != nil {

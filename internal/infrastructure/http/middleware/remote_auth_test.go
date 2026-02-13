@@ -27,7 +27,7 @@ func init() {
 func generateTestToken(t *testing.T, userID, email string, role enum.SystemRole, expiresIn time.Duration) string {
 	t.Helper()
 	manager := auth.NewJWTManager(testJWTSecret, testJWTIssuer)
-	token, err := manager.GenerateToken(userID, email, role, expiresIn)
+	token, err := manager.GenerateToken(userID, email, role, expiresIn) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 	if err != nil {
 		t.Fatalf("Error generando token de prueba: %v", err)
 	}

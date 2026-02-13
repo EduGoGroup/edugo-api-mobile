@@ -57,6 +57,13 @@ func AuthRequired(jwtManager *auth.JWTManager, log logger.Logger) gin.HandlerFun
 		c.Set(ContextKeyRole, claims.Role)
 		c.Set(ContextKeySchoolID, claims.SchoolID)
 
+		// RBAC: Inyectar ActiveContext si está disponible
+		if claims.ActiveContext != nil {
+			c.Set(ContextKeyActiveContext, claims.ActiveContext)
+			// Sobreescribir role con el del contexto RBAC
+			c.Set(ContextKeyRole, claims.ActiveContext.RoleName)
+		}
+
 		log.Debug("auth successful",
 			"user_id", claims.UserID,
 			"role", claims.Role,
@@ -156,6 +163,7 @@ func GetEmailFromContext(c *gin.Context) (string, bool) {
 	return str, ok
 }
 
+// Deprecated: Usar RequirePermission() en su lugar.
 // IsAdminRole verifica si el usuario autenticado tiene rol admin o super_admin
 func IsAdminRole(c *gin.Context) bool {
 	role, ok := GetRoleFromContext(c)
@@ -165,6 +173,7 @@ func IsAdminRole(c *gin.Context) bool {
 	return role == "admin" || role == "super_admin"
 }
 
+// Deprecated: Usar RequirePermission() en su lugar.
 // HasRole verifica si el usuario autenticado tiene alguno de los roles especificados
 func HasRole(c *gin.Context, roles ...string) bool {
 	role, ok := GetRoleFromContext(c)

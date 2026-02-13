@@ -61,7 +61,7 @@ func TestAuthRequired_Success(t *testing.T) {
 	mockLogger.On("Debug", mock.Anything, mock.Anything).Maybe()
 
 	// Generate valid token
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
+	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 	assert.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
@@ -203,7 +203,7 @@ func TestAuthRequired_ExpiredToken(t *testing.T) {
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
 
 	// Generate expired token (negative duration)
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, -1*time.Hour)
+	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, -1*time.Hour) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 	assert.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
@@ -235,7 +235,7 @@ func TestAuthRequired_WrongSecret(t *testing.T) {
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
 
 	// Generate token with one secret
-	token, err := jwtManager1.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
+	token, err := jwtManager1.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute) //nolint:staticcheck // test legacy con tokens sin ActiveContext
 	assert.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
