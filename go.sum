@@ -10,8 +10,8 @@ github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1 h1:IZSAIAVa1uN9YE3Dift
 github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1/go.mod h1:f1wD3I1KUWUJaVkFjHKzoMSPIV0dWWa8RFfPK2dfLyg=
 github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0 h1:T5m/4w0qwcTCrEIfdPo0P06BFmFO99wcZS65uWRo1Hc=
 github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0/go.mod h1:WsBQaVSKld1RHAdIs673B5t7x2KC4arebpfCva1peRw=
-github.com/EduGoGroup/edugo-shared/auth v0.10.0 h1:SmnmVhwv9KCvyQzssSC/5BngC7tgVeVPgD4NkZYcA/Q=
-github.com/EduGoGroup/edugo-shared/auth v0.10.0/go.mod h1:DIKFgc7sdcxuDYvzEj607WsQy6I+XNMG3olqa5GxQnQ=
+github.com/EduGoGroup/edugo-shared/auth v0.11.0 h1:iOB9EsCgwhjW+p41NHoFIrjeMmXnuiy/XFN2lYc95IU=
+github.com/EduGoGroup/edugo-shared/auth v0.11.0/go.mod h1:DIKFgc7sdcxuDYvzEj607WsQy6I+XNMG3olqa5GxQnQ=
 github.com/EduGoGroup/edugo-shared/bootstrap v0.9.0 h1:CcHBkwmYUpqO33xYGNELaHWXkz8xaZez68ye7oALJQQ=
 github.com/EduGoGroup/edugo-shared/bootstrap v0.9.0/go.mod h1:Vdj7oMeDe52YU8kduP8MB5s1N4zJLXGyUZzhwW9Faiw=
 github.com/EduGoGroup/edugo-shared/common v0.9.0 h1:05gZYPQcH4BAToop17IHqRlNIFpB0iVXCDIcWCM0LUw=
