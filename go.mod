@@ -3,7 +3,7 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.25
 
 require (
-	github.com/EduGoGroup/edugo-infrastructure/postgres v0.15.0
+	github.com/EduGoGroup/edugo-infrastructure/postgres v0.16.5
 	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1
 	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0
 	github.com/EduGoGroup/edugo-shared/auth v0.13.0

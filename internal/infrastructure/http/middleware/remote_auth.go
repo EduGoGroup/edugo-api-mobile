@@ -205,13 +205,12 @@ func GetActiveContext(c *gin.Context) *auth.UserContext {
 }
 
 // RequirePermission middleware que verifica que el usuario tenga el permiso especificado.
-// Soporta tokens RBAC (ActiveContext) y tokens legacy (basados en Role).
+// Requiere que el token JWT incluya ActiveContext con permisos RBAC.
 // Debe usarse DESPUES de RemoteAuthMiddleware.
 func RequirePermission(permission enum.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		activeCtx := GetActiveContext(c)
 		if activeCtx == nil {
-			// Token legacy sin ActiveContext: denegar acceso a endpoints protegidos por permisos
 			c.JSON(http.StatusForbidden, gin.H{
 				"error":   "forbidden",
 				"message": "Se requiere contexto RBAC activo",
