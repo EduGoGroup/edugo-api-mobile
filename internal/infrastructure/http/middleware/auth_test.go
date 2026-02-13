@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -52,6 +53,58 @@ func (m *MockLogger) With(keysAndValues ...interface{}) logger.Logger {
 	return args.Get(0).(logger.Logger)
 }
 
+// generateTestTokenWithContext genera un token JWT para tests con contexto RBAC
+func generateTestTokenWithContext(t *testing.T, manager *auth.JWTManager, userID, email string, role enum.SystemRole, expiresIn time.Duration) string {
+	t.Helper()
+
+	activeContext := &auth.UserContext{
+		RoleID:      "role-" + string(role),
+		RoleName:    string(role),
+		SchoolID:    "test-school-123",
+		SchoolName:  "Test School",
+		Permissions: []string{"read", "write"},
+	}
+
+	// Si expiresIn es negativo o menor a 1 minuto, generar token manualmente (para tests de expiración)
+	if expiresIn < time.Minute {
+		return generateExpiredTokenManually(t, userID, email, activeContext, expiresIn)
+	}
+
+	token, _, err := manager.GenerateTokenWithContext(userID, email, activeContext, expiresIn)
+	if err != nil {
+		t.Fatalf("Error generando token de prueba: %v", err)
+	}
+	return token
+}
+
+// generateExpiredTokenManually crea un token JWT manualmente para tests de expiración
+func generateExpiredTokenManually(t *testing.T, userID, email string, activeContext *auth.UserContext, expiresIn time.Duration) string {
+	t.Helper()
+
+	now := time.Now()
+	expiresAt := now.Add(expiresIn)
+
+	claims := &auth.Claims{
+		UserID:        userID,
+		Email:         email,
+		ActiveContext: activeContext,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Issuer:    "test-issuer",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test-secret-key"))
+	if err != nil {
+		t.Fatalf("Error generando token manual: %v", err)
+	}
+
+	return tokenString
+}
+
 func TestAuthRequired_Success(t *testing.T) {
 	t.Parallel()
 
@@ -61,8 +114,7 @@ func TestAuthRequired_Success(t *testing.T) {
 	mockLogger.On("Debug", mock.Anything, mock.Anything).Maybe()
 
 	// Generate valid token
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
-	assert.NoError(t, err)
+	token := generateTestTokenWithContext(t, jwtManager, "user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -203,8 +255,7 @@ func TestAuthRequired_ExpiredToken(t *testing.T) {
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
 
 	// Generate expired token (negative duration)
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, -1*time.Hour)
-	assert.NoError(t, err)
+	token := generateTestTokenWithContext(t, jwtManager, "user-123", "test@example.com", enum.SystemRoleStudent, -1*time.Hour)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
@@ -235,8 +286,7 @@ func TestAuthRequired_WrongSecret(t *testing.T) {
 	mockLogger.On("Warn", mock.Anything, mock.Anything).Maybe()
 
 	// Generate token with one secret
-	token, err := jwtManager1.GenerateToken("user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
-	assert.NoError(t, err)
+	token := generateTestTokenWithContext(t, jwtManager1, "user-123", "test@example.com", enum.SystemRoleStudent, 15*time.Minute)
 
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()

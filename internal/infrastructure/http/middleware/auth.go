@@ -54,14 +54,24 @@ func AuthRequired(jwtManager *auth.JWTManager, log logger.Logger) gin.HandlerFun
 		// Agregar claims al contexto para uso en handlers
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyEmail, claims.Email)
-		c.Set(ContextKeyRole, claims.Role)
-		c.Set(ContextKeySchoolID, claims.SchoolID)
 
-		log.Debug("auth successful",
-			"user_id", claims.UserID,
-			"role", claims.Role,
-			"school_id", claims.SchoolID,
-		)
+		// RBAC: Inyectar ActiveContext si está disponible
+		if claims.ActiveContext != nil {
+			c.Set(ContextKeyActiveContext, claims.ActiveContext)
+			c.Set(ContextKeyRole, claims.ActiveContext.RoleName)
+			c.Set(ContextKeySchoolID, claims.ActiveContext.SchoolID)
+
+			log.Debug("auth successful",
+				"user_id", claims.UserID,
+				"role", claims.ActiveContext.RoleName,
+				"school_id", claims.ActiveContext.SchoolID,
+			)
+		} else {
+			// Token sin ActiveContext (legacy o sin contexto RBAC)
+			log.Debug("auth successful (no RBAC context)",
+				"user_id", claims.UserID,
+			)
+		}
 
 		c.Next()
 	}
@@ -154,27 +164,4 @@ func GetEmailFromContext(c *gin.Context) (string, bool) {
 
 	str, ok := email.(string)
 	return str, ok
-}
-
-// IsAdminRole verifica si el usuario autenticado tiene rol admin o super_admin
-func IsAdminRole(c *gin.Context) bool {
-	role, ok := GetRoleFromContext(c)
-	if !ok {
-		return false
-	}
-	return role == "admin" || role == "super_admin"
-}
-
-// HasRole verifica si el usuario autenticado tiene alguno de los roles especificados
-func HasRole(c *gin.Context, roles ...string) bool {
-	role, ok := GetRoleFromContext(c)
-	if !ok {
-		return false
-	}
-	for _, r := range roles {
-		if role == r {
-			return true
-		}
-	}
-	return false
 }

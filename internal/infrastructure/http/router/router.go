@@ -4,6 +4,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/container"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/handler"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
+	"github.com/EduGoGroup/edugo-shared/common/types/enum"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -77,35 +78,59 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupMaterialRoutes(rg *gin.RouterGroup, c *container.Container) {
 	materials := rg.Group("/materials")
 	{
-		// Lectura de materiales (cualquier usuario autenticado)
-		materials.GET("", c.Handlers.MaterialHandler.ListMaterials)
-		materials.GET("/:id", c.Handlers.MaterialHandler.GetMaterial)
-		materials.GET("/:id/versions", c.Handlers.MaterialHandler.GetMaterialWithVersions)
-		materials.GET("/:id/download-url", c.Handlers.MaterialHandler.GenerateDownloadURL)
-		materials.GET("/:id/summary", c.Handlers.SummaryHandler.GetSummary)
-		materials.GET("/:id/assessment", c.Handlers.AssessmentHandler.GetMaterialAssessment)
-		materials.GET("/:id/stats", c.Handlers.StatsHandler.GetMaterialStats)
+		// Lectura de materiales (requiere permiso materials:read)
+		materials.GET("",
+			middleware.RequirePermission(enum.PermissionMaterialsRead),
+			c.Handlers.MaterialHandler.ListMaterials,
+		)
+		materials.GET("/:id",
+			middleware.RequirePermission(enum.PermissionMaterialsRead),
+			c.Handlers.MaterialHandler.GetMaterial,
+		)
+		materials.GET("/:id/versions",
+			middleware.RequirePermission(enum.PermissionMaterialsRead),
+			c.Handlers.MaterialHandler.GetMaterialWithVersions,
+		)
+		materials.GET("/:id/download-url",
+			middleware.RequirePermission(enum.PermissionMaterialsDownload),
+			c.Handlers.MaterialHandler.GenerateDownloadURL,
+		)
+		materials.GET("/:id/summary",
+			middleware.RequirePermission(enum.PermissionMaterialsRead),
+			c.Handlers.SummaryHandler.GetSummary,
+		)
+		materials.GET("/:id/assessment",
+			middleware.RequirePermission(enum.PermissionAssessmentsRead),
+			c.Handlers.AssessmentHandler.GetMaterialAssessment,
+		)
+		materials.GET("/:id/stats",
+			middleware.RequirePermission(enum.PermissionStatsUnit),
+			c.Handlers.StatsHandler.GetMaterialStats,
+		)
 
-		// Creación/modificación de materiales (solo teacher, admin, super_admin)
+		// Creación/modificación de materiales (requiere permisos específicos)
 		materials.POST("",
-			middleware.RequireTeacher(),
+			middleware.RequirePermission(enum.PermissionMaterialsCreate),
 			c.Handlers.MaterialHandler.CreateMaterial,
 		)
 		materials.POST("/:id/upload-complete",
-			middleware.RequireTeacher(),
+			middleware.RequirePermission(enum.PermissionMaterialsCreate),
 			c.Handlers.MaterialHandler.NotifyUploadComplete,
 		)
 		materials.POST("/:id/upload-url",
-			middleware.RequireTeacher(),
+			middleware.RequirePermission(enum.PermissionMaterialsCreate),
 			c.Handlers.MaterialHandler.GenerateUploadURL,
 		)
 		materials.PUT("/:id",
-			middleware.RequireTeacher(),
+			middleware.RequirePermission(enum.PermissionMaterialsUpdate),
 			c.Handlers.MaterialHandler.UpdateMaterial,
 		)
 
-		// Intentos de evaluación (cualquier usuario autenticado)
-		materials.POST("/:id/assessment/attempts", c.Handlers.AssessmentHandler.CreateMaterialAttempt)
+		// Intentos de evaluación (requiere permiso assessments:attempt)
+		materials.POST("/:id/assessment/attempts",
+			middleware.RequirePermission(enum.PermissionAssessmentsAttempt),
+			c.Handlers.AssessmentHandler.CreateMaterialAttempt,
+		)
 	}
 }
 
@@ -114,13 +139,19 @@ func setupAssessmentRoutes(rg *gin.RouterGroup, c *container.Container) {
 	// Rutas de intentos (attempts) - Sprint-04
 	attempts := rg.Group("/attempts")
 	{
-		attempts.GET("/:id/results", c.Handlers.AssessmentHandler.GetAttemptResults)
+		attempts.GET("/:id/results",
+			middleware.RequirePermission(enum.PermissionAssessmentsViewResults),
+			c.Handlers.AssessmentHandler.GetAttemptResults,
+		)
 	}
 
 	// Rutas de historial de usuario - Sprint-04
 	users := rg.Group("/users")
 	{
-		users.GET("/me/attempts", c.Handlers.AssessmentHandler.GetUserAttemptHistory)
+		users.GET("/me/attempts",
+			middleware.RequirePermission(enum.PermissionAssessmentsViewResults),
+			c.Handlers.AssessmentHandler.GetUserAttemptHistory,
+		)
 	}
 }
 
@@ -130,7 +161,10 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 	{
 		// Endpoint UPSERT idempotente de progreso (Fase 5)
 		// PUT (no POST) porque la operación es idempotente
-		progress.PUT("", c.Handlers.ProgressHandler.UpsertProgress)
+		progress.PUT("",
+			middleware.RequirePermission(enum.PermissionProgressUpdate),
+			c.Handlers.ProgressHandler.UpsertProgress,
+		)
 	}
 }
 
@@ -138,10 +172,9 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 func setupStatsRoutes(rg *gin.RouterGroup, c *container.Container) {
 	stats := rg.Group("/stats")
 	{
-		// Estadísticas globales del sistema
-		// Solo accesible para administradores (admin, super_admin)
+		// Estadísticas globales del sistema (requiere permiso stats:global)
 		stats.GET("/global",
-			middleware.RequireAdmin(),
+			middleware.RequirePermission(enum.PermissionStatsGlobal),
 			c.Handlers.StatsHandler.GetGlobalStats,
 		)
 	}
