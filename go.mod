@@ -6,7 +6,7 @@ require (
 	github.com/EduGoGroup/edugo-infrastructure/postgres v0.14.0
 	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1
 	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0
-	github.com/EduGoGroup/edugo-shared/auth v0.10.0
+	github.com/EduGoGroup/edugo-shared/auth v0.11.0
 	github.com/EduGoGroup/edugo-shared/bootstrap v0.9.0
 	github.com/EduGoGroup/edugo-shared/common v0.9.0
 	github.com/EduGoGroup/edugo-shared/lifecycle v0.9.0
