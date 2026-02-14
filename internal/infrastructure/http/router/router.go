@@ -188,7 +188,7 @@ func setupScreenRoutes(rg *gin.RouterGroup, c *container.Container) {
 			c.Handlers.ScreenHandler.GetNavigation,
 		)
 		screens.PUT("/:screenKey/preferences",
-			middleware.RequirePermission(enum.PermissionScreensRead),
+			middleware.RequirePermission(enum.PermissionScreenInstancesUpdate),
 			c.Handlers.ScreenHandler.SavePreferences,
 		)
 	}
