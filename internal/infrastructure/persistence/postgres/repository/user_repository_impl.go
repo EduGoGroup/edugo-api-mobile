@@ -21,9 +21,25 @@ func NewPostgresUserRepository(db *sql.DB) repository.UserRepository {
 
 func (r *postgresUserRepository) FindByID(ctx context.Context, id valueobject.UserID) (*pgentities.User, error) {
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at
-		FROM users
-		WHERE id = $1 AND deleted_at IS NULL
+		SELECT
+			u.id,
+			u.email,
+			u.password_hash,
+			u.first_name,
+			u.last_name,
+			COALESCE((
+				SELECT r.name
+				FROM user_roles ur
+				JOIN roles r ON r.id = ur.role_id
+				WHERE ur.user_id = u.id AND ur.is_active = true
+				ORDER BY ur.granted_at DESC
+				LIMIT 1
+			), '') AS role,
+			u.is_active,
+			u.created_at,
+			u.updated_at
+		FROM users u
+		WHERE u.id = $1 AND u.deleted_at IS NULL
 	`
 
 	var (
@@ -64,9 +80,25 @@ func (r *postgresUserRepository) FindByID(ctx context.Context, id valueobject.Us
 
 func (r *postgresUserRepository) FindByEmail(ctx context.Context, email valueobject.Email) (*pgentities.User, error) {
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at
-		FROM users
-		WHERE email = $1 AND deleted_at IS NULL
+		SELECT
+			u.id,
+			u.email,
+			u.password_hash,
+			u.first_name,
+			u.last_name,
+			COALESCE((
+				SELECT r.name
+				FROM user_roles ur
+				JOIN roles r ON r.id = ur.role_id
+				WHERE ur.user_id = u.id AND ur.is_active = true
+				ORDER BY ur.granted_at DESC
+				LIMIT 1
+			), '') AS role,
+			u.is_active,
+			u.created_at,
+			u.updated_at
+		FROM users u
+		WHERE u.email = $1 AND u.deleted_at IS NULL
 	`
 
 	var (
@@ -108,14 +140,13 @@ func (r *postgresUserRepository) FindByEmail(ctx context.Context, email valueobj
 func (r *postgresUserRepository) Update(ctx context.Context, user *pgentities.User) error {
 	query := `
 		UPDATE users
-		SET first_name = $1, last_name = $2, role = $3, is_active = $4, updated_at = $5
-		WHERE id = $6
+		SET first_name = $1, last_name = $2, is_active = $3, updated_at = $4
+		WHERE id = $5
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		user.FirstName,
 		user.LastName,
-		user.Role,
 		user.IsActive,
 		user.UpdatedAt,
 		user.ID,

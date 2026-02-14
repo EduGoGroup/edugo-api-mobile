@@ -157,6 +157,23 @@ func (s *IntegrationTestSuite) applyMigrations() {
 	err := migrations.ApplyAll(s.PostgresDB)
 	s.Require().NoError(err, "Migraciones deben aplicarse correctamente")
 
+	// Compatibilidad temporal para repositorios legacy de api-mobile.
+	_, err = s.PostgresDB.Exec(`
+		CREATE TABLE IF NOT EXISTS material_progress (
+			material_id UUID NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			percentage INTEGER NOT NULL DEFAULT 0 CHECK (percentage >= 0 AND percentage <= 100),
+			last_page INTEGER NOT NULL DEFAULT 0 CHECK (last_page >= 0),
+			status VARCHAR(20) NOT NULL DEFAULT 'not_started' CHECK (status IN ('not_started', 'in_progress', 'completed')),
+			last_accessed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			completed_at TIMESTAMP WITH TIME ZONE,
+			PRIMARY KEY (material_id, user_id)
+		)
+	`)
+	s.Require().NoError(err, "Tabla material_progress debe existir para compatibilidad")
+
 	s.Logger.Info("✅ Migraciones aplicadas")
 }
 

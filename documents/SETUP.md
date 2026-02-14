@@ -330,8 +330,8 @@ make info
 # Pipeline CI completo
 make ci
 
-# Pre-commit (rápido)
-make pre-commit
+# Validación rápida (sin integración)
+make quick
 ```
 
 ---

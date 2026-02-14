@@ -12,6 +12,7 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/client"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/http/middleware"
+	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,16 +48,20 @@ func TestRemoteAuth_Integration(t *testing.T) {
 				Valid:     true,
 				UserID:    "teacher-123",
 				Email:     "teacher@example.com",
-				Role:      "teacher",
 				ExpiresAt: time.Now().Add(1 * time.Hour),
+				ActiveContext: &auth.UserContext{
+					RoleName: "teacher",
+				},
 			}
 		case "valid-student-token":
 			response = client.TokenInfo{
 				Valid:     true,
 				UserID:    "student-456",
 				Email:     "student@example.com",
-				Role:      "student",
 				ExpiresAt: time.Now().Add(1 * time.Hour),
+				ActiveContext: &auth.UserContext{
+					RoleName: "student",
+				},
 			}
 		case "expired-token":
 			response = client.TokenInfo{
@@ -77,10 +82,11 @@ func TestRemoteAuth_Integration(t *testing.T) {
 
 	// Crear AuthClient apuntando al mock
 	authClient := client.NewAuthClient(client.AuthClientConfig{
-		BaseURL:      apiAdminMock.URL,
-		Timeout:      5 * time.Second,
-		CacheEnabled: true,
-		CacheTTL:     60 * time.Second,
+		BaseURL:       apiAdminMock.URL,
+		Timeout:       5 * time.Second,
+		RemoteEnabled: true,
+		CacheEnabled:  true,
+		CacheTTL:      60 * time.Second,
 	})
 
 	// Crear router con RemoteAuthMiddleware
@@ -201,7 +207,9 @@ func TestRemoteAuth_CacheIntegration(t *testing.T) {
 		response := client.TokenInfo{
 			Valid:  true,
 			UserID: "user-123",
-			Role:   "teacher",
+			ActiveContext: &auth.UserContext{
+				RoleName: "teacher",
+			},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)
@@ -209,9 +217,10 @@ func TestRemoteAuth_CacheIntegration(t *testing.T) {
 	defer apiAdminMock.Close()
 
 	authClient := client.NewAuthClient(client.AuthClientConfig{
-		BaseURL:      apiAdminMock.URL,
-		CacheEnabled: true,
-		CacheTTL:     5 * time.Second,
+		BaseURL:       apiAdminMock.URL,
+		RemoteEnabled: true,
+		CacheEnabled:  true,
+		CacheTTL:      5 * time.Second,
 	})
 
 	router := gin.New()
@@ -252,11 +261,29 @@ func TestRemoteAuth_RequireRoleIntegration(t *testing.T) {
 
 		var response client.TokenInfo
 		if req.Token == "admin-token" {
-			response = client.TokenInfo{Valid: true, UserID: "admin-1", Role: "admin"}
+			response = client.TokenInfo{
+				Valid:  true,
+				UserID: "admin-1",
+				ActiveContext: &auth.UserContext{
+					RoleName: "admin",
+				},
+			}
 		} else if req.Token == "teacher-token" {
-			response = client.TokenInfo{Valid: true, UserID: "teacher-1", Role: "teacher"}
+			response = client.TokenInfo{
+				Valid:  true,
+				UserID: "teacher-1",
+				ActiveContext: &auth.UserContext{
+					RoleName: "teacher",
+				},
+			}
 		} else {
-			response = client.TokenInfo{Valid: true, UserID: "student-1", Role: "student"}
+			response = client.TokenInfo{
+				Valid:  true,
+				UserID: "student-1",
+				ActiveContext: &auth.UserContext{
+					RoleName: "student",
+				},
+			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(response)
@@ -264,8 +291,9 @@ func TestRemoteAuth_RequireRoleIntegration(t *testing.T) {
 	defer apiAdminMock.Close()
 
 	authClient := client.NewAuthClient(client.AuthClientConfig{
-		BaseURL:      apiAdminMock.URL,
-		CacheEnabled: false,
+		BaseURL:       apiAdminMock.URL,
+		RemoteEnabled: true,
+		CacheEnabled:  false,
 	})
 
 	router := gin.New()

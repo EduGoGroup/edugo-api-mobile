@@ -37,11 +37,11 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 		idStr           string
 		assessmentIDStr string
 		studentIDStr    string
-		score           int
-		maxScore        int
-		timeSpent       int
+		score           sql.NullFloat64
+		maxScore        sql.NullFloat64
+		timeSpent       sql.NullInt64
 		startedAt       time.Time
-		completedAt     time.Time
+		completedAt     sql.NullTime
 		createdAt       time.Time
 		idempotencyKey  sql.NullString
 	)
@@ -133,20 +133,26 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	}
 
 	var scorePtr *float64
-	if score > 0 {
-		scoreF := float64(score)
+	if score.Valid {
+		scoreF := score.Float64
 		scorePtr = &scoreF
 	}
 
 	var maxScorePtr *float64
-	if maxScore > 0 {
-		maxScoreF := float64(maxScore)
+	if maxScore.Valid {
+		maxScoreF := maxScore.Float64
 		maxScorePtr = &maxScoreF
 	}
 
 	var timeSpentPtr *int
-	if timeSpent > 0 {
-		timeSpentPtr = &timeSpent
+	if timeSpent.Valid {
+		timeSpentVal := int(timeSpent.Int64)
+		timeSpentPtr = &timeSpentVal
+	}
+
+	var completedAtPtr *time.Time
+	if completedAt.Valid {
+		completedAtPtr = &completedAt.Time
 	}
 
 	attempt := &pgentities.AssessmentAttempt{
@@ -157,7 +163,7 @@ func (r *PostgresAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) 
 		MaxScore:         maxScorePtr,
 		TimeSpentSeconds: timeSpentPtr,
 		StartedAt:        startedAt,
-		CompletedAt:      &completedAt,
+		CompletedAt:      completedAtPtr,
 		CreatedAt:        createdAt,
 		IdempotencyKey:   idempotencyKeyPtr,
 	}
@@ -188,11 +194,11 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 			idStr           string
 			assessmentIDStr string
 			studentIDStr    string
-			score           int
-			maxScore        int
-			timeSpent       int
+			score           sql.NullFloat64
+			maxScore        sql.NullFloat64
+			timeSpent       sql.NullInt64
 			startedAt       time.Time
-			completedAt     time.Time
+			completedAt     sql.NullTime
 			createdAt       time.Time
 			idempotencyKey  sql.NullString
 		)
@@ -277,20 +283,26 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 		_ = answerRows.Close()
 
 		var scorePtr *float64
-		if score > 0 {
-			scoreF := float64(score)
+		if score.Valid {
+			scoreF := score.Float64
 			scorePtr = &scoreF
 		}
 
 		var maxScorePtr *float64
-		if maxScore > 0 {
-			maxScoreF := float64(maxScore)
+		if maxScore.Valid {
+			maxScoreF := maxScore.Float64
 			maxScorePtr = &maxScoreF
 		}
 
 		var timeSpentPtr *int
-		if timeSpent > 0 {
-			timeSpentPtr = &timeSpent
+		if timeSpent.Valid {
+			timeSpentVal := int(timeSpent.Int64)
+			timeSpentPtr = &timeSpentVal
+		}
+
+		var completedAtPtr *time.Time
+		if completedAt.Valid {
+			completedAtPtr = &completedAt.Time
 		}
 
 		attempt := &pgentities.AssessmentAttempt{
@@ -301,7 +313,7 @@ func (r *PostgresAttemptRepository) FindByStudentAndAssessment(ctx context.Conte
 			MaxScore:         maxScorePtr,
 			TimeSpentSeconds: timeSpentPtr,
 			StartedAt:        startedAt,
-			CompletedAt:      &completedAt,
+			CompletedAt:      completedAtPtr,
 			CreatedAt:        createdAt,
 			IdempotencyKey:   idempotencyKeyPtr,
 		}
@@ -445,11 +457,11 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 			idStr           string
 			assessmentIDStr string
 			studentIDStr    string
-			score           int
-			maxScore        int
-			timeSpent       int
+			score           sql.NullFloat64
+			maxScore        sql.NullFloat64
+			timeSpent       sql.NullInt64
 			startedAt       time.Time
-			completedAt     time.Time
+			completedAt     sql.NullTime
 			createdAt       time.Time
 			idempotencyKey  sql.NullString
 		)
@@ -534,20 +546,26 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 		_ = answerRows.Close()
 
 		var scorePtr *float64
-		if score > 0 {
-			scoreF := float64(score)
+		if score.Valid {
+			scoreF := score.Float64
 			scorePtr = &scoreF
 		}
 
 		var maxScorePtr *float64
-		if maxScore > 0 {
-			maxScoreF := float64(maxScore)
+		if maxScore.Valid {
+			maxScoreF := maxScore.Float64
 			maxScorePtr = &maxScoreF
 		}
 
 		var timeSpentPtr *int
-		if timeSpent > 0 {
-			timeSpentPtr = &timeSpent
+		if timeSpent.Valid {
+			timeSpentVal := int(timeSpent.Int64)
+			timeSpentPtr = &timeSpentVal
+		}
+
+		var completedAtPtr *time.Time
+		if completedAt.Valid {
+			completedAtPtr = &completedAt.Time
 		}
 
 		attempt := &pgentities.AssessmentAttempt{
@@ -558,7 +576,7 @@ func (r *PostgresAttemptRepository) FindByStudent(ctx context.Context, studentID
 			MaxScore:         maxScorePtr,
 			TimeSpentSeconds: timeSpentPtr,
 			StartedAt:        startedAt,
-			CompletedAt:      &completedAt,
+			CompletedAt:      completedAtPtr,
 			CreatedAt:        createdAt,
 			IdempotencyKey:   idempotencyKeyPtr,
 		}

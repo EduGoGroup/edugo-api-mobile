@@ -236,9 +236,6 @@ docker-logs: ## Ver logs de servicios
 ci: fmt vet test coverage-check ## Pipeline CI completo
 	@echo "$(GREEN)✅ CI completado$(RESET)"
 
-pre-commit: fmt vet test-unit ## Hook pre-commit (rápido)
-	@echo "$(GREEN)✅ Pre-commit OK$(RESET)"
-
 # ============================================
 # Utilidades
 # ============================================
@@ -270,4 +267,4 @@ quick: fmt test-unit build ## Build rápido (sin integración)
         fmt vet lint audit deps tidy tools configctl config-validate config-docs \
         swagger docker-build docker-up docker-down docker-logs \
         dev-init dev-setup dev-status dev-reset dev-teardown \
-        ci pre-commit clean info all quick
+        ci clean info all quick

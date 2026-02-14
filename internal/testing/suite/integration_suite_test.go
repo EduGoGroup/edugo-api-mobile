@@ -62,8 +62,8 @@ func (s *ExampleSuite) TestDataCleanupBetweenTests_First() {
 
 	// Insertar un usuario nuevo
 	_, err := s.PostgresDB.ExecContext(ctx, `
-		INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active)
-		VALUES (gen_random_uuid(), 'test@cleanup.com', 'hash', 'Test', 'Cleanup', 'student', true)
+		INSERT INTO users (id, email, password_hash, first_name, last_name, is_active)
+		VALUES (gen_random_uuid(), 'test@cleanup.com', 'hash', 'Test', 'Cleanup', true)
 	`)
 	s.NoError(err)
 

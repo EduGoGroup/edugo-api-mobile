@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	testifySuite "github.com/stretchr/testify/suite"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
@@ -26,6 +27,24 @@ func ptr[T any](v T) *T {
 type MaterialRepositoryIntegrationSuite struct {
 	suite.IntegrationTestSuite
 	repo repository.MaterialRepository
+}
+
+func (s *MaterialRepositoryIntegrationSuite) getSeedSchoolAndAuthor() (uuid.UUID, valueobject.UserID) {
+	var schoolIDStr string
+	err := s.PostgresDB.QueryRow(`SELECT id::text FROM schools LIMIT 1`).Scan(&schoolIDStr)
+	s.Require().NoError(err)
+
+	var authorIDStr string
+	err = s.PostgresDB.QueryRow(`SELECT id::text FROM users LIMIT 1`).Scan(&authorIDStr)
+	s.Require().NoError(err)
+
+	schoolID, err := uuid.Parse(schoolIDStr)
+	s.Require().NoError(err)
+
+	authorID, err := valueobject.UserIDFromString(authorIDStr)
+	s.Require().NoError(err)
+
+	return schoolID, authorID
 }
 
 // SetupSuite se ejecuta UNA VEZ antes de todos los tests
@@ -50,13 +69,12 @@ func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
 	ctx := context.Background()
 
 	// Arrange
-	authorID := valueobject.NewUserID()
-	schoolID := valueobject.NewUserID() // Reusar UserID como UUID genérico
+	schoolID, authorID := s.getSeedSchoolAndAuthor()
 	materialID := valueobject.NewMaterialID()
 	now := time.Now()
 	material := &pgentities.Material{
 		ID:                    materialID.UUID().UUID,
-		SchoolID:              schoolID.UUID().UUID,
+		SchoolID:              schoolID,
 		UploadedByTeacherID:   authorID.UUID().UUID,
 		AcademicUnitID:        nil,
 		Title:                 "Test Material",
@@ -66,7 +84,7 @@ func (s *MaterialRepositoryIntegrationSuite) TestCreate() {
 		FileURL:               "",
 		FileType:              "",
 		FileSizeBytes:         0,
-		Status:                "draft",
+		Status:                "uploaded",
 		ProcessingStartedAt:   nil,
 		ProcessingCompletedAt: nil,
 		IsPublic:              false,
@@ -93,13 +111,12 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByID_MaterialExists() {
 
 	// Arrange - Crear material directamente en DB
 	materialID := valueobject.NewMaterialID()
-	authorID := valueobject.NewUserID()
-	schoolID := valueobject.NewUserID()
+	schoolID, authorID := s.getSeedSchoolAndAuthor()
 
 	_, err := s.PostgresDB.Exec(`
 		INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-	`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, "Test Material", "Test Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
+		`, materialID.UUID().UUID, schoolID, authorID.UUID().UUID, "Test Material", "Test Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "ready", true, time.Now(), time.Now())
 	s.Require().NoError(err)
 
 	// Act
@@ -133,8 +150,7 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
 	ctx := context.Background()
 
 	// Arrange
-	authorID := valueobject.NewUserID()
-	schoolID := valueobject.NewUserID()
+	schoolID, authorID := s.getSeedSchoolAndAuthor()
 
 	// Crear 2 materiales del mismo autor
 	for i := 1; i <= 2; i++ {
@@ -142,7 +158,7 @@ func (s *MaterialRepositoryIntegrationSuite) TestFindByAuthor() {
 		_, err := s.PostgresDB.Exec(`
 			INSERT INTO materials (id, school_id, uploaded_by_teacher_id, title, description, subject, grade, file_url, file_type, file_size_bytes, status, is_public, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-		`, materialID.UUID().UUID, schoolID.UUID().UUID, authorID.UUID().UUID, fmt.Sprintf("Material %d", i), "Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "published", true, time.Now(), time.Now())
+		`, materialID.UUID().UUID, schoolID, authorID.UUID().UUID, fmt.Sprintf("Material %d", i), "Description", "Math", "10th", "https://example.com/file.pdf", "pdf", 1024, "ready", true, time.Now(), time.Now())
 		s.Require().NoError(err)
 	}
 
