@@ -3,15 +3,15 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.25
 
 require (
-	github.com/EduGoGroup/edugo-infrastructure/postgres v0.16.5
-	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.1
+	github.com/EduGoGroup/edugo-infrastructure/postgres v0.18.0
+	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.2
 	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.0
-	github.com/EduGoGroup/edugo-shared/auth v0.13.0
+	github.com/EduGoGroup/edugo-shared/auth v0.13.1
 	github.com/EduGoGroup/edugo-shared/bootstrap v0.9.0
-	github.com/EduGoGroup/edugo-shared/common v0.10.0
+	github.com/EduGoGroup/edugo-shared/common v0.12.0
 	github.com/EduGoGroup/edugo-shared/lifecycle v0.9.0
 	github.com/EduGoGroup/edugo-shared/logger v0.9.0
-	github.com/EduGoGroup/edugo-shared/middleware/gin v0.11.0
+	github.com/EduGoGroup/edugo-shared/middleware/gin v0.11.1
 	github.com/EduGoGroup/edugo-shared/testing v0.9.0
 	github.com/aws/aws-sdk-go-v2 v1.39.5
 	github.com/aws/aws-sdk-go-v2/config v1.31.16
@@ -38,7 +38,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.46.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.31.1
 )
 
 require (

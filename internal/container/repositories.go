@@ -23,6 +23,9 @@ type RepositoryContainer struct {
 	AttemptRepo      repositories.AttemptRepository
 	AnswerRepo       repositories.AnswerRepository
 
+	// Screen Config Repository (Dynamic UI - Phase 1)
+	ScreenRepository repository.ScreenRepository
+
 	// MongoDB Repositories
 	SummaryRepository      repository.SummaryRepository
 	AssessmentDocumentRepo mongoRepo.AssessmentDocumentRepository
@@ -51,6 +54,9 @@ func NewRepositoryContainer(infra *InfrastructureContainer, cfg *config.Config) 
 		AssessmentRepoV2: factory.CreateAssessmentRepository(),
 		AttemptRepo:      factory.CreateAttemptRepository(),
 		AnswerRepo:       factory.CreateAnswerRepository(),
+
+		// Screen Config repository (Dynamic UI - Phase 1) - creado vía factory
+		ScreenRepository: factory.CreateScreenRepository(),
 
 		// MongoDB repositories - creados vía factory
 		SummaryRepository:      factory.CreateSummaryRepository(),

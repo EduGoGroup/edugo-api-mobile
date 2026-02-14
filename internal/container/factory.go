@@ -105,6 +105,16 @@ func (f *RepositoryFactory) CreateAnswerRepository() repositories.AnswerReposito
 	return postgresRepo.NewPostgresAnswerRepository(f.infra.DB)
 }
 
+func (f *RepositoryFactory) CreateScreenRepository() repository.ScreenRepository {
+	if f.config.Development.UseMockRepositories {
+		return mockPostgres.NewMockScreenRepository()
+	}
+	if f.infra.DB == nil {
+		panic("PostgreSQL DB connection is nil but mock repositories are disabled")
+	}
+	return postgresRepo.NewPostgresScreenRepository(f.infra.DB)
+}
+
 func (f *RepositoryFactory) CreateSummaryRepository() repository.SummaryRepository {
 	if f.config.Development.UseMockRepositories {
 		return mockMongo.NewMockSummaryRepository()

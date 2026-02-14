@@ -13,6 +13,7 @@ type HandlerContainer struct {
 	SummaryHandler    *handler.SummaryHandler
 	AssessmentHandler *handler.AssessmentHandler
 	StatsHandler      *handler.StatsHandler
+	ScreenHandler     *handler.ScreenHandler // Dynamic UI - Phase 1
 }
 
 // NewHandlerContainer crea y configura todos los handlers HTTP
@@ -52,6 +53,12 @@ func NewHandlerContainer(infra *InfrastructureContainer, services *ServiceContai
 		// StatsHandler gestiona estadísticas globales y por material
 		StatsHandler: handler.NewStatsHandler(
 			services.StatsService,
+			infra.Logger,
+		),
+
+		// ScreenHandler gestiona definiciones de pantalla dinámicas (Dynamic UI - Phase 1)
+		ScreenHandler: handler.NewScreenHandler(
+			services.ScreenService,
 			infra.Logger,
 		),
 	}

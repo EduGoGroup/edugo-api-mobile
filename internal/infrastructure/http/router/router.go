@@ -71,6 +71,9 @@ func setupProtectedRoutes(rg *gin.RouterGroup, c *container.Container) {
 
 		// Rutas de estadísticas globales
 		setupStatsRoutes(protected, c)
+
+		// Rutas de pantallas dinámicas (Dynamic UI - Phase 1)
+		setupScreenRoutes(protected, c)
 	}
 }
 
@@ -164,6 +167,29 @@ func setupProgressRoutes(rg *gin.RouterGroup, c *container.Container) {
 		progress.PUT("",
 			middleware.RequirePermission(enum.PermissionProgressUpdate),
 			c.Handlers.ProgressHandler.UpsertProgress,
+		)
+	}
+}
+
+// setupScreenRoutes configura todas las rutas relacionadas con pantallas dinámicas (Dynamic UI).
+func setupScreenRoutes(rg *gin.RouterGroup, c *container.Container) {
+	screens := rg.Group("/screens")
+	{
+		screens.GET("/:screenKey",
+			middleware.RequirePermission(enum.PermissionScreensRead),
+			c.Handlers.ScreenHandler.GetScreen,
+		)
+		screens.GET("/resource/:resourceKey",
+			middleware.RequirePermission(enum.PermissionScreensRead),
+			c.Handlers.ScreenHandler.GetScreensForResource,
+		)
+		screens.GET("/navigation",
+			middleware.RequirePermission(enum.PermissionScreensRead),
+			c.Handlers.ScreenHandler.GetNavigation,
+		)
+		screens.PUT("/:screenKey/preferences",
+			middleware.RequirePermission(enum.PermissionScreensRead),
+			c.Handlers.ScreenHandler.SavePreferences,
 		)
 	}
 }
