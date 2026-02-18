@@ -1,0 +1,8 @@
+# Configuración para Development Mode (Cloud DBs: Neon + Atlas)
+# Este archivo sobrescribe valores de config.yaml
+# Las ENV vars tienen prioridad sobre este archivo
+
+database:
+  postgres:
+    # Neon DB requiere SSL obligatorio
+    ssl_mode: require  # ← FIX principal
