@@ -105,12 +105,24 @@ func (f *RepositoryFactory) CreateAnswerRepository() repositories.AnswerReposito
 	return postgresRepo.NewPostgresAnswerRepository(f.infra.DB)
 }
 
+func (f *RepositoryFactory) CreateScreenRepository() repository.ScreenRepository {
+	if f.config.Development.UseMockRepositories {
+		return mockPostgres.NewMockScreenRepository()
+	}
+	if f.infra.DB == nil {
+		panic("PostgreSQL DB connection is nil but mock repositories are disabled")
+	}
+	return postgresRepo.NewPostgresScreenRepository(f.infra.DB)
+}
+
 func (f *RepositoryFactory) CreateSummaryRepository() repository.SummaryRepository {
 	if f.config.Development.UseMockRepositories {
 		return mockMongo.NewMockSummaryRepository()
 	}
+	// Si MongoDB es opcional y no está disponible, usar mock como fallback
 	if f.infra.MongoDB == nil {
-		panic("MongoDB connection is nil but mock repositories are disabled")
+		f.infra.Logger.Warn("MongoDB not available, using mock SummaryRepository as fallback")
+		return mockMongo.NewMockSummaryRepository()
 	}
 	return mongoRepo.NewMongoSummaryRepository(f.infra.MongoDB)
 }
@@ -119,8 +131,10 @@ func (f *RepositoryFactory) CreateAssessmentDocumentRepository() mongoRepo.Asses
 	if f.config.Development.UseMockRepositories {
 		return mockMongo.NewMockAssessmentDocumentRepository()
 	}
+	// Si MongoDB es opcional y no está disponible, usar mock como fallback
 	if f.infra.MongoDB == nil {
-		panic("MongoDB connection is nil but mock repositories are disabled")
+		f.infra.Logger.Warn("MongoDB not available, using mock AssessmentDocumentRepository as fallback")
+		return mockMongo.NewMockAssessmentDocumentRepository()
 	}
 	return mongoRepo.NewMongoAssessmentDocumentRepository(f.infra.MongoDB)
 }

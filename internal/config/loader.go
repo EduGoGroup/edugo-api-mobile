@@ -132,9 +132,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("auth.api_admin.remote_enabled", false)   // Validación local preferida
 	v.SetDefault("auth.api_admin.fallback_enabled", false) // Fallback deshabilitado por defecto
 
-	// Bootstrap - Optional resources (default: true for RabbitMQ and S3)
+	// Bootstrap - Optional resources (default: true for RabbitMQ, S3, and MongoDB)
 	v.SetDefault("bootstrap.optional_resources.rabbitmq", true)
 	v.SetDefault("bootstrap.optional_resources.s3", true)
+	v.SetDefault("bootstrap.optional_resources.mongodb", true)
 }
 
 // bindEnvVars vincula explícitamente las variables de entorno
@@ -197,6 +198,7 @@ func bindEnvVars(v *viper.Viper) {
 	// Bootstrap - Optional resources
 	_ = v.BindEnv("bootstrap.optional_resources.rabbitmq")
 	_ = v.BindEnv("bootstrap.optional_resources.s3")
+	_ = v.BindEnv("bootstrap.optional_resources.mongodb")
 
 	// Development - Mock repositories
 	// Binding explícito para compatibilidad con USE_MOCK_REPOSITORIES

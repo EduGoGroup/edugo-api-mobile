@@ -33,7 +33,7 @@ func TestSecurity_CorrectAnswersNeverExposed(t *testing.T) {
 	t.Run("GET /v1/materials/:id/assessment NO debe exponer correct_answer", func(t *testing.T) {
 		gin.SetMode(gin.TestMode)
 		router := gin.New()
-		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetAssessment)
+		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetMaterialAssessment)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/materials/"+materialID+"/assessment", nil)
 		w := httptest.NewRecorder()
@@ -70,7 +70,7 @@ func TestSecurity_JWTRequired(t *testing.T) {
 	t.Run("GET /v1/materials/:id/assessment SIN JWT debe retornar 401", func(t *testing.T) {
 		router := gin.New()
 		// Sin middleware de autenticación → debería fallar si el endpoint lo requiere
-		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetAssessment)
+		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetMaterialAssessment)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/materials/"+materialID+"/assessment", nil)
 		// Sin header Authorization
@@ -158,7 +158,7 @@ func TestSecurity_ResponsesAreSanitized(t *testing.T) {
 	t.Run("Assessment response debe estar sanitizado (sin campos internos)", func(t *testing.T) {
 		gin.SetMode(gin.TestMode)
 		router := gin.New()
-		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetAssessment)
+		router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetMaterialAssessment)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/materials/"+materialID+"/assessment", nil)
 		w := httptest.NewRecorder()

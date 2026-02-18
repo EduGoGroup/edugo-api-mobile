@@ -93,10 +93,10 @@ jobs:
     if: vars.ENABLE_INTEGRATION_TESTS == 'true'
 ```
 
-### 4. **Pre-commit Hook Inteligente**
+### 4. **Hook Local Inteligente (Opcional)**
 
 ```bash
-# .git/hooks/pre-commit
+# .git/hooks/pre-push (ejemplo)
 if docker ps > /dev/null 2>&1; then
   echo "✅ Docker disponible, corriendo integration tests"
   RUN_INTEGRATION_TESTS=true make test-integration

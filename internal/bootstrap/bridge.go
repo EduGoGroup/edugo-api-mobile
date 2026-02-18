@@ -11,6 +11,7 @@ import (
 	"github.com/EduGoGroup/edugo-shared/lifecycle"
 	sharedLogger "github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/sony/gobreaker"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm/logger"
 )
 
@@ -113,6 +114,9 @@ func bridgeToSharedBootstrap(
 	if cfg.Bootstrap.OptionalResources.S3 {
 		bootstrapOpts = append(bootstrapOpts, sharedBootstrap.WithOptionalResources("s3"))
 	}
+	if cfg.Bootstrap.OptionalResources.MongoDB {
+		bootstrapOpts = append(bootstrapOpts, sharedBootstrap.WithOptionalResources("mongodb"))
+	}
 
 	// 6. Llamar shared/bootstrap
 	_, err := sharedBootstrap.Bootstrap(
@@ -158,11 +162,11 @@ func adaptSharedResources(
 		return nil, fmt.Errorf("PostgreSQL connection not initialized")
 	}
 
-	// 3. MongoDB: obtener *mongo.Database del cliente retenido
-	if wrapper.mongoClient == nil {
-		return nil, fmt.Errorf("MongoDB client not initialized")
+	// 3. MongoDB: obtener *mongo.Database del cliente retenido (opcional)
+	var mongoDatabase *mongo.Database
+	if wrapper.mongoClient != nil {
+		mongoDatabase = wrapper.mongoClient.Database(cfg.Database.MongoDB.Database)
 	}
-	mongoDatabase := wrapper.mongoClient.Database(cfg.Database.MongoDB.Database)
 
 	// 4. RabbitMQ: crear adapter con el channel retenido y envolver con circuit breaker
 	// Si está deshabilitado, usar noop publisher

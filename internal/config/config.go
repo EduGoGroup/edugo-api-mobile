@@ -142,6 +142,7 @@ type BootstrapConfig struct {
 type OptionalResourcesConfig struct {
 	RabbitMQ bool `mapstructure:"rabbitmq"` // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ
 	S3       bool `mapstructure:"s3"`       // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_S3
+	MongoDB  bool `mapstructure:"mongodb"`  // ENV: BOOTSTRAP_OPTIONAL_RESOURCES_MONGODB
 }
 
 // DevelopmentConfig configuración para modo desarrollo

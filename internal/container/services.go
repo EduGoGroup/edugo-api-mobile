@@ -13,6 +13,7 @@ type ServiceContainer struct {
 	SummaryService           service.SummaryService
 	AssessmentAttemptService service.AssessmentAttemptService // Sprint-04
 	StatsService             service.StatsService
+	ScreenService            service.ScreenService // Dynamic UI - Phase 1
 }
 
 // NewServiceContainer crea y configura todos los servicios de aplicación
@@ -64,6 +65,12 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 			repos.MaterialRepository, // MaterialStats (PostgreSQL)
 			repos.AttemptRepo,        // AssessmentStats (PostgreSQL) - migrado de MongoDB
 			repos.ProgressRepository, // ProgressStats (PostgreSQL)
+		),
+
+		// ScreenService gestiona definiciones de pantalla dinámicas (Dynamic UI - Phase 1)
+		ScreenService: service.NewScreenService(
+			repos.ScreenRepository,
+			infra.Logger,
 		),
 	}
 }

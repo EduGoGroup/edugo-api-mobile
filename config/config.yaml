@@ -74,6 +74,9 @@ bootstrap:
     # S3 is optional by default to facilitate local development
     # Set to false to make it required (will fail if unavailable)
     s3: true
+    # MongoDB is optional by default to facilitate cloud development
+    # Set to false to make it required (will fail if unavailable)
+    mongodb: true
 
 # Development mode configuration
 development:

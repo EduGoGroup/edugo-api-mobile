@@ -25,17 +25,20 @@ func createAssessmentTables(db *sql.DB) error {
 		return err
 	}
 
-	// Luego crear las tablas con el schema correcto
+	// Luego crear tablas aisladas para tests de repositorio.
+	// Se evita acoplar estos tests al schema completo de infrastructure y sus FKs.
 	schema := `
 		CREATE TABLE assessment (
 			id UUID PRIMARY KEY,
 			material_id UUID NOT NULL,
 			mongo_document_id VARCHAR(24) NOT NULL,
-			title VARCHAR(255) NOT NULL,
-			total_questions INTEGER NOT NULL,
-			pass_threshold INTEGER NOT NULL,
+			questions_count INTEGER NOT NULL DEFAULT 0,
+			total_questions INTEGER,
+			title VARCHAR(255),
+			pass_threshold INTEGER,
 			max_attempts INTEGER DEFAULT NULL,
 			time_limit_minutes INTEGER DEFAULT NULL,
+			status VARCHAR(50) NOT NULL DEFAULT 'generated',
 			created_at TIMESTAMP NOT NULL,
 			updated_at TIMESTAMP NOT NULL
 		);
@@ -46,13 +49,15 @@ func createAssessmentTables(db *sql.DB) error {
 			id UUID PRIMARY KEY,
 			assessment_id UUID NOT NULL,
 			student_id UUID NOT NULL,
-			score INTEGER NOT NULL,
-			max_score INTEGER NOT NULL,
-			time_spent_seconds INTEGER NOT NULL,
+			score NUMERIC(5,2),
+			max_score NUMERIC(5,2),
+			percentage NUMERIC(5,2),
+			status VARCHAR(50) NOT NULL DEFAULT 'completed',
+			time_spent_seconds INTEGER,
+			idempotency_key VARCHAR(64),
 			started_at TIMESTAMP NOT NULL,
-			completed_at TIMESTAMP NOT NULL,
-			created_at TIMESTAMP NOT NULL,
-			idempotency_key VARCHAR(255) DEFAULT NULL
+			completed_at TIMESTAMP,
+			created_at TIMESTAMP NOT NULL
 		);
 
 		CREATE INDEX idx_attempt_student_assessment ON assessment_attempt(student_id, assessment_id);
@@ -60,16 +65,20 @@ func createAssessmentTables(db *sql.DB) error {
 		CREATE TABLE assessment_attempt_answer (
 			id UUID NOT NULL,
 			attempt_id UUID NOT NULL,
-			question_id VARCHAR(100) NOT NULL,
-			selected_answer_id VARCHAR(10) NOT NULL,
-			is_correct BOOLEAN NOT NULL,
-			time_spent_seconds INTEGER NOT NULL,
+			question_index INTEGER NOT NULL,
+			student_answer TEXT,
+			is_correct BOOLEAN,
+			points_earned NUMERIC(5,2),
+			max_points NUMERIC(5,2),
+			time_spent_seconds INTEGER,
+			answered_at TIMESTAMP NOT NULL,
 			created_at TIMESTAMP NOT NULL,
+			updated_at TIMESTAMP NOT NULL,
 			PRIMARY KEY (id)
 		);
 
 		CREATE INDEX idx_answer_attempt_id ON assessment_attempt_answer(attempt_id);
-		CREATE INDEX idx_answer_question_id ON assessment_attempt_answer(question_id);
+		CREATE INDEX idx_answer_question_index ON assessment_attempt_answer(question_index);
 	`
 
 	_, err = db.ExecContext(ctx, schema)

@@ -38,7 +38,7 @@ func TestAssessmentFlow_GetAssessment(t *testing.T) {
 	router := gin.New()
 
 	// Registrar endpoint
-	router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetAssessment)
+	router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetMaterialAssessment)
 
 	// Ejecutar request
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/materials/"+materialID+"/assessment", nil)
@@ -91,7 +91,7 @@ func TestAssessmentFlow_GetAssessmentNotFound(t *testing.T) {
 	router := gin.New()
 
 	// Registrar endpoint
-	router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetAssessment)
+	router.GET("/api/v1/materials/:id/assessment", app.Container.Handlers.AssessmentHandler.GetMaterialAssessment)
 
 	// Ejecutar request con ID inexistente
 	fakeID := "00000000-0000-0000-0000-000000000000"
@@ -131,24 +131,33 @@ func TestAssessmentFlow_SubmitAssessment(t *testing.T) {
 	router := gin.New()
 
 	// Registrar endpoint con inyección de user_id en contexto
-	router.POST("/api/v1/assessments/:id/submit", func(c *gin.Context) {
+	router.POST("/api/v1/materials/:id/assessment/attempts", func(c *gin.Context) {
 		c.Set("user_id", userID)
-		app.Container.Handlers.AssessmentHandler.SubmitAssessment(c)
+		app.Container.Handlers.AssessmentHandler.CreateMaterialAttempt(c)
 	})
 
 	// Preparar respuestas (responder correctamente a las preguntas)
 	submitReq := map[string]interface{}{
-		"responses": map[string]interface{}{
-			"q1": "A", // Respuesta correcta para pregunta 1
-			"q2": "B", // Respuesta correcta para pregunta 2
+		"answers": []map[string]interface{}{
+			{
+				"question_id":        "q1",
+				"selected_answer_id": "A",
+				"time_spent_seconds": 10,
+			},
+			{
+				"question_id":        "q2",
+				"selected_answer_id": "B",
+				"time_spent_seconds": 10,
+			},
 		},
+		"time_spent_seconds": 20,
 	}
 
 	reqBody, err := json.Marshal(submitReq)
 	require.NoError(t, err)
 
 	// Ejecutar request
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/assessments/"+assessmentID+"/submit", bytes.NewBuffer(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -157,7 +166,7 @@ func TestAssessmentFlow_SubmitAssessment(t *testing.T) {
 	t.Logf("Response status: %d", w.Code)
 	t.Logf("Response body: %s", w.Body.String())
 
-	assert.Equal(t, http.StatusOK, w.Code, "Submit assessment should succeed")
+	assert.Equal(t, http.StatusCreated, w.Code, "Submit assessment should succeed")
 
 	var response map[string]interface{}
 	err = json.Unmarshal(w.Body.Bytes(), &response)
@@ -224,37 +233,46 @@ func TestAssessmentFlow_SubmitAssessmentDuplicate(t *testing.T) {
 	// Seed usuario, material y assessment
 	userID, _ := SeedTestUser(t, app.DB)
 	materialID := SeedTestMaterial(t, app.DB, userID)
-	assessmentID := SeedTestAssessment(t, app.MongoDB, materialID)
+	SeedTestAssessment(t, app.MongoDB, materialID)
 
 	// Crear router Gin
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	router.POST("/api/v1/assessments/:id/submit", func(c *gin.Context) {
+	router.POST("/api/v1/materials/:id/assessment/attempts", func(c *gin.Context) {
 		c.Set("user_id", userID)
-		app.Container.Handlers.AssessmentHandler.SubmitAssessment(c)
+		app.Container.Handlers.AssessmentHandler.CreateMaterialAttempt(c)
 	})
 
 	// Preparar respuestas
 	submitReq := map[string]interface{}{
-		"responses": map[string]interface{}{
-			"q1": "A",
-			"q2": "B",
+		"answers": []map[string]interface{}{
+			{
+				"question_id":        "q1",
+				"selected_answer_id": "A",
+				"time_spent_seconds": 10,
+			},
+			{
+				"question_id":        "q2",
+				"selected_answer_id": "B",
+				"time_spent_seconds": 10,
+			},
 		},
+		"time_spent_seconds": 20,
 	}
 	reqBody, _ := json.Marshal(submitReq)
 
 	// PRIMER envío (debe exitir)
-	req1 := httptest.NewRequest(http.MethodPost, "/api/v1/assessments/"+assessmentID+"/submit", bytes.NewBuffer(reqBody))
+	req1 := httptest.NewRequest(http.MethodPost, "/api/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(reqBody))
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
 	router.ServeHTTP(w1, req1)
 
 	t.Logf("First submit - Status: %d", w1.Code)
-	assert.Equal(t, http.StatusOK, w1.Code, "First submit should succeed")
+	assert.Equal(t, http.StatusCreated, w1.Code, "First submit should succeed")
 
 	// SEGUNDO envío (idealmente debe fallar con 409 Conflict si índice UNIQUE está configurado)
-	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/assessments/"+assessmentID+"/submit", bytes.NewBuffer(reqBody))
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/materials/"+materialID+"/assessment/attempts", bytes.NewBuffer(reqBody))
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
 	router.ServeHTTP(w2, req2)
@@ -265,8 +283,8 @@ func TestAssessmentFlow_SubmitAssessmentDuplicate(t *testing.T) {
 	// TODO: En producción con MongoDB configurado, esto debería retornar 409
 	// Por ahora, en tests sin índice UNIQUE persistente, puede retornar 200
 	// Validamos que al menos no falla (200 o 409 son aceptables)
-	assert.True(t, w2.Code == http.StatusOK || w2.Code == http.StatusConflict,
-		"Second submit should return 200 (without unique index) or 409 (with unique index)")
+	assert.True(t, w2.Code == http.StatusCreated || w2.Code == http.StatusConflict,
+		"Second submit should return 201 (without unique index) or 409 (with unique index)")
 
 	if w2.Code == http.StatusConflict {
 		var response map[string]interface{}
