@@ -28,6 +28,7 @@ func (r *PostgresScreenRepository) GetCombinedScreen(ctx context.Context, screen
 	query := `
 		SELECT si.id, si.screen_key, si.name, st.pattern, st.version, st.definition,
 		       si.slot_data, si.actions, si.data_endpoint, si.data_config,
+		       si.handler_key,
 		       COALESCE(sup.preferences, '{}'::jsonb) as user_preferences,
 		       GREATEST(si.updated_at, st.updated_at) as last_updated
 		FROM ui_config.screen_instances si
@@ -48,6 +49,7 @@ func (r *PostgresScreenRepository) GetCombinedScreen(ctx context.Context, screen
 		actions         json.RawMessage
 		dataEndpoint    sql.NullString
 		dataConfig      json.RawMessage
+		handlerKey      sql.NullString
 		userPreferences json.RawMessage
 		lastUpdated     time.Time
 	)
@@ -55,7 +57,7 @@ func (r *PostgresScreenRepository) GetCombinedScreen(ctx context.Context, screen
 	err := r.db.QueryRowContext(ctx, query, screenKey, userID).Scan(
 		&id, &sKey, &name, &pattern, &version, &definition,
 		&slotData, &actions, &dataEndpoint, &dataConfig,
-		&userPreferences, &lastUpdated,
+		&handlerKey, &userPreferences, &lastUpdated,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -81,6 +83,9 @@ func (r *PostgresScreenRepository) GetCombinedScreen(ctx context.Context, screen
 
 	if dataEndpoint.Valid {
 		result.DataEndpoint = dataEndpoint.String
+	}
+	if handlerKey.Valid {
+		result.HandlerKey = &handlerKey.String
 	}
 
 	return result, nil

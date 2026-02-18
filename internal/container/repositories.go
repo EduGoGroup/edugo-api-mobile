@@ -26,6 +26,9 @@ type RepositoryContainer struct {
 	// Screen Config Repository (Dynamic UI - Phase 1)
 	ScreenRepository repository.ScreenRepository
 
+	// Resource Reader (Dynamic UI - Phase 2: Dynamic Navigation)
+	ResourceReader repository.ResourceReader
+
 	// MongoDB Repositories
 	SummaryRepository      repository.SummaryRepository
 	AssessmentDocumentRepo mongoRepo.AssessmentDocumentRepository
@@ -57,6 +60,9 @@ func NewRepositoryContainer(infra *InfrastructureContainer, cfg *config.Config) 
 
 		// Screen Config repository (Dynamic UI - Phase 1) - creado vía factory
 		ScreenRepository: factory.CreateScreenRepository(),
+
+		// Resource Reader (Dynamic UI - Phase 2) - creado vía factory
+		ResourceReader: factory.CreateResourceReader(),
 
 		// MongoDB repositories - creados vía factory
 		SummaryRepository:      factory.CreateSummaryRepository(),

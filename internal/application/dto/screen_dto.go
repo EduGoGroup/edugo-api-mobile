@@ -17,6 +17,7 @@ type CombinedScreenDTO struct {
 	DataEndpoint    string          `json:"dataEndpoint,omitempty"`
 	DataConfig      json.RawMessage `json:"dataConfig,omitempty"`
 	Actions         json.RawMessage `json:"actions"`
+	HandlerKey      *string         `json:"handlerKey,omitempty"`
 	UserPreferences json.RawMessage `json:"userPreferences,omitempty"`
 	UpdatedAt       time.Time       `json:"updatedAt"`
 }
