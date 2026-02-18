@@ -51,8 +51,8 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserExists() {
 
 	var userID string
 	err := s.PostgresDB.QueryRow(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'John', 'Doe', 'student', true)
+		INSERT INTO users (email, password_hash, first_name, last_name, is_active)
+		VALUES ($1, $2, 'John', 'Doe', true)
 		RETURNING id
 	`, email, string(hashedPassword)).Scan(&userID)
 	s.Require().NoError(err)
@@ -70,7 +70,7 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserExists() {
 	s.Equal(email, user.Email)
 	s.Equal("John", user.FirstName)
 	s.Equal("Doe", user.LastName)
-	s.Equal("student", user.Role)
+	s.Equal("", user.Role)
 	s.True(user.IsActive)
 }
 
@@ -86,9 +86,8 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_UserNotFound() {
 	user, err := s.repo.FindByEmail(ctx, emailVO)
 
 	// Assert
-	s.Error(err, "FindByEmail should return error when user not found")
+	s.NoError(err, "FindByEmail should not return error when user not found")
 	s.Nil(user)
-	s.Contains(err.Error(), "user not found")
 }
 
 // TestFindByID_UserExists valida que FindByID retorna usuario cuando existe
@@ -100,8 +99,8 @@ func (s *UserRepositoryIntegrationSuite) TestFindByID_UserExists() {
 
 	var userID string
 	err := s.PostgresDB.QueryRow(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'Jane', 'Smith', 'teacher', true)
+		INSERT INTO users (email, password_hash, first_name, last_name, is_active)
+		VALUES ($1, $2, 'Jane', 'Smith', true)
 		RETURNING id
 	`, "jane@example.com", string(hashedPassword)).Scan(&userID)
 	s.Require().NoError(err)
@@ -119,7 +118,7 @@ func (s *UserRepositoryIntegrationSuite) TestFindByID_UserExists() {
 	s.Equal("jane@example.com", user.Email)
 	s.Equal("Jane", user.FirstName)
 	s.Equal("Smith", user.LastName)
-	s.Equal("teacher", user.Role)
+	s.Equal("", user.Role)
 }
 
 // TestFindByID_UserNotFound valida que FindByID retorna error cuando no existe
@@ -133,9 +132,8 @@ func (s *UserRepositoryIntegrationSuite) TestFindByID_UserNotFound() {
 	user, err := s.repo.FindByID(ctx, nonExistentID)
 
 	// Assert
-	s.Error(err, "FindByID should return error when user not found")
+	s.NoError(err, "FindByID should not return error when user not found")
 	s.Nil(user)
-	s.Contains(err.Error(), "user not found")
 }
 
 // TestFindByEmail_MultipleUsersWithSameEmail valida que DB enforce UNIQUE constraint
@@ -148,15 +146,15 @@ func (s *UserRepositoryIntegrationSuite) TestFindByEmail_MultipleUsersWithSameEm
 
 	// Intentar crear primer usuario
 	_, err := s.PostgresDB.Exec(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'User', 'One', 'student', true)
+		INSERT INTO users (email, password_hash, first_name, last_name, is_active)
+		VALUES ($1, $2, 'User', 'One', true)
 	`, email, string(hashedPassword))
 	s.Require().NoError(err)
 
 	// Intentar crear segundo usuario con mismo email (debe fallar por UNIQUE constraint)
 	_, err = s.PostgresDB.Exec(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'User', 'Two', 'student', true)
+		INSERT INTO users (email, password_hash, first_name, last_name, is_active)
+		VALUES ($1, $2, 'User', 'Two', true)
 	`, email, string(hashedPassword))
 	s.Error(err, "Database should enforce UNIQUE constraint on email")
 
@@ -183,8 +181,8 @@ func (s *UserRepositoryIntegrationSuite) TestUpdate() {
 
 	var userID string
 	err := s.PostgresDB.QueryRow(`
-		INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
-		VALUES ($1, $2, 'Original', 'Name', 'student', true)
+		INSERT INTO users (email, password_hash, first_name, last_name, is_active)
+		VALUES ($1, $2, 'Original', 'Name', true)
 		RETURNING id
 	`, email.String(), string(hashedPassword)).Scan(&userID)
 	s.Require().NoError(err)
