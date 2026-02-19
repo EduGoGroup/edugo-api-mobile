@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // AssessmentDocumentRepository maneja documentos de evaluación en MongoDB
@@ -29,18 +28,18 @@ type AssessmentDocumentRepository interface {
 
 // AssessmentDocument representa el schema MongoDB de material_assessment_worker
 type AssessmentDocument struct {
-	ID               primitive.ObjectID `bson:"_id,omitempty"`
-	MaterialID       string             `bson:"material_id"`
-	Title            string             `bson:"title"`
-	Questions        []Question         `bson:"questions"`
-	TotalQuestions   int                `bson:"total_questions"`
-	TotalPoints      int                `bson:"total_points"`
-	AIModel          string             `bson:"ai_model"`
-	ProcessingTimeMs int                `bson:"processing_time_ms"`
-	Metadata         Metadata           `bson:"metadata"`
-	Version          int                `bson:"version"`
-	CreatedAt        time.Time          `bson:"created_at"`
-	UpdatedAt        time.Time          `bson:"updated_at"`
+	ID               bson.ObjectID `bson:"_id,omitempty"`
+	MaterialID       string        `bson:"material_id"`
+	Title            string        `bson:"title"`
+	Questions        []Question    `bson:"questions"`
+	TotalQuestions   int           `bson:"total_questions"`
+	TotalPoints      int           `bson:"total_points"`
+	AIModel          string        `bson:"ai_model"`
+	ProcessingTimeMs int           `bson:"processing_time_ms"`
+	Metadata         Metadata      `bson:"metadata"`
+	Version          int           `bson:"version"`
+	CreatedAt        time.Time     `bson:"created_at"`
+	UpdatedAt        time.Time     `bson:"updated_at"`
 }
 
 // Question representa una pregunta del assessment
@@ -115,7 +114,7 @@ func (r *MongoAssessmentDocumentRepository) FindByID(ctx context.Context, object
 	}
 
 	// Validar que sea un ObjectID válido
-	oid, err := primitive.ObjectIDFromHex(objectID)
+	oid, err := bson.ObjectIDFromHex(objectID)
 	if err != nil {
 		return nil, fmt.Errorf("mongo: invalid ObjectID: %w", err)
 	}
@@ -166,7 +165,7 @@ func (r *MongoAssessmentDocumentRepository) Save(ctx context.Context, doc *Asses
 	} else {
 		// Documento nuevo: generar _id y created_at
 		if doc.ID.IsZero() {
-			doc.ID = primitive.NewObjectID()
+			doc.ID = bson.NewObjectID()
 		}
 		if doc.CreatedAt.IsZero() {
 			doc.CreatedAt = time.Now().UTC()
@@ -191,7 +190,7 @@ func (r *MongoAssessmentDocumentRepository) Delete(ctx context.Context, objectID
 	}
 
 	// Validar ObjectID
-	oid, err := primitive.ObjectIDFromHex(objectID)
+	oid, err := bson.ObjectIDFromHex(objectID)
 	if err != nil {
 		return fmt.Errorf("mongo: invalid ObjectID: %w", err)
 	}

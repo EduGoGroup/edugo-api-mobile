@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // HealthChecker define la interfaz para verificar el estado de un servicio
@@ -19,13 +19,13 @@ type HealthChecker interface {
 // HealthHandler maneja el endpoint de health check del sistema.
 type HealthHandler struct {
 	db              *sql.DB
-	mongoDB         *mongo.Database
+	mongoDB         *mongov2.Database
 	rabbitMQChecker HealthChecker
 	s3Checker       HealthChecker
 }
 
 // NewHealthHandler crea una nueva instancia de HealthHandler con las dependencias necesarias.
-func NewHealthHandler(db *sql.DB, mongoDB *mongo.Database) *HealthHandler {
+func NewHealthHandler(db *sql.DB, mongoDB *mongov2.Database) *HealthHandler {
 	return &HealthHandler{
 		db:      db,
 		mongoDB: mongoDB,
@@ -35,7 +35,7 @@ func NewHealthHandler(db *sql.DB, mongoDB *mongo.Database) *HealthHandler {
 // NewHealthHandlerWithCheckers crea un HealthHandler con checkers adicionales para RabbitMQ y S3
 func NewHealthHandlerWithCheckers(
 	db *sql.DB,
-	mongoDB *mongo.Database,
+	mongoDB *mongov2.Database,
 	rabbitMQChecker HealthChecker,
 	s3Checker HealthChecker,
 ) *HealthHandler {

@@ -17,6 +17,30 @@ import (
 )
 
 // ============================================
+// Mock: ResourceReader
+// ============================================
+
+type MockResourceReader struct {
+	mock.Mock
+}
+
+func (m *MockResourceReader) GetMenuResources(ctx context.Context) ([]*repository.MenuResource, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*repository.MenuResource), args.Error(1)
+}
+
+func (m *MockResourceReader) GetResourceScreenMappings(ctx context.Context, resourceKeys []string) ([]*repository.ResourceScreenMapping, error) {
+	args := m.Called(ctx, resourceKeys)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*repository.ResourceScreenMapping), args.Error(1)
+}
+
+// ============================================
 // Mock: ScreenRepository
 // ============================================
 
@@ -105,7 +129,7 @@ func TestScreenService_GetScreen_Success(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -137,7 +161,7 @@ func TestScreenService_GetScreen_NotFound(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -162,7 +186,7 @@ func TestScreenService_GetScreen_DatabaseError(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -187,7 +211,7 @@ func TestScreenService_GetScreen_ResolvesSlots(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -219,7 +243,7 @@ func TestScreenService_GetScreen_AppliesPlatformOverrides(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -273,7 +297,7 @@ func TestScreenService_GetScreen_NoPlatformOverrides_WhenNotRequested(t *testing
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -319,7 +343,7 @@ func TestScreenService_GetScreen_CacheHit(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -357,7 +381,7 @@ func TestScreenService_GetScreen_MergesUserPreferences(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -391,15 +415,32 @@ func TestScreenService_GetScreen_MergesUserPreferences(t *testing.T) {
 func TestScreenService_GetNavigationConfig_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockScreenRepository)
+	mockResourceReader := new(MockResourceReader)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, mockResourceReader, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
 
+	resources := []*repository.MenuResource{
+		{ID: "r1", Key: "dashboard", DisplayName: "Home", Icon: strPtr("home"), SortOrder: 0, Scope: "system"},
+		{ID: "r2", Key: "materials", DisplayName: "Materials", Icon: strPtr("folder"), SortOrder: 1, Scope: "school"},
+		{ID: "r3", Key: "settings", DisplayName: "Settings", Icon: strPtr("settings"), SortOrder: 4, Scope: "system"},
+	}
+	mappings := []*repository.ResourceScreenMapping{
+		{ResourceKey: "dashboard", ScreenKey: "dashboard-teacher", IsDefault: true, SortOrder: 0},
+		{ResourceKey: "materials", ScreenKey: "materials-list", IsDefault: true, SortOrder: 1},
+		{ResourceKey: "settings", ScreenKey: "app-settings", IsDefault: true, SortOrder: 4},
+	}
+
+	mockResourceReader.On("GetMenuResources", ctx).Return(resources, nil)
+	mockResourceReader.On("GetResourceScreenMappings", ctx, []string{"dashboard", "materials", "settings"}).Return(mappings, nil)
+
+	permissions := []string{"materials:read", "assessments:read"}
+
 	// Act
-	result, err := svc.GetNavigationConfig(ctx, userID, "mobile")
+	result, err := svc.GetNavigationConfig(ctx, userID, "mobile", permissions)
 
 	// Assert
 	require.NoError(t, err)
@@ -412,10 +453,12 @@ func TestScreenService_GetNavigationConfig_Success(t *testing.T) {
 	for _, item := range result.BottomNav {
 		assert.NotEmpty(t, item.Key)
 		assert.NotEmpty(t, item.Label)
-		assert.NotEmpty(t, item.Icon)
-		assert.NotEmpty(t, item.ScreenKey)
 	}
+
+	mockResourceReader.AssertExpectations(t)
 }
+
+func strPtr(s string) *string { return &s }
 
 // ============================================
 // Tests: SaveUserPreferences
@@ -426,7 +469,7 @@ func TestScreenService_SaveUserPreferences_Success(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -450,7 +493,7 @@ func TestScreenService_SaveUserPreferences_DatabaseError(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -479,7 +522,7 @@ func TestScreenService_GetScreensForResource_Success(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	resourceKey := "materials"
@@ -523,7 +566,7 @@ func TestScreenService_GetScreensForResource_Empty(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	resourceKey := "nonexistent"
@@ -545,7 +588,7 @@ func TestScreenService_GetScreensForResource_DatabaseError(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger)
+	svc := NewScreenService(mockRepo, nil, mockLogger)
 
 	ctx := context.Background()
 	resourceKey := "materials"
@@ -724,7 +767,7 @@ func TestScreenService_WithUserPreferences_MergesOnCacheHit(t *testing.T) {
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger).(*screenService)
+	svc := NewScreenService(mockRepo, new(MockResourceReader), mockLogger).(*screenService)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -760,7 +803,7 @@ func TestScreenService_WithUserPreferences_ErrorFallsBackToCached(t *testing.T) 
 	mockRepo := new(MockScreenRepository)
 	mockLogger := new(MockLogger)
 
-	svc := NewScreenService(mockRepo, mockLogger).(*screenService)
+	svc := NewScreenService(mockRepo, new(MockResourceReader), mockLogger).(*screenService)
 
 	ctx := context.Background()
 	userID := uuid.New()

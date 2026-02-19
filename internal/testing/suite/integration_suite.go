@@ -15,7 +15,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/rabbitmq"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // IntegrationTestSuite es la suite base para tests de integración
@@ -30,7 +30,7 @@ type IntegrationTestSuite struct {
 
 	// Conexiones a recursos (compartidas entre tests)
 	PostgresDB *sql.DB
-	MongoDB    *mongo.Database
+	MongoDB    *mongov2.Database
 	Logger     logger.Logger
 
 	// Contexto de la suite

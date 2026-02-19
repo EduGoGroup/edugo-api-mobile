@@ -5,10 +5,10 @@ import (
 	"database/sql"
 
 	"github.com/EduGoGroup/edugo-shared/bootstrap"
+	sharedLogger "github.com/EduGoGroup/edugo-shared/logger"
 	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 	"gorm.io/gorm"
 )
 
@@ -20,10 +20,10 @@ type customFactoriesWrapper struct {
 
 	// Referencias a tipos concretos que necesitamos retener
 	sqlDB         *sql.DB
-	mongoClient   *mongo.Client
+	mongoClient   *mongov2.Client
 	rabbitChannel *amqp.Channel
 	s3Client      *awsS3.Client
-	logrusLogger  *logrus.Logger
+	sharedLogger  sharedLogger.Logger
 }
 
 // newCustomFactoriesWrapper crea un wrapper de factories que retiene los tipos concretos
@@ -46,8 +46,6 @@ func (f *customPostgreSQLFactory) CreateConnection(ctx context.Context, config b
 	}
 
 	// Guardar referencia a *sql.DB para uso posterior
-	// IMPORTANTE: shared/bootstrap llama a CreateConnection (no CreateRawConnection)
-	// por lo que necesitamos extraer sqlDB del gormDB aquí
 	sqlDB, err := gormDB.DB()
 	if err != nil {
 		return nil, err
@@ -63,7 +61,6 @@ func (f *customPostgreSQLFactory) CreateRawConnection(ctx context.Context, confi
 		return nil, err
 	}
 
-	// Guardar referencia para uso posterior
 	*f.sqlDB = db
 
 	return db, nil
@@ -77,33 +74,32 @@ func (f *customPostgreSQLFactory) Close(db *gorm.DB) error {
 	return f.shared.Close(db)
 }
 
-// MongoDBFactory wrapper - retiene el client
+// MongoDBFactory wrapper - retiene el client (usa mongo driver v2)
 type customMongoDBFactory struct {
 	shared      bootstrap.MongoDBFactory
-	mongoClient **mongo.Client // puntero al puntero para poder guardar la referencia
+	mongoClient **mongov2.Client // puntero al puntero para poder guardar la referencia
 }
 
-func (f *customMongoDBFactory) CreateConnection(ctx context.Context, config bootstrap.MongoDBConfig) (*mongo.Client, error) {
+func (f *customMongoDBFactory) CreateConnection(ctx context.Context, config bootstrap.MongoDBConfig) (*mongov2.Client, error) {
 	client, err := f.shared.CreateConnection(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
-	// Guardar referencia para uso posterior
 	*f.mongoClient = client
 
 	return client, nil
 }
 
-func (f *customMongoDBFactory) GetDatabase(client *mongo.Client, dbName string) *mongo.Database {
+func (f *customMongoDBFactory) GetDatabase(client *mongov2.Client, dbName string) *mongov2.Database {
 	return f.shared.GetDatabase(client, dbName)
 }
 
-func (f *customMongoDBFactory) Ping(ctx context.Context, client *mongo.Client) error {
+func (f *customMongoDBFactory) Ping(ctx context.Context, client *mongov2.Client) error {
 	return f.shared.Ping(ctx, client)
 }
 
-func (f *customMongoDBFactory) Close(ctx context.Context, client *mongo.Client) error {
+func (f *customMongoDBFactory) Close(ctx context.Context, client *mongov2.Client) error {
 	return f.shared.Close(ctx, client)
 }
 
@@ -123,7 +119,6 @@ func (f *customRabbitMQFactory) CreateChannel(conn *amqp.Connection) (*amqp.Chan
 		return nil, err
 	}
 
-	// Guardar referencia para uso posterior
 	*f.channel = ch
 
 	return ch, nil
@@ -149,13 +144,12 @@ func (f *customS3Factory) CreateClient(ctx context.Context, config bootstrap.S3C
 		return nil, err
 	}
 
-	// Guardar referencia para uso posterior
 	*f.s3Client = client
 
 	return client, nil
 }
 
-func (f *customS3Factory) CreatePresignClient(client *awsS3.Client) interface{} {
+func (f *customS3Factory) CreatePresignClient(client *awsS3.Client) *awsS3.PresignClient {
 	return f.shared.CreatePresignClient(client)
 }
 
@@ -163,22 +157,21 @@ func (f *customS3Factory) ValidateBucket(ctx context.Context, client *awsS3.Clie
 	return f.shared.ValidateBucket(ctx, client, bucket)
 }
 
-// LoggerFactory wrapper - retiene el logger
+// LoggerFactory wrapper - retiene el logger (usa la interface logger.Logger de shared)
 type customLoggerFactory struct {
 	shared bootstrap.LoggerFactory
-	logger **logrus.Logger // puntero al puntero para poder guardar la referencia
+	logger *sharedLogger.Logger // puntero a interface para poder guardar la referencia
 }
 
-func (f *customLoggerFactory) CreateLogger(ctx context.Context, env string, version string) (*logrus.Logger, error) {
-	logger, err := f.shared.CreateLogger(ctx, env, version)
+func (f *customLoggerFactory) CreateLogger(ctx context.Context, env string, version string) (sharedLogger.Logger, error) {
+	log, err := f.shared.CreateLogger(ctx, env, version)
 	if err != nil {
 		return nil, err
 	}
 
-	// Guardar referencia para uso posterior
-	*f.logger = logger
+	*f.logger = log
 
-	return logger, nil
+	return log, nil
 }
 
 // createCustomFactories crea factories personalizadas que retienen los tipos concretos
@@ -186,7 +179,7 @@ func createCustomFactories(wrapper *customFactoriesWrapper) *bootstrap.Factories
 	return &bootstrap.Factories{
 		Logger: &customLoggerFactory{
 			shared: wrapper.sharedFactories.Logger,
-			logger: &wrapper.logrusLogger,
+			logger: &wrapper.sharedLogger,
 		},
 		PostgreSQL: &customPostgreSQLFactory{
 			shared: wrapper.sharedFactories.PostgreSQL,

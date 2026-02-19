@@ -11,7 +11,7 @@ import (
 	"github.com/EduGoGroup/edugo-shared/lifecycle"
 	sharedLogger "github.com/EduGoGroup/edugo-shared/logger"
 	"github.com/sony/gobreaker"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 	"gorm.io/gorm/logger"
 )
 
@@ -130,12 +130,11 @@ func bridgeToSharedBootstrap(
 		return nil, nil, fmt.Errorf("shared bootstrap failed: %w", err)
 	}
 
-	// 7. Adaptar recursos de shared a tipos de api-mobile usando los tipos retenidos
-	// 7. Crear loggerAdapter primero para poder usarlo en lifecycle
-	if wrapper.logrusLogger == nil {
+	// 7. Obtener logger ya inicializado por shared/bootstrap
+	if wrapper.sharedLogger == nil {
 		return nil, nil, fmt.Errorf("logger not initialized")
 	}
-	loggerAdapter := adapter.NewLoggerAdapter(wrapper.logrusLogger)
+	loggerAdapter := wrapper.sharedLogger
 
 	// 8. Crear lifecycle manager con logger configurado
 	lifecycleManagerWithLogger := lifecycle.NewManager(loggerAdapter)
@@ -162,8 +161,8 @@ func adaptSharedResources(
 		return nil, fmt.Errorf("PostgreSQL connection not initialized")
 	}
 
-	// 3. MongoDB: obtener *mongo.Database del cliente retenido (opcional)
-	var mongoDatabase *mongo.Database
+	// 3. MongoDB: obtener *mongov2.Database del cliente retenido (opcional)
+	var mongoDatabase *mongov2.Database
 	if wrapper.mongoClient != nil {
 		mongoDatabase = wrapper.mongoClient.Database(cfg.Database.MongoDB.Database)
 	}
