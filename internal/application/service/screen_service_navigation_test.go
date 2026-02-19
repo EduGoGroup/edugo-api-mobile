@@ -270,7 +270,7 @@ func TestScreenService_GetNavigationConfig_ResourceReaderError(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "failed to get navigation config")
+	assert.Contains(t, err.Error(), "get menu resources")
 
 	mockResourceReader.AssertExpectations(t)
 }

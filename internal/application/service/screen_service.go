@@ -134,7 +134,7 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	resources, err := s.resourceReader.GetMenuResources(ctx)
 	if err != nil {
 		s.logger.Error("failed to get menu resources", "error", err)
-		return nil, fmt.Errorf("failed to get navigation config: %w", err)
+		return nil, errors.NewDatabaseError("get menu resources", err)
 	}
 
 	if len(resources) == 0 {
@@ -168,7 +168,7 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	mappings, err := s.resourceReader.GetResourceScreenMappings(ctx, resourceKeys)
 	if err != nil {
 		s.logger.Error("failed to get resource screen mappings", "error", err)
-		return nil, fmt.Errorf("failed to get screen mappings: %w", err)
+		return nil, errors.NewDatabaseError("get resource screen mappings", err)
 	}
 
 	screenMap := make(map[string]string) // resourceKey -> screenKey

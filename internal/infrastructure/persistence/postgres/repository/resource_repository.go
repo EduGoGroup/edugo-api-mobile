@@ -25,7 +25,7 @@ func (r *PostgresResourceRepository) GetMenuResources(ctx context.Context) ([]*r
 		SELECT id::text, key, display_name, icon, parent_id::text, sort_order, scope
 		FROM auth.resources
 		WHERE is_active = true AND is_menu_visible = true
-		ORDER BY sort_order ASC
+		ORDER BY sort_order ASC, key ASC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
