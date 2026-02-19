@@ -3,16 +3,16 @@ module github.com/EduGoGroup/edugo-api-mobile
 go 1.25
 
 require (
-	github.com/EduGoGroup/edugo-infrastructure/postgres v0.20.1
-	github.com/EduGoGroup/edugo-infrastructure/schemas v0.1.4
-	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.1.2
-	github.com/EduGoGroup/edugo-shared/auth v0.13.3
-	github.com/EduGoGroup/edugo-shared/bootstrap v0.11.0
-	github.com/EduGoGroup/edugo-shared/common v0.12.1
-	github.com/EduGoGroup/edugo-shared/lifecycle v0.10.1
-	github.com/EduGoGroup/edugo-shared/logger v0.10.0
-	github.com/EduGoGroup/edugo-shared/middleware/gin v0.11.2
-	github.com/EduGoGroup/edugo-shared/testing v0.11.0
+	github.com/EduGoGroup/edugo-infrastructure/postgres v0.50.0
+	github.com/EduGoGroup/edugo-infrastructure/schemas v0.50.0
+	github.com/EduGoGroup/edugo-infrastructure/tools/mock-generator v0.50.0
+	github.com/EduGoGroup/edugo-shared/auth v0.50.0
+	github.com/EduGoGroup/edugo-shared/bootstrap v0.50.0
+	github.com/EduGoGroup/edugo-shared/common v0.50.0
+	github.com/EduGoGroup/edugo-shared/lifecycle v0.50.0
+	github.com/EduGoGroup/edugo-shared/logger v0.50.0
+	github.com/EduGoGroup/edugo-shared/middleware/gin v0.50.0
+	github.com/EduGoGroup/edugo-shared/testing v0.50.0
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.9
