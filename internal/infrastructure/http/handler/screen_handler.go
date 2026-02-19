@@ -122,7 +122,7 @@ func (h *ScreenHandler) GetScreensForResource(c *gin.Context) {
 // @Router /v1/screens/navigation [get]
 // @Security BearerAuth
 func (h *ScreenHandler) GetNavigation(c *gin.Context) {
-	platform := c.Query("platform")
+	platform := c.DefaultQuery("platform", "mobile")
 	userIDStr := ginmiddleware.MustGetUserID(c)
 
 	userID, err := uuid.Parse(userIDStr)
@@ -132,7 +132,14 @@ func (h *ScreenHandler) GetNavigation(c *gin.Context) {
 		return
 	}
 
-	nav, err := h.screenService.GetNavigationConfig(c.Request.Context(), userID, platform)
+	// Extraer permisos del JWT context
+	var permissions []string
+	claims, claimsErr := ginmiddleware.GetClaims(c)
+	if claimsErr == nil && claims != nil && claims.ActiveContext != nil {
+		permissions = claims.ActiveContext.Permissions
+	}
+
+	nav, err := h.screenService.GetNavigationConfig(c.Request.Context(), userID, platform, permissions)
 	if err != nil {
 		if appErr, ok := errors.GetAppError(err); ok {
 			c.JSON(appErr.StatusCode, ErrorResponse{Error: appErr.Message, Code: string(appErr.Code)})

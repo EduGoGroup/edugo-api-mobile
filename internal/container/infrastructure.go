@@ -9,14 +9,14 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // InfrastructureContainer encapsula todas las dependencias de infraestructura
 // Responsabilidad: Gestionar recursos externos (DB, Logger, Messaging, Storage, Auth)
 type InfrastructureContainer struct {
 	DB               *sql.DB
-	MongoDB          *mongo.Database
+	MongoDB          *mongov2.Database
 	Logger           logger.Logger
 	JWTManager       *auth.JWTManager
 	AuthClient       *client.AuthClient // Cliente para validar tokens JWT (local + fallback remoto opcional)
@@ -35,7 +35,7 @@ type InfrastructureContainer struct {
 //   - logger: Logger compartido de la aplicación
 func NewInfrastructureContainer(
 	db *sql.DB,
-	mongoDB *mongo.Database,
+	mongoDB *mongov2.Database,
 	publisher rabbitmq.Publisher,
 	s3Client bootstrap.S3Storage,
 	jwtSecret string,

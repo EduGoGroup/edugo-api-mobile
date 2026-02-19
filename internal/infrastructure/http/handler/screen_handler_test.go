@@ -25,7 +25,7 @@ import (
 
 type MockScreenService struct {
 	GetScreenFunc             func(ctx context.Context, screenKey string, userID uuid.UUID, platform string) (*dto.CombinedScreenDTO, error)
-	GetNavigationConfigFunc   func(ctx context.Context, userID uuid.UUID, platform string) (*service.NavigationConfigDTO, error)
+	GetNavigationConfigFunc   func(ctx context.Context, userID uuid.UUID, platform string, permissions []string) (*service.NavigationConfigDTO, error)
 	SaveUserPreferencesFunc   func(ctx context.Context, screenKey string, userID uuid.UUID, prefs json.RawMessage) error
 	GetScreensForResourceFunc func(ctx context.Context, resourceKey string) ([]*dto.ResourceScreenDTO, error)
 }
@@ -37,9 +37,9 @@ func (m *MockScreenService) GetScreen(ctx context.Context, screenKey string, use
 	return &dto.CombinedScreenDTO{ScreenKey: screenKey}, nil
 }
 
-func (m *MockScreenService) GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string) (*service.NavigationConfigDTO, error) {
+func (m *MockScreenService) GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string, permissions []string) (*service.NavigationConfigDTO, error) {
 	if m.GetNavigationConfigFunc != nil {
-		return m.GetNavigationConfigFunc(ctx, userID, platform)
+		return m.GetNavigationConfigFunc(ctx, userID, platform, permissions)
 	}
 	return &service.NavigationConfigDTO{
 		BottomNav:   []service.NavItemDTO{},
@@ -404,7 +404,7 @@ func TestScreenHandler_GetNavigation_Success(t *testing.T) {
 	}
 
 	mockService := &MockScreenService{
-		GetNavigationConfigFunc: func(ctx context.Context, uid uuid.UUID, platform string) (*service.NavigationConfigDTO, error) {
+		GetNavigationConfigFunc: func(ctx context.Context, uid uuid.UUID, platform string, permissions []string) (*service.NavigationConfigDTO, error) {
 			assert.Equal(t, testUserID, uid.String())
 			return expectedNav, nil
 		},
@@ -458,7 +458,7 @@ func TestScreenHandler_GetNavigation_ServiceError(t *testing.T) {
 	testUserID := uuid.New().String()
 
 	mockService := &MockScreenService{
-		GetNavigationConfigFunc: func(ctx context.Context, uid uuid.UUID, platform string) (*service.NavigationConfigDTO, error) {
+		GetNavigationConfigFunc: func(ctx context.Context, uid uuid.UUID, platform string, permissions []string) (*service.NavigationConfigDTO, error) {
 			return nil, fmt.Errorf("unexpected error")
 		},
 	}

@@ -67,9 +67,10 @@ func NewServiceContainer(infra *InfrastructureContainer, repos *RepositoryContai
 			repos.ProgressRepository, // ProgressStats (PostgreSQL)
 		),
 
-		// ScreenService gestiona definiciones de pantalla dinámicas (Dynamic UI - Phase 1)
+		// ScreenService gestiona definiciones de pantalla dinámicas (Dynamic UI - Phase 2)
 		ScreenService: service.NewScreenService(
 			repos.ScreenRepository,
+			repos.ResourceReader,
 			infra.Logger,
 		),
 	}

@@ -1,6 +1,0 @@
-###
-# Health Check
-# Verifica estado del servicio (público, sin auth)
-GET {{baseUrl}}/health
-
-?? status == 200

@@ -5,7 +5,7 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // ResourceConfig define la configuración de un recurso de infraestructura
@@ -50,7 +50,7 @@ func WithPostgreSQL(db *sql.DB) BootstrapOption {
 
 // WithMongoDB inyecta una conexión MongoDB pre-construida
 // Útil para testing con bases de datos mock o en memoria
-func WithMongoDB(db *mongo.Database) BootstrapOption {
+func WithMongoDB(db *mongov2.Database) BootstrapOption {
 	return func(opts *BootstrapOptions) {
 		opts.MongoDB = db
 	}

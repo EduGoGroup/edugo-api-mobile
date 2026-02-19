@@ -20,6 +20,7 @@ type CombinedScreen struct {
 	Actions         json.RawMessage
 	DataEndpoint    string
 	DataConfig      json.RawMessage
+	HandlerKey      *string
 	UserPreferences json.RawMessage
 	LastUpdated     time.Time
 }

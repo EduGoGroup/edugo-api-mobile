@@ -19,7 +19,7 @@ import (
 // ScreenService define las operaciones de negocio para pantallas
 type ScreenService interface {
 	GetScreen(ctx context.Context, screenKey string, userID uuid.UUID, platform string) (*dto.CombinedScreenDTO, error)
-	GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string) (*NavigationConfigDTO, error)
+	GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string, permissions []string) (*NavigationConfigDTO, error)
 	SaveUserPreferences(ctx context.Context, screenKey string, userID uuid.UUID, prefs json.RawMessage) error
 	GetScreensForResource(ctx context.Context, resourceKey string) ([]*dto.ResourceScreenDTO, error)
 }
@@ -33,11 +33,12 @@ type NavigationConfigDTO struct {
 
 // NavItemDTO representa un item de navegacion
 type NavItemDTO struct {
-	Key       string `json:"key"`
-	Label     string `json:"label"`
-	Icon      string `json:"icon"`
-	ScreenKey string `json:"screenKey"`
-	SortOrder int    `json:"sortOrder"`
+	Key       string       `json:"key"`
+	Label     string       `json:"label"`
+	Icon      string       `json:"icon,omitempty"`
+	ScreenKey string       `json:"screenKey,omitempty"`
+	SortOrder int          `json:"sortOrder"`
+	Children  []NavItemDTO `json:"children,omitempty"`
 }
 
 // screenCache es una entrada de cache con TTL
@@ -47,8 +48,9 @@ type screenCache struct {
 }
 
 type screenService struct {
-	repo   repository.ScreenRepository
-	logger logger.Logger
+	repo           repository.ScreenRepository
+	resourceReader repository.ResourceReader
+	logger         logger.Logger
 
 	mu    sync.RWMutex
 	cache map[string]*screenCache
@@ -58,13 +60,15 @@ type screenService struct {
 // NewScreenService crea una nueva instancia del servicio de pantallas
 func NewScreenService(
 	repo repository.ScreenRepository,
+	resourceReader repository.ResourceReader,
 	logger logger.Logger,
 ) ScreenService {
 	return &screenService{
-		repo:   repo,
-		logger: logger,
-		cache:  make(map[string]*screenCache),
-		ttl:    1 * time.Hour,
+		repo:           repo,
+		resourceReader: resourceReader,
+		logger:         logger,
+		cache:          make(map[string]*screenCache),
+		ttl:            1 * time.Hour,
 	}
 }
 
@@ -107,6 +111,7 @@ func (s *screenService) GetScreen(ctx context.Context, screenKey string, userID 
 		DataEndpoint:    combined.DataEndpoint,
 		DataConfig:      combined.DataConfig,
 		Actions:         combined.Actions,
+		HandlerKey:      combined.HandlerKey,
 		UserPreferences: combined.UserPreferences,
 		UpdatedAt:       combined.LastUpdated,
 	}
@@ -123,21 +128,148 @@ func (s *screenService) GetScreen(ctx context.Context, screenKey string, userID 
 	return result, nil
 }
 
-// GetNavigationConfig retorna la estructura de navegacion para el usuario
-func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string) (*NavigationConfigDTO, error) {
-	// En Fase 1, retornamos una navegacion basica hardcodeada
-	// En fases futuras, se consultara la BD para obtener la configuracion del menu del usuario
-	nav := &NavigationConfigDTO{
-		BottomNav: []NavItemDTO{
-			{Key: "dashboard", Label: "Home", Icon: "home", ScreenKey: "dashboard-teacher", SortOrder: 0},
-			{Key: "materials", Label: "Materials", Icon: "folder", ScreenKey: "materials-list", SortOrder: 1},
-			{Key: "settings", Label: "Settings", Icon: "settings", ScreenKey: "app-settings", SortOrder: 4},
-		},
-		DrawerItems: []NavItemDTO{},
-		Version:     1,
+// GetNavigationConfig retorna la estructura de navegacion dinamica basada en permisos del usuario
+func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUID, platform string, permissions []string) (*NavigationConfigDTO, error) {
+	// 1. Obtener todos los recursos visibles en menu
+	resources, err := s.resourceReader.GetMenuResources(ctx)
+	if err != nil {
+		s.logger.Error("failed to get menu resources", "error", err)
+		return nil, errors.NewDatabaseError("get menu resources", err)
 	}
 
-	return nav, nil
+	if len(resources) == 0 {
+		return &NavigationConfigDTO{
+			BottomNav:   []NavItemDTO{},
+			DrawerItems: []NavItemDTO{},
+			Version:     1,
+		}, nil
+	}
+
+	// 2. Filtrar recursos por permisos del usuario
+	var allowedResources []*repository.MenuResource
+	var resourceKeys []string
+	for _, res := range resources {
+		permKey := res.Key + ":read"
+		if hasPermission(permissions, permKey) || res.Scope == "system" {
+			allowedResources = append(allowedResources, res)
+			resourceKeys = append(resourceKeys, res.Key)
+		}
+	}
+
+	if len(allowedResources) == 0 {
+		return &NavigationConfigDTO{
+			BottomNav:   []NavItemDTO{},
+			DrawerItems: []NavItemDTO{},
+			Version:     1,
+		}, nil
+	}
+
+	// 3. Obtener mappings de pantalla para los recursos permitidos
+	mappings, err := s.resourceReader.GetResourceScreenMappings(ctx, resourceKeys)
+	if err != nil {
+		s.logger.Error("failed to get resource screen mappings", "error", err)
+		return nil, errors.NewDatabaseError("get resource screen mappings", err)
+	}
+
+	screenMap := make(map[string]string) // resourceKey -> screenKey
+	for _, m := range mappings {
+		if m.IsDefault {
+			screenMap[m.ResourceKey] = m.ScreenKey
+		}
+	}
+
+	// 4. Construir arbol de navegacion
+	bottomNav, drawerItems := buildNavigationTree(allowedResources, screenMap, platform)
+
+	return &NavigationConfigDTO{
+		BottomNav:   bottomNav,
+		DrawerItems: drawerItems,
+		Version:     1,
+	}, nil
+}
+
+// hasPermission verifica si una lista de permisos contiene un permiso requerido
+func hasPermission(perms []string, required string) bool {
+	for _, p := range perms {
+		if p == required {
+			return true
+		}
+	}
+	return false
+}
+
+// buildNavigationTree construye los items de navegacion separados en bottomNav y drawer
+func buildNavigationTree(resources []*repository.MenuResource, screenMap map[string]string, platform string) ([]NavItemDTO, []NavItemDTO) {
+	// Separar top-level (sin parent) de hijos
+	topLevel := make([]*repository.MenuResource, 0)
+	children := make(map[string][]*repository.MenuResource) // parentID -> children
+
+	for _, res := range resources {
+		if res.ParentID == nil {
+			topLevel = append(topLevel, res)
+		} else {
+			children[*res.ParentID] = append(children[*res.ParentID], res)
+		}
+	}
+
+	// Convertir a NavItemDTO
+	var allItems []NavItemDTO
+	for _, res := range topLevel {
+		item := NavItemDTO{
+			Key:       res.Key,
+			Label:     res.DisplayName,
+			SortOrder: res.SortOrder,
+		}
+		if res.Icon != nil {
+			item.Icon = *res.Icon
+		}
+		if sk, ok := screenMap[res.Key]; ok {
+			item.ScreenKey = sk
+		}
+		// Agregar hijos
+		if kids, ok := children[res.ID]; ok {
+			for _, kid := range kids {
+				childItem := NavItemDTO{
+					Key:       kid.Key,
+					Label:     kid.DisplayName,
+					SortOrder: kid.SortOrder,
+				}
+				if kid.Icon != nil {
+					childItem.Icon = *kid.Icon
+				}
+				if sk, ok := screenMap[kid.Key]; ok {
+					childItem.ScreenKey = sk
+				}
+				item.Children = append(item.Children, childItem)
+			}
+		}
+		allItems = append(allItems, item)
+	}
+
+	// Separar: mobile obtiene max 5 en bottomNav, el resto en drawer
+	// desktop/web obtiene todo en drawer (sin bottom nav)
+	maxBottomNav := 5
+	if platform == "desktop" || platform == "web" {
+		maxBottomNav = 0
+	}
+
+	var bottomNav, drawerItems []NavItemDTO
+	for i, item := range allItems {
+		if i < maxBottomNav {
+			bottomNav = append(bottomNav, item)
+		} else {
+			drawerItems = append(drawerItems, item)
+		}
+	}
+
+	if bottomNav == nil {
+		bottomNav = []NavItemDTO{}
+	}
+	if drawerItems == nil {
+		drawerItems = []NavItemDTO{}
+	}
+
+	return bottomNav, drawerItems
 }
 
 // SaveUserPreferences almacena las preferencias de pantalla especificas del usuario

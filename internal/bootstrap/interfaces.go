@@ -9,7 +9,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/messaging/rabbitmq"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/infrastructure/storage/s3"
 	"github.com/EduGoGroup/edugo-shared/logger"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongov2 "go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // LoggerFactory crea instancias de logger
@@ -20,7 +20,7 @@ type LoggerFactory interface {
 // DatabaseFactory crea conexiones a bases de datos
 type DatabaseFactory interface {
 	CreatePostgreSQL(ctx context.Context, cfg *config.Config, log logger.Logger) (*sql.DB, error)
-	CreateMongoDB(ctx context.Context, cfg *config.Config, log logger.Logger) (*mongo.Database, error)
+	CreateMongoDB(ctx context.Context, cfg *config.Config, log logger.Logger) (*mongov2.Database, error)
 }
 
 // MessagingFactory crea clientes de mensajería
@@ -48,7 +48,7 @@ type S3Storage interface {
 type Resources struct {
 	Logger            logger.Logger
 	PostgreSQL        *sql.DB
-	MongoDB           *mongo.Database
+	MongoDB           *mongov2.Database
 	RabbitMQPublisher rabbitmq.Publisher
 	S3Client          S3Storage
 	JWTSecret         string
@@ -63,7 +63,7 @@ type BootstrapOptions struct {
 	// Recursos pre-construidos (para testing)
 	Logger            logger.Logger
 	PostgreSQL        *sql.DB
-	MongoDB           *mongo.Database
+	MongoDB           *mongov2.Database
 	RabbitMQPublisher rabbitmq.Publisher
 	S3Client          S3Storage
 
