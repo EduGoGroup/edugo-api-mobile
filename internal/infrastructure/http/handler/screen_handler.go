@@ -35,7 +35,7 @@ func NewScreenHandler(screenService service.ScreenService, logger logger.Logger)
 // @Tags screens
 // @Produce json
 // @Param screenKey path string true "Screen key identifier"
-// @Param platform query string false "Platform (mobile, desktop, web)"
+// @Param platform query string false "Platform (ios, android, mobile, desktop, web)"
 // @Success 200 {object} screenconfig.CombinedScreenDTO "Screen definition"
 // @Success 304 "Not Modified"
 // @Failure 404 {object} ErrorResponse "Screen not found"
@@ -116,7 +116,7 @@ func (h *ScreenHandler) GetScreensForResource(c *gin.Context) {
 // @Description Retrieves the complete navigation structure for the authenticated user
 // @Tags screens
 // @Produce json
-// @Param platform query string false "Platform (mobile, desktop, web)"
+// @Param platform query string false "Platform (ios, android, mobile, desktop, web)"
 // @Success 200 {object} service.NavigationConfigDTO "Navigation configuration"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /v1/screens/navigation [get]
