@@ -14,6 +14,7 @@ import (
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
+	"github.com/EduGoGroup/edugo-shared/screenconfig"
 )
 
 // ============================================
@@ -149,7 +150,7 @@ func TestScreenService_GetScreen_Success(t *testing.T) {
 	assert.Equal(t, "si-materials-list", result.ScreenID)
 	assert.Equal(t, screenKey, result.ScreenKey)
 	assert.Equal(t, "Educational Materials", result.ScreenName)
-	assert.Equal(t, "list", result.Pattern)
+	assert.Equal(t, screenconfig.Pattern("list"), result.Pattern)
 	assert.Equal(t, 1, result.Version)
 	assert.Equal(t, "/v1/materials", result.DataEndpoint)
 
@@ -605,157 +606,6 @@ func TestScreenService_GetScreensForResource_DatabaseError(t *testing.T) {
 	assert.Nil(t, result)
 
 	mockRepo.AssertExpectations(t)
-}
-
-// ============================================
-// Tests: resolveSlots (funcion interna)
-// ============================================
-
-func TestResolveSlots_ReplacesSlotReferences(t *testing.T) {
-	definition := json.RawMessage(`{"title": "slot:page_title", "subtitle": "static text"}`)
-	slotData := json.RawMessage(`{"page_title": "My Page Title"}`)
-
-	result := resolveSlots(definition, slotData)
-
-	var resultMap map[string]interface{}
-	err := json.Unmarshal(result, &resultMap)
-	require.NoError(t, err)
-
-	assert.Equal(t, "My Page Title", resultMap["title"])
-	assert.Equal(t, "static text", resultMap["subtitle"])
-}
-
-func TestResolveSlots_EmptySlotData(t *testing.T) {
-	definition := json.RawMessage(`{"title": "slot:page_title"}`)
-
-	// Con slotData vacio, no deberia cambiar nada
-	result := resolveSlots(definition, json.RawMessage(`{}`))
-
-	assert.Equal(t, string(definition), string(result))
-}
-
-func TestResolveSlots_NullSlotData(t *testing.T) {
-	definition := json.RawMessage(`{"title": "slot:page_title"}`)
-
-	result := resolveSlots(definition, json.RawMessage(`null`))
-
-	assert.Equal(t, string(definition), string(result))
-}
-
-func TestResolveSlots_NestedStructure(t *testing.T) {
-	definition := json.RawMessage(`{
-		"nav": {
-			"topBar": {
-				"title": "slot:header_title"
-			}
-		},
-		"items": [
-			{"label": "slot:item_label"},
-			{"label": "fixed"}
-		]
-	}`)
-	slotData := json.RawMessage(`{
-		"header_title": "Dashboard",
-		"item_label": "Home"
-	}`)
-
-	result := resolveSlots(definition, slotData)
-
-	resultStr := string(result)
-	assert.NotContains(t, resultStr, "slot:header_title")
-	assert.NotContains(t, resultStr, "slot:item_label")
-	assert.Contains(t, resultStr, "Dashboard")
-	assert.Contains(t, resultStr, "Home")
-	assert.Contains(t, resultStr, "fixed")
-}
-
-func TestResolveSlots_UnknownSlotKey_KeepsOriginal(t *testing.T) {
-	definition := json.RawMessage(`{"title": "slot:unknown_key"}`)
-	slotData := json.RawMessage(`{"other_key": "value"}`)
-
-	result := resolveSlots(definition, slotData)
-
-	var resultMap map[string]interface{}
-	err := json.Unmarshal(result, &resultMap)
-	require.NoError(t, err)
-
-	// Un slot:xxx que no tiene match en slotData debe mantenerse como string
-	assert.Equal(t, "slot:unknown_key", resultMap["title"])
-}
-
-// ============================================
-// Tests: applyPlatformOverrides (funcion interna)
-// ============================================
-
-func TestApplyPlatformOverrides_AppliesDesktop(t *testing.T) {
-	definition := json.RawMessage(`{
-		"zones": [
-			{"id": "list_content", "distribution": "stacked"}
-		],
-		"platformOverrides": {
-			"desktop": {
-				"zones": {
-					"list_content": {"distribution": "grid", "columns": 3}
-				}
-			}
-		}
-	}`)
-
-	result := applyPlatformOverrides(definition, "desktop")
-
-	var resultMap map[string]interface{}
-	err := json.Unmarshal(result, &resultMap)
-	require.NoError(t, err)
-
-	// platformOverrides debe eliminarse
-	_, exists := resultMap["platformOverrides"]
-	assert.False(t, exists)
-
-	// zone debe tener los overrides aplicados
-	zones := resultMap["zones"].([]interface{})
-	zone := zones[0].(map[string]interface{})
-	assert.Equal(t, "grid", zone["distribution"])
-	assert.Equal(t, float64(3), zone["columns"])
-}
-
-func TestApplyPlatformOverrides_NoPlatformMatch(t *testing.T) {
-	definition := json.RawMessage(`{
-		"zones": [
-			{"id": "list_content", "distribution": "stacked"}
-		],
-		"platformOverrides": {
-			"desktop": {
-				"zones": {
-					"list_content": {"distribution": "grid"}
-				}
-			}
-		}
-	}`)
-
-	// Platform "mobile" no tiene overrides definidos
-	result := applyPlatformOverrides(definition, "mobile")
-
-	var resultMap map[string]interface{}
-	err := json.Unmarshal(result, &resultMap)
-	require.NoError(t, err)
-
-	// zones no deben cambiar
-	zones := resultMap["zones"].([]interface{})
-	zone := zones[0].(map[string]interface{})
-	assert.Equal(t, "stacked", zone["distribution"])
-}
-
-func TestApplyPlatformOverrides_NoOverridesKey(t *testing.T) {
-	definition := json.RawMessage(`{
-		"zones": [
-			{"id": "list_content", "distribution": "stacked"}
-		]
-	}`)
-
-	result := applyPlatformOverrides(definition, "desktop")
-
-	// Sin platformOverrides, el template debe ser identico
-	assert.JSONEq(t, string(definition), string(result))
 }
 
 // ============================================
