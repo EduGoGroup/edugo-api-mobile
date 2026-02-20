@@ -132,6 +132,15 @@ jobs:
               "BOOTSTRAP_OPTIONAL_RESOURCES_RABBITMQ=true" \
               "BOOTSTRAP_OPTIONAL_RESOURCES_S3=true" \
               "BOOTSTRAP_OPTIONAL_RESOURCES_MONGODB=true" \
+              "MESSAGING_RABBITMQ_URL=amqp://disabled:disabled@localhost:5672/" \
+              "MESSAGING_RABBITMQ_PREFETCH_COUNT=1" \
+              "MESSAGING_RABBITMQ_QUEUES_MATERIAL_UPLOADED=material.uploaded" \
+              "MESSAGING_RABBITMQ_QUEUES_ASSESSMENT_ATTEMPT=assessment.attempt" \
+              "MESSAGING_RABBITMQ_EXCHANGES_MATERIALS=materials" \
+              "STORAGE_S3_BUCKET_NAME=edugo-materials-dev" \
+              "STORAGE_S3_REGION=us-east-1" \
+              "STORAGE_S3_ACCESS_KEY_ID=disabled" \
+              "STORAGE_S3_SECRET_ACCESS_KEY=disabled" \
               "LOGGING_LEVEL=info" \
               "LOGGING_FORMAT=json"
 
