@@ -483,7 +483,7 @@ func initTestSchema(db *sql.DB) error {
 		);
 
 		-- Material Progress table (nombre correcto según repositorio)
-		CREATE TABLE IF NOT EXISTS material_progress (
+		CREATE TABLE IF NOT EXISTS progress (
 			material_id UUID NOT NULL REFERENCES materials(id),
 			user_id UUID NOT NULL REFERENCES users(id),
 			percentage INT DEFAULT 0 CHECK (percentage >= 0 AND percentage <= 100),
