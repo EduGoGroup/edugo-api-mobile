@@ -89,7 +89,7 @@ jobs:
       - name: Crear Container App (primera vez)
         if: steps.check-app.outputs.exists == 'false'
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+          IMAGE="${{ env.REGISTRY }}/$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]'):${{ needs.prepare.outputs.image_tag }}"
           echo "📦 Creando Container App con imagen: $IMAGE"
 
           az containerapp create \
@@ -97,6 +97,9 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --environment ${{ env.CONTAINER_APP_ENV }} \
             --image "$IMAGE" \
+            --registry-server ${{ env.REGISTRY }} \
+            --registry-username ${{ github.actor }} \
+            --registry-password "${{ secrets.GITHUB_TOKEN }}" \
             --target-port 9091 \
             --ingress external \
             --min-replicas 0 \
@@ -137,7 +140,7 @@ jobs:
       - name: Actualizar imagen (deploys siguientes)
         if: steps.check-app.outputs.exists == 'true'
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+          IMAGE="${{ env.REGISTRY }}/$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]'):${{ needs.prepare.outputs.image_tag }}"
           echo "🔄 Actualizando imagen a: $IMAGE"
 
           az containerapp update \
