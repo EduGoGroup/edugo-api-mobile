@@ -12,6 +12,7 @@ require (
 	github.com/EduGoGroup/edugo-shared/lifecycle v0.50.0
 	github.com/EduGoGroup/edugo-shared/logger v0.50.0
 	github.com/EduGoGroup/edugo-shared/middleware/gin v0.50.0
+	github.com/EduGoGroup/edugo-shared/screenconfig v0.51.0
 	github.com/EduGoGroup/edugo-shared/testing v0.50.0
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.9

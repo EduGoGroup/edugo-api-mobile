@@ -25,7 +25,7 @@ type ProgressRepositoryIntegrationSuite struct {
 // SetupSuite se ejecuta UNA VEZ antes de todos los tests
 func (s *ProgressRepositoryIntegrationSuite) SetupSuite() {
 	s.IntegrationTestSuite.SetupSuite()
-	// Las tablas users, materials, material_progress ya deben existir por las migraciones
+	// Las tablas users, materials, progress ya deben existir por las migraciones
 }
 
 // SetupTest prepara cada test individual
@@ -112,7 +112,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CreateNewProgress() {
 	// Verificar que se creó en DB
 	var count int
 	err = s.PostgresDB.QueryRow(`
-		SELECT COUNT(*) FROM material_progress
+		SELECT COUNT(*) FROM progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&count)
 	s.Require().NoError(err)
@@ -170,7 +170,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress()
 	// Verificar que solo hay un registro en DB
 	var count int
 	err = s.PostgresDB.QueryRow(`
-		SELECT COUNT(*) FROM material_progress
+		SELECT COUNT(*) FROM progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&count)
 	s.Require().NoError(err)
@@ -179,7 +179,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_UpdateExistingProgress()
 	// Verificar que el porcentaje se actualizó
 	var percentage int
 	err = s.PostgresDB.QueryRow(`
-		SELECT percentage FROM material_progress
+		SELECT percentage FROM progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&percentage)
 	s.Require().NoError(err)
@@ -217,7 +217,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestUpsert_CompleteProgress() {
 	// Verificar que el registro existe en DB
 	var count int
 	err = s.PostgresDB.QueryRow(`
-		SELECT COUNT(*) FROM material_progress
+		SELECT COUNT(*) FROM progress
 		WHERE material_id = $1 AND user_id = $2
 	`, materialID.String(), userID.String()).Scan(&count)
 	s.Require().NoError(err)
@@ -233,7 +233,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_ProgressE
 
 	now := time.Now()
 	_, err := s.PostgresDB.Exec(`
-		INSERT INTO material_progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
+		INSERT INTO progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`, materialID.String(), userID.String(), 75, 15, "in_progress", now, now, now)
 	s.Require().NoError(err)
@@ -289,7 +289,7 @@ func (s *ProgressRepositoryIntegrationSuite) TestFindByMaterialAndUser_Different
 	// Crear progreso para userID1
 	now := time.Now()
 	_, err = s.PostgresDB.Exec(`
-		INSERT INTO material_progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
+		INSERT INTO progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`, materialID.String(), userID1.String(), 50, 10, "in_progress", now, now, now)
 	s.Require().NoError(err)

@@ -21,7 +21,7 @@ func NewPostgresProgressRepository(db *sql.DB) repository.ProgressRepository {
 
 func (r *postgresProgressRepository) Save(ctx context.Context, progress *pgentities.Progress) error {
 	query := `
-		INSERT INTO material_progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
+		INSERT INTO progress (material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
@@ -42,7 +42,7 @@ func (r *postgresProgressRepository) Save(ctx context.Context, progress *pgentit
 func (r *postgresProgressRepository) FindByMaterialAndUser(ctx context.Context, materialID valueobject.MaterialID, userID valueobject.UserID) (*pgentities.Progress, error) {
 	query := `
 		SELECT material_id, user_id, percentage, last_page, status, last_accessed_at, created_at, updated_at
-		FROM material_progress
+		FROM progress
 		WHERE material_id = $1 AND user_id = $2
 	`
 
@@ -82,7 +82,7 @@ func (r *postgresProgressRepository) FindByMaterialAndUser(ctx context.Context, 
 
 func (r *postgresProgressRepository) Update(ctx context.Context, progress *pgentities.Progress) error {
 	query := `
-		UPDATE material_progress
+		UPDATE progress
 		SET percentage = $1, last_page = $2, status = $3, last_accessed_at = $4, updated_at = $5
 		WHERE material_id = $6 AND user_id = $7
 	`
@@ -108,7 +108,7 @@ func (r *postgresProgressRepository) Upsert(ctx context.Context, progress *pgent
 	// Query UPSERT usando ON CONFLICT de PostgreSQL
 	// La PRIMARY KEY (material_id, user_id) garantiza unicidad
 	query := `
-		INSERT INTO material_progress (
+		INSERT INTO progress (
 			material_id, user_id, percentage, last_page, status,
 			last_accessed_at, created_at, updated_at
 		)
@@ -172,7 +172,7 @@ func (r *postgresProgressRepository) Upsert(ctx context.Context, progress *pgent
 func (r *postgresProgressRepository) CountActiveUsers(ctx context.Context) (int64, error) {
 	query := `
 		SELECT COUNT(DISTINCT user_id)
-		FROM material_progress
+		FROM progress
 		WHERE last_accessed_at >= NOW() - INTERVAL '30 days'
 	`
 
@@ -188,7 +188,7 @@ func (r *postgresProgressRepository) CountActiveUsers(ctx context.Context) (int6
 // CalculateAverageProgress calcula el promedio de progreso de todos los usuarios
 // Usado para estadísticas globales del sistema
 func (r *postgresProgressRepository) CalculateAverageProgress(ctx context.Context) (float64, error) {
-	query := `SELECT COALESCE(AVG(percentage), 0) FROM material_progress`
+	query := `SELECT COALESCE(AVG(percentage), 0) FROM progress`
 
 	var avgProgress float64
 	err := r.db.QueryRowContext(ctx, query).Scan(&avgProgress)

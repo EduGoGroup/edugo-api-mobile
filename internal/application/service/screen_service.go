@@ -14,6 +14,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/domain/repository"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
+	"github.com/EduGoGroup/edugo-shared/screenconfig"
 )
 
 // ScreenService define las operaciones de negocio para pantallas
@@ -74,8 +75,8 @@ func NewScreenService(
 
 // GetScreen retorna la definicion de pantalla combinada para el renderizado del frontend
 func (s *screenService) GetScreen(ctx context.Context, screenKey string, userID uuid.UUID, platform string) (*dto.CombinedScreenDTO, error) {
-	// 1. Verificar cache (sin preferencias de usuario, esas se fusionan despues)
-	cacheKey := fmt.Sprintf("screen:%s", screenKey)
+	// 1. Verificar cache (incluyendo platform para evitar servir overrides incorrectos)
+	cacheKey := fmt.Sprintf("screen:%s:platform:%s", screenKey, platform)
 	if cached := s.getCached(cacheKey); cached != nil {
 		s.logger.Info("screen cache hit", "screen_key", screenKey)
 		// Fusionar preferencias de usuario sobre la copia cacheada
@@ -429,7 +430,15 @@ func applyPlatformOverrides(definition json.RawMessage, platform string) json.Ra
 		return definition
 	}
 
-	platformOverride, ok := overridesMap[platform]
+	// Resolver override con cadena de fallback (ej: ios -> mobile -> sin override)
+	resolvedKey, found := screenconfig.ResolvePlatformOverrideKey(
+		screenconfig.Platform(platform), overridesMap,
+	)
+	if !found {
+		return definition
+	}
+
+	platformOverride, ok := overridesMap[resolvedKey]
 	if !ok {
 		return definition
 	}
