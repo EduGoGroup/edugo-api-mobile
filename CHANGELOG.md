@@ -5,6 +5,16 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-02-20
+
+### Tipo de Release: patch
+
+- refactor: usar screenconfig v0.52.0 shared para eliminar logica duplicada (#111)
+- fix: usar GHCR_TOKEN persistente para registry credentials
+- fix: agregar variables RabbitMQ y S3 requeridas por el bootstrap de api-mobile
+
+---
+
 ## [0.20.0] - 2026-02-20
 
 ### Tipo de Release: patch
