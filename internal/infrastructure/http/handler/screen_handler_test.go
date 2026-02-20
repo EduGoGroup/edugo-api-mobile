@@ -17,6 +17,7 @@ import (
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/dto"
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
+	"github.com/EduGoGroup/edugo-shared/screenconfig"
 )
 
 // ============================================
@@ -136,7 +137,7 @@ func TestScreenHandler_GetScreen_Success(t *testing.T) {
 
 	assert.Equal(t, screenKey, response.ScreenKey)
 	assert.Equal(t, "Test Screen", response.ScreenName)
-	assert.Equal(t, "list", response.Pattern)
+	assert.Equal(t, screenconfig.Pattern("list"), response.Pattern)
 
 	// Verificar headers de cache
 	assert.NotEmpty(t, w.Header().Get("ETag"))

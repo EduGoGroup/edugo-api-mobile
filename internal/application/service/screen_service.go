@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -94,11 +93,11 @@ func (s *screenService) GetScreen(ctx context.Context, screenKey string, userID 
 	}
 
 	// 3. Resolver referencias de slot
-	resolvedDefinition := resolveSlots(combined.Definition, combined.SlotData)
+	resolvedDefinition := screenconfig.ResolveSlots(combined.Definition, combined.SlotData)
 
 	// 4. Aplicar platformOverrides si se proporciona platform
 	if platform != "" {
-		resolvedDefinition = applyPlatformOverrides(resolvedDefinition, platform)
+		resolvedDefinition = screenconfig.ApplyPlatformOverrides(resolvedDefinition, platform)
 	}
 
 	// 5. Construir DTO
@@ -106,7 +105,7 @@ func (s *screenService) GetScreen(ctx context.Context, screenKey string, userID 
 		ScreenID:        combined.ID,
 		ScreenKey:       combined.ScreenKey,
 		ScreenName:      combined.Name,
-		Pattern:         combined.Pattern,
+		Pattern:         screenconfig.Pattern(combined.Pattern),
 		Version:         combined.Version,
 		Template:        resolvedDefinition,
 		DataEndpoint:    combined.DataEndpoint,
@@ -151,7 +150,7 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	var resourceKeys []string
 	for _, res := range resources {
 		permKey := res.Key + ":read"
-		if hasPermission(permissions, permKey) || res.Scope == "system" {
+		if screenconfig.HasPermission(permissions, permKey) || res.Scope == "system" {
 			allowedResources = append(allowedResources, res)
 			resourceKeys = append(resourceKeys, res.Key)
 		}
@@ -189,85 +188,72 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	}, nil
 }
 
-// hasPermission verifica si una lista de permisos contiene un permiso requerido
-func hasPermission(perms []string, required string) bool {
-	for _, p := range perms {
-		if p == required {
-			return true
-		}
-	}
-	return false
-}
-
-// buildNavigationTree construye los items de navegacion separados en bottomNav y drawer
-func buildNavigationTree(resources []*repository.MenuResource, screenMap map[string]string, platform string) ([]NavItemDTO, []NavItemDTO) {
-	// Separar top-level (sin parent) de hijos
-	topLevel := make([]*repository.MenuResource, 0)
-	children := make(map[string][]*repository.MenuResource) // parentID -> children
-
-	for _, res := range resources {
-		if res.ParentID == nil {
-			topLevel = append(topLevel, res)
-		} else {
-			children[*res.ParentID] = append(children[*res.ParentID], res)
-		}
-	}
-
-	// Convertir a NavItemDTO
-	var allItems []NavItemDTO
-	for _, res := range topLevel {
-		item := NavItemDTO{
-			Key:       res.Key,
-			Label:     res.DisplayName,
-			SortOrder: res.SortOrder,
+// toMenuNodes convierte MenuResource del repositorio a screenconfig.MenuNode del shared.
+// Los campos opcionales Icon y ParentID se asignan solo si no son nil.
+func toMenuNodes(resources []*repository.MenuResource) []screenconfig.MenuNode {
+	nodes := make([]screenconfig.MenuNode, len(resources))
+	for i, res := range resources {
+		node := screenconfig.MenuNode{
+			ID:          res.ID,
+			Key:         res.Key,
+			DisplayName: res.DisplayName,
+			SortOrder:   res.SortOrder,
+			Scope:       res.Scope,
 		}
 		if res.Icon != nil {
-			item.Icon = *res.Icon
+			node.Icon = *res.Icon
 		}
-		if sk, ok := screenMap[res.Key]; ok {
-			item.ScreenKey = sk
+		if res.ParentID != nil {
+			node.ParentID = *res.ParentID
 		}
-		// Agregar hijos
-		if kids, ok := children[res.ID]; ok {
-			for _, kid := range kids {
-				childItem := NavItemDTO{
-					Key:       kid.Key,
-					Label:     kid.DisplayName,
-					SortOrder: kid.SortOrder,
-				}
-				if kid.Icon != nil {
-					childItem.Icon = *kid.Icon
-				}
-				if sk, ok := screenMap[kid.Key]; ok {
-					childItem.ScreenKey = sk
-				}
-				item.Children = append(item.Children, childItem)
-			}
-		}
-		allItems = append(allItems, item)
+		nodes[i] = node
 	}
+	return nodes
+}
 
-	// Separar: mobile obtiene max 5 en bottomNav, el resto en drawer
-	// desktop/web obtiene todo en drawer (sin bottom nav)
+// toNavItems convierte screenconfig.MenuTreeItem a NavItemDTO especifico de mobile.
+// El campo DisplayName se mapea a Label para mantener el contrato JSON del endpoint.
+func toNavItems(items []screenconfig.MenuTreeItem) []NavItemDTO {
+	result := make([]NavItemDTO, len(items))
+	for i, item := range items {
+		navItem := NavItemDTO{
+			Key:       item.Key,
+			Label:     item.DisplayName,
+			Icon:      item.Icon,
+			ScreenKey: item.ScreenKey,
+			SortOrder: item.SortOrder,
+		}
+		if len(item.Children) > 0 {
+			navItem.Children = toNavItems(item.Children)
+		}
+		result[i] = navItem
+	}
+	return result
+}
+
+// buildNavigationTree construye los items de navegacion separados en bottomNav y drawer.
+// Usa screenconfig.BuildMenuTree para la construccion del arbol, luego aplica logica de
+// separacion especifica de mobile (max 5 bottomNav para mobile, todo en drawer para desktop/web).
+func buildNavigationTree(resources []*repository.MenuResource, screenMap map[string]string, platform string) ([]NavItemDTO, []NavItemDTO) {
+	nodes := toMenuNodes(resources)
+	treeItems := screenconfig.BuildMenuTree(nodes, nil, screenMap)
+	allItems := toNavItems(treeItems)
+
+	// Separar: mobile obtiene max 5 en bottomNav, el resto en drawer.
+	// desktop/web obtiene todo en drawer (sin bottom nav).
 	maxBottomNav := 5
 	if platform == "desktop" || platform == "web" {
 		maxBottomNav = 0
 	}
 
-	var bottomNav, drawerItems []NavItemDTO
+	bottomNav := make([]NavItemDTO, 0)
+	drawerItems := make([]NavItemDTO, 0)
 	for i, item := range allItems {
 		if i < maxBottomNav {
 			bottomNav = append(bottomNav, item)
 		} else {
 			drawerItems = append(drawerItems, item)
 		}
-	}
-
-	if bottomNav == nil {
-		bottomNav = []NavItemDTO{}
-	}
-	if drawerItems == nil {
-		drawerItems = []NavItemDTO{}
 	}
 
 	return bottomNav, drawerItems
@@ -353,131 +339,4 @@ func (s *screenService) withUserPreferences(ctx context.Context, cached *dto.Com
 	result := *cached
 	result.UserPreferences = prefs
 	return &result, nil
-}
-
-// resolveSlots reemplaza las referencias "slot:xxx" en el template con valores de slotData
-func resolveSlots(definition json.RawMessage, slotData json.RawMessage) json.RawMessage {
-	if len(slotData) == 0 || string(slotData) == "null" || string(slotData) == "{}" {
-		return definition
-	}
-
-	var slots map[string]interface{}
-	if err := json.Unmarshal(slotData, &slots); err != nil {
-		return definition
-	}
-
-	if len(slots) == 0 {
-		return definition
-	}
-
-	var defMap interface{}
-	if err := json.Unmarshal(definition, &defMap); err != nil {
-		return definition
-	}
-
-	resolved := resolveValue(defMap, slots)
-
-	result, err := json.Marshal(resolved)
-	if err != nil {
-		return definition
-	}
-
-	return result
-}
-
-// resolveValue resuelve recursivamente referencias slot:xxx en un valor JSON
-func resolveValue(value interface{}, slots map[string]interface{}) interface{} {
-	switch v := value.(type) {
-	case string:
-		if strings.HasPrefix(v, "slot:") {
-			slotKey := strings.TrimPrefix(v, "slot:")
-			if slotValue, ok := slots[slotKey]; ok {
-				return slotValue
-			}
-		}
-		return v
-	case map[string]interface{}:
-		result := make(map[string]interface{}, len(v))
-		for key, val := range v {
-			result[key] = resolveValue(val, slots)
-		}
-		return result
-	case []interface{}:
-		result := make([]interface{}, len(v))
-		for i, val := range v {
-			result[i] = resolveValue(val, slots)
-		}
-		return result
-	default:
-		return v
-	}
-}
-
-// applyPlatformOverrides aplica overrides especificos de plataforma al template
-func applyPlatformOverrides(definition json.RawMessage, platform string) json.RawMessage {
-	var defMap map[string]interface{}
-	if err := json.Unmarshal(definition, &defMap); err != nil {
-		return definition
-	}
-
-	overrides, ok := defMap["platformOverrides"]
-	if !ok {
-		return definition
-	}
-
-	overridesMap, ok := overrides.(map[string]interface{})
-	if !ok {
-		return definition
-	}
-
-	// Resolver override con cadena de fallback (ej: ios -> mobile -> sin override)
-	resolvedKey, found := screenconfig.ResolvePlatformOverrideKey(
-		screenconfig.Platform(platform), overridesMap,
-	)
-	if !found {
-		return definition
-	}
-
-	platformOverride, ok := overridesMap[resolvedKey]
-	if !ok {
-		return definition
-	}
-
-	platformMap, ok := platformOverride.(map[string]interface{})
-	if !ok {
-		return definition
-	}
-
-	// Aplicar overrides de zonas
-	if zoneOverrides, ok := platformMap["zones"]; ok {
-		if zonesMap, ok := zoneOverrides.(map[string]interface{}); ok {
-			if zones, ok := defMap["zones"]; ok {
-				if zonesArr, ok := zones.([]interface{}); ok {
-					for i, zone := range zonesArr {
-						if zoneMap, ok := zone.(map[string]interface{}); ok {
-							zoneID, _ := zoneMap["id"].(string)
-							if override, ok := zonesMap[zoneID]; ok {
-								if overrideMap, ok := override.(map[string]interface{}); ok {
-									for k, v := range overrideMap {
-										zoneMap[k] = v
-									}
-									zonesArr[i] = zoneMap
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Remover platformOverrides del resultado final
-	delete(defMap, "platformOverrides")
-
-	result, err := json.Marshal(defMap)
-	if err != nil {
-		return definition
-	}
-
-	return result
 }
