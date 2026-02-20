@@ -5,6 +5,25 @@ Todos los cambios notables en edugo-api-mobile serán documentados en este archi
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-02-20
+
+### Tipo de Release: patch
+
+- fix: agregar credenciales GHCR para que Container Apps pueda hacer pull
+- feat: agregar pipeline de deploy on-demand a Azure Container Apps
+- Fix redi (#110)
+- chore: actualizar dependencias edugo-shared e infraestructura a v0.50.0
+- fix: update lifecycle to v0.10.1 (nil logger panic fix)
+- fase 2 (#109)
+- Create config-development.yaml
+- Pantalla dinamica (#107)
+- Manejo de roles (#105)
+- fix: actualizar edugo-shared/auth v0.10.0 → v0.11.0
+- fix: actualizar dependencias y eliminar EmailVerified
+- update (#103)
+
+---
+
 ## [0.18.0] - 2026-01-02
 
 ### Tipo de Release: patch
