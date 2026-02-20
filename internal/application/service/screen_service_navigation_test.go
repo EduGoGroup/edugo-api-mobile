@@ -319,3 +319,79 @@ func TestScreenService_GetNavigationConfig_WithParentChild(t *testing.T) {
 	mockResourceReader.AssertExpectations(t)
 }
 
+func TestScreenService_GetNavigationConfig_MobileMax5BottomNav(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockScreenRepository)
+	mockResourceReader := new(MockResourceReader)
+	mockLogger := new(MockLogger)
+
+	svc := NewScreenService(mockRepo, mockResourceReader, mockLogger)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	// 7 recursos system scope (todos visibles sin permisos)
+	resources := make([]*repository.MenuResource, 7)
+	mappings := make([]*repository.ResourceScreenMapping, 7)
+	expectedKeys := make([]string, 7)
+	for i := 0; i < 7; i++ {
+		key := fmt.Sprintf("item-%d", i)
+		resources[i] = &repository.MenuResource{
+			ID: fmt.Sprintf("r%d", i), Key: key, DisplayName: fmt.Sprintf("Item %d", i),
+			SortOrder: i, Scope: "system",
+		}
+		mappings[i] = &repository.ResourceScreenMapping{
+			ResourceKey: key, ScreenKey: fmt.Sprintf("screen-%d", i), IsDefault: true,
+		}
+		expectedKeys[i] = key
+	}
+
+	mockResourceReader.On("GetMenuResources", ctx).Return(resources, nil)
+	mockResourceReader.On("GetResourceScreenMappings", ctx, expectedKeys).Return(mappings, nil)
+
+	// Act
+	result, err := svc.GetNavigationConfig(ctx, userID, "mobile", []string{})
+
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Len(t, result.BottomNav, 5, "mobile debe tener max 5 en bottomNav")
+	assert.Len(t, result.DrawerItems, 2, "el resto debe ir a drawer")
+
+	mockResourceReader.AssertExpectations(t)
+}
+
+func TestScreenService_GetNavigationConfig_DesktopAllInDrawerNoBottomNav(t *testing.T) {
+	// Arrange
+	mockRepo := new(MockScreenRepository)
+	mockResourceReader := new(MockResourceReader)
+	mockLogger := new(MockLogger)
+
+	svc := NewScreenService(mockRepo, mockResourceReader, mockLogger)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	resources := []*repository.MenuResource{
+		{ID: "r1", Key: "dashboard", DisplayName: "Home", SortOrder: 0, Scope: "system"},
+		{ID: "r2", Key: "materials", DisplayName: "Materials", SortOrder: 1, Scope: "system"},
+	}
+	mappings := []*repository.ResourceScreenMapping{
+		{ResourceKey: "dashboard", ScreenKey: "dash-screen", IsDefault: true},
+		{ResourceKey: "materials", ScreenKey: "mat-screen", IsDefault: true},
+	}
+
+	mockResourceReader.On("GetMenuResources", ctx).Return(resources, nil)
+	mockResourceReader.On("GetResourceScreenMappings", ctx, []string{"dashboard", "materials"}).Return(mappings, nil)
+
+	// Act
+	result, err := svc.GetNavigationConfig(ctx, userID, "desktop", []string{})
+
+	// Assert
+	require.NoError(t, err)
+	assert.Empty(t, result.BottomNav, "desktop no debe tener bottomNav")
+	assert.Len(t, result.DrawerItems, 2, "desktop debe tener todo en drawer")
+
+	mockResourceReader.AssertExpectations(t)
+}
+

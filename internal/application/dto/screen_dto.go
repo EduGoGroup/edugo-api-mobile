@@ -2,10 +2,10 @@ package dto
 
 import "github.com/EduGoGroup/edugo-shared/screenconfig"
 
-// CombinedScreenDTO is a type alias for the shared library's CombinedScreenDTO.
-// This avoids breaking existing code that references dto.CombinedScreenDTO.
-// Note: Pattern field is screenconfig.Pattern (a string type), not plain string.
+// CombinedScreenDTO es un alias al tipo del shared library screenconfig.CombinedScreenDTO.
+// Evita romper codigo existente que referencia dto.CombinedScreenDTO.
+// Nota: el campo Pattern es screenconfig.Pattern (tipo string), no string plano.
 type CombinedScreenDTO = screenconfig.CombinedScreenDTO
 
-// ResourceScreenDTO is a type alias for the shared library's ResourceScreenDTO.
+// ResourceScreenDTO es un alias al tipo del shared library screenconfig.ResourceScreenDTO.
 type ResourceScreenDTO = screenconfig.ResourceScreenDTO
