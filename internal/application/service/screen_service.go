@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -146,11 +147,53 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	}
 
 	// 2. Filtrar recursos por permisos del usuario
+	// 2a. Determinar qué resource keys tienen algún permiso del usuario
+	userResourceKeys := make(map[string]bool)
+	for _, res := range resources {
+		permPrefix := res.Key + ":"
+		for _, perm := range permissions {
+			if strings.HasPrefix(perm, permPrefix) {
+				userResourceKeys[res.Key] = true
+				break
+			}
+		}
+		// System scope resources are always visible
+		if res.Scope == "system" {
+			userResourceKeys[res.Key] = true
+		}
+	}
+
+	// 2b. Build lookup maps for parent traversal
+	resourceByKey := make(map[string]*repository.MenuResource)
+	resourceByID := make(map[string]*repository.MenuResource)
+	for _, res := range resources {
+		resourceByKey[res.Key] = res
+		if res.ID != "" {
+			resourceByID[res.ID] = res
+		}
+	}
+
+	// 2c. Include parent resources (walk up the hierarchy)
+	allowedKeys := make(map[string]bool)
+	for key := range userResourceKeys {
+		allowedKeys[key] = true
+		res := resourceByKey[key]
+		for res != nil && res.ParentID != nil {
+			parent := resourceByID[*res.ParentID]
+			if parent != nil {
+				allowedKeys[parent.Key] = true
+				res = parent
+			} else {
+				break
+			}
+		}
+	}
+
+	// 2d. Filter resources to only allowed ones
 	var allowedResources []*repository.MenuResource
 	var resourceKeys []string
 	for _, res := range resources {
-		permKey := res.Key + ":read"
-		if screenconfig.HasPermission(permissions, permKey) || res.Scope == "system" {
+		if allowedKeys[res.Key] {
 			allowedResources = append(allowedResources, res)
 			resourceKeys = append(resourceKeys, res.Key)
 		}
