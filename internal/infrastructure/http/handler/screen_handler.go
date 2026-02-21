@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/EduGoGroup/edugo-api-mobile/internal/application/service"
+	"github.com/EduGoGroup/edugo-shared/auth"
 	"github.com/EduGoGroup/edugo-shared/common/errors"
 	"github.com/EduGoGroup/edugo-shared/logger"
 	ginmiddleware "github.com/EduGoGroup/edugo-shared/middleware/gin"
@@ -132,11 +133,12 @@ func (h *ScreenHandler) GetNavigation(c *gin.Context) {
 		return
 	}
 
-	// Extraer permisos del JWT context
+	// Extraer permisos del contexto RBAC (inyectado por RemoteAuthMiddleware)
 	var permissions []string
-	claims, claimsErr := ginmiddleware.GetClaims(c)
-	if claimsErr == nil && claims != nil && claims.ActiveContext != nil {
-		permissions = claims.ActiveContext.Permissions
+	if activeCtx, exists := c.Get("active_context"); exists {
+		if uc, ok := activeCtx.(*auth.UserContext); ok && uc != nil {
+			permissions = uc.Permissions
+		}
 	}
 
 	nav, err := h.screenService.GetNavigationConfig(c.Request.Context(), userID, platform, permissions)

@@ -23,7 +23,7 @@ func NewPostgresResourceRepository(db *sql.DB) repository.ResourceReader {
 func (r *PostgresResourceRepository) GetMenuResources(ctx context.Context) ([]*repository.MenuResource, error) {
 	query := `
 		SELECT id::text, key, display_name, icon, parent_id::text, sort_order, scope
-		FROM auth.resources
+		FROM resources
 		WHERE is_active = true AND is_menu_visible = true
 		ORDER BY sort_order ASC, key ASC
 	`
