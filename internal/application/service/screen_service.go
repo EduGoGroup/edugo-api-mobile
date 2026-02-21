@@ -147,23 +147,23 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	}
 
 	// 2. Filtrar recursos por permisos del usuario
-	// 2a. Determinar qué resource keys tienen algún permiso del usuario
+	// 2a. Pre-procesar permisos en un set de resource keys para verificaciones O(1)
+	permResourceKeys := make(map[string]bool, len(permissions))
+	for _, perm := range permissions {
+		if idx := strings.Index(perm, ":"); idx > 0 {
+			permResourceKeys[perm[:idx]] = true
+		}
+	}
+
+	// 2b. Determinar qué resource keys tienen algún permiso del usuario
 	userResourceKeys := make(map[string]bool)
 	for _, res := range resources {
-		permPrefix := res.Key + ":"
-		for _, perm := range permissions {
-			if strings.HasPrefix(perm, permPrefix) {
-				userResourceKeys[res.Key] = true
-				break
-			}
-		}
-		// System scope resources are always visible
-		if res.Scope == "system" {
+		if permResourceKeys[res.Key] || res.Scope == "system" {
 			userResourceKeys[res.Key] = true
 		}
 	}
 
-	// 2b. Build lookup maps for parent traversal
+	// 2c. Build lookup maps for parent traversal
 	resourceByKey := make(map[string]*repository.MenuResource)
 	resourceByID := make(map[string]*repository.MenuResource)
 	for _, res := range resources {
@@ -173,19 +173,28 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 		}
 	}
 
-	// 2c. Include parent resources (walk up the hierarchy)
+	// 2d. Include parent resources (walk up the hierarchy)
+	// Límite de profundidad y detección de ciclos para prevenir loops infinitos con datos malformados
+	const maxHierarchyDepth = 10
 	allowedKeys := make(map[string]bool)
 	for key := range userResourceKeys {
 		allowedKeys[key] = true
 		res := resourceByKey[key]
-		for res != nil && res.ParentID != nil {
+		visited := make(map[string]bool)
+		visited[key] = true
+		depth := 0
+		for res != nil && res.ParentID != nil && depth < maxHierarchyDepth {
+			if visited[*res.ParentID] {
+				break // ciclo detectado
+			}
 			parent := resourceByID[*res.ParentID]
-			if parent != nil {
-				allowedKeys[parent.Key] = true
-				res = parent
-			} else {
+			if parent == nil {
 				break
 			}
+			visited[*res.ParentID] = true
+			allowedKeys[parent.Key] = true
+			res = parent
+			depth++
 		}
 	}
 

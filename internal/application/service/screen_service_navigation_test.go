@@ -319,6 +319,60 @@ func TestScreenService_GetNavigationConfig_WithParentChild(t *testing.T) {
 	mockResourceReader.AssertExpectations(t)
 }
 
+func TestScreenService_GetNavigationConfig_ParentIncludedWhenChildHasPermission(t *testing.T) {
+	// Valida que cuando un hijo tiene permiso y scope "school" (no "system"),
+	// el padre (también scope "school") se incluye automáticamente por el recorrido jerárquico.
+	mockRepo := new(MockScreenRepository)
+	mockResourceReader := new(MockResourceReader)
+	mockLogger := new(MockLogger)
+
+	svc := NewScreenService(mockRepo, mockResourceReader, mockLogger)
+
+	ctx := context.Background()
+	userID := uuid.New()
+	parentID := "r-parent"
+
+	resources := []*repository.MenuResource{
+		{ID: "r-parent", Key: "academic", DisplayName: "Academic", Icon: strPtr("school"), SortOrder: 0, Scope: "school"},
+		{ID: "r-child", Key: "materials", DisplayName: "Materials", Icon: strPtr("folder"), ParentID: &parentID, SortOrder: 0, Scope: "school"},
+		{ID: "r-other", Key: "reports", DisplayName: "Reports", Icon: strPtr("bar_chart"), SortOrder: 1, Scope: "school"},
+	}
+	mappings := []*repository.ResourceScreenMapping{
+		{ResourceKey: "academic", ScreenKey: "academic-home", IsDefault: true},
+		{ResourceKey: "materials", ScreenKey: "materials-list", IsDefault: true},
+	}
+
+	mockResourceReader.On("GetMenuResources", ctx).Return(resources, nil)
+	// Solo "academic" (padre incluido por jerarquía) y "materials" (hijo con permiso)
+	mockResourceReader.On("GetResourceScreenMappings", ctx, []string{"academic", "materials"}).Return(mappings, nil)
+
+	// Solo tiene permiso sobre el hijo "materials", no sobre el padre ni sobre "reports"
+	permissions := []string{"materials:read"}
+
+	result, err := svc.GetNavigationConfig(ctx, userID, "mobile", permissions)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// El árbol colapsa el hijo bajo el padre: 1 item top-level "academic" con "materials" como hijo
+	totalTopLevel := len(result.BottomNav) + len(result.DrawerItems)
+	assert.Equal(t, 1, totalTopLevel, "debe haber 1 item top-level (el padre académico)")
+
+	require.Len(t, result.BottomNav, 1)
+	parent := result.BottomNav[0]
+	assert.Equal(t, "academic", parent.Key, "el padre debe estar incluido por recorrido jerárquico")
+	require.Len(t, parent.Children, 1, "el padre debe tener el hijo materials")
+	assert.Equal(t, "materials", parent.Children[0].Key)
+
+	// "reports" no debe aparecer en ningún nivel
+	for _, item := range result.BottomNav {
+		assert.NotEqual(t, "reports", item.Key)
+	}
+	assert.Empty(t, result.DrawerItems, "reports no debe aparecer sin permiso")
+
+	mockResourceReader.AssertExpectations(t)
+}
+
 func TestScreenService_GetNavigationConfig_MobileMax5BottomNav(t *testing.T) {
 	// Arrange
 	mockRepo := new(MockScreenRepository)

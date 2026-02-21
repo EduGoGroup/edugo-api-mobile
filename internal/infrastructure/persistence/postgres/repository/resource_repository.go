@@ -19,7 +19,9 @@ func NewPostgresResourceRepository(db *sql.DB) repository.ResourceReader {
 	return &PostgresResourceRepository{db: db}
 }
 
-// GetMenuResources retorna los recursos activos y visibles en menu, ordenados por sort_order
+// GetMenuResources retorna los recursos activos y visibles en menu, ordenados por sort_order.
+// La tabla `resources` se encuentra en el schema público (sin prefijo auth.).
+// Requiere que la migración de base de datos haya creado o renombrado la tabla a `resources`.
 func (r *PostgresResourceRepository) GetMenuResources(ctx context.Context) ([]*repository.MenuResource, error) {
 	query := `
 		SELECT id::text, key, display_name, icon, parent_id::text, sort_order, scope
