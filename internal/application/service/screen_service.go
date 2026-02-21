@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -146,11 +147,62 @@ func (s *screenService) GetNavigationConfig(ctx context.Context, userID uuid.UUI
 	}
 
 	// 2. Filtrar recursos por permisos del usuario
+	// 2a. Pre-procesar permisos en un set de resource keys para verificaciones O(1)
+	permResourceKeys := make(map[string]bool, len(permissions))
+	for _, perm := range permissions {
+		if idx := strings.Index(perm, ":"); idx > 0 {
+			permResourceKeys[perm[:idx]] = true
+		}
+	}
+
+	// 2b. Determinar qué resource keys tienen algún permiso del usuario
+	userResourceKeys := make(map[string]bool)
+	for _, res := range resources {
+		if permResourceKeys[res.Key] || res.Scope == "system" {
+			userResourceKeys[res.Key] = true
+		}
+	}
+
+	// 2c. Build lookup maps for parent traversal
+	resourceByKey := make(map[string]*repository.MenuResource)
+	resourceByID := make(map[string]*repository.MenuResource)
+	for _, res := range resources {
+		resourceByKey[res.Key] = res
+		if res.ID != "" {
+			resourceByID[res.ID] = res
+		}
+	}
+
+	// 2d. Include parent resources (walk up the hierarchy)
+	// Límite de profundidad y detección de ciclos para prevenir loops infinitos con datos malformados
+	const maxHierarchyDepth = 10
+	allowedKeys := make(map[string]bool)
+	for key := range userResourceKeys {
+		allowedKeys[key] = true
+		res := resourceByKey[key]
+		visited := make(map[string]bool)
+		visited[key] = true
+		depth := 0
+		for res != nil && res.ParentID != nil && depth < maxHierarchyDepth {
+			if visited[*res.ParentID] {
+				break // ciclo detectado
+			}
+			parent := resourceByID[*res.ParentID]
+			if parent == nil {
+				break
+			}
+			visited[*res.ParentID] = true
+			allowedKeys[parent.Key] = true
+			res = parent
+			depth++
+		}
+	}
+
+	// 2d. Filter resources to only allowed ones
 	var allowedResources []*repository.MenuResource
 	var resourceKeys []string
 	for _, res := range resources {
-		permKey := res.Key + ":read"
-		if screenconfig.HasPermission(permissions, permKey) || res.Scope == "system" {
+		if allowedKeys[res.Key] {
 			allowedResources = append(allowedResources, res)
 			resourceKeys = append(resourceKeys, res.Key)
 		}
